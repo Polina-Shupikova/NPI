@@ -25,16 +25,6 @@ document.getElementById('game-settings-button').addEventListener('click', () => 
     document.getElementById('settings-page').classList.remove('hidden');
 });
 
-// Загрузка цитаты дня (заглушка)
-const quotes = [
-    "Звук - это волна, которая распространяется в упругой среде.",
-    "Фигура - это графическое представление данных.",
-    "Клавиатура - это устройство ввода информации.",
-    "Свобода - это возможность выбора.",
-    "Работа - это целенаправленная деятельность."
-];
-
-document.getElementById('daily-quote').textContent = quotes[Math.floor(Math.random() * quotes.length)];
 
 // Генерация кроссворда
 function generateCrossword() {
@@ -62,7 +52,7 @@ document.getElementById('font-size').addEventListener('change', (e) => {
     }
 });
 
-// Настройка темы
+// Настройка темы (завершён)
 document.getElementById('theme_sw').addEventListener('click', () => {
     if (document.body.classList.contains('dark-theme')) {
         document.body.classList.remove('dark-theme');
@@ -92,3 +82,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
     setVolume(volumeSlider.value);
 });
+
+// Загрузка цитаты дня (завершён)
+const quotes = [
+    "Война — это мир. Свобода — это рабство. Незнание — сила.",
+    "Сообщите о всех подозрительных действиях.",
+    "Реальность существует в человеческом сознании и нигде больше.",    
+    "Мы не просто уничтожаем наших врагов — мы меняем их.",
+    "Мы знаем, что никто не захватывает власть с намерением отказаться от неё.",
+    "Пролетарии и животные свободны.",
+    "Кто управляет прошлым, тот управляет будущим. Кто управляет настоящим, тот управляет прошлым.",
+    "Старший Брат наблюдает за тобой. Всегда.",
+    "Не человек управляет государством, а государство управляет человеком.",
+    "Если ты хочешь представить себе будущее, представь сапог, топчущий человеческое лицо — вечно.",
+    "Мы контролируем жизнь на всех её уровнях.",
+    "Правда — это то, что говорит Партия."
+];
+
+document.getElementById('daily-quote').textContent = quotes[Math.floor(Math.random() * quotes.length)];

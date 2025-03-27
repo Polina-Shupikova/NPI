@@ -26,9 +26,14 @@ body {
 }
 
 .container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 20px;
+    
+    width: 100%;
+
+    max-width: device-width;
+/*    margin: 0 auto;
+    padding: 20px;*/
+    padding: 0;
+    margin: 0;
 }
 
 
@@ -119,7 +124,8 @@ body {
   font-size: 17px;
   padding: 0.8em 1.3em 0.8em 0.9em;
   color: white;
-  background: linear-gradient(to right, #11998e, #38ef7d);
+/*  background: linear-gradient(to right, #11998e, #38ef7d);*/
+  background: linear-gradient(to right, #363c3c, #0a0d0b);
   border: none;
   letter-spacing: 0.05em;
   border-radius: 16px;
@@ -137,7 +143,8 @@ body {
 }
 
 .play-button:hover {
-  background: linear-gradient(to right, #0b8b63, #32de6a);
+/*  background: linear-gradient(to right, #0b8b63, #32de6a);*/
+    background: linear-gradient(to right, #2d2e2e, #000000);
 }
 
 .play-button:hover svg {
@@ -157,11 +164,11 @@ body {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  background-color: rgb(129, 110, 216);
+  background-color: rgb(36, 36, 38);
   border-radius: 10px;
   cursor: pointer;
   border: none;
-  box-shadow: 0px 0px 0px 2px rgb(212, 209, 255);
+  box-shadow: 0px 0px 0px 2px rgb(123, 123, 123);
 }
 .bar {
   width: 50%;
@@ -475,8 +482,8 @@ body {
 
 
 /* Общий контейнер настроек */
-.settings-page {
-/*    display: flex;*/
+/*.settings-page {
+    display: flex;
 
     flex-direction: column;
     align-items: center;
@@ -490,12 +497,61 @@ body {
     border-radius: 12px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
     backdrop-filter: blur(10px);
+
+
 }
 
 .settings-page h1 {
     font-size: 24px;
     text-align: center;
+}*/
+/* Фон для всей страницы */
+body {
+    background: url('assets/vertical (2).jpg') no-repeat center center fixed;
+    background-size: cover;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
 }
+
+/* Затемнение для контраста */
+body::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5); /* Затемнение */
+    z-index: 0;
+}
+
+/* Контейнер настроек */
+.settings-page {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    width: 100%;
+    max-width: 400px;
+    margin: 50px auto;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(10px);
+    position: relative;
+    z-index: 1;
+}
+
+/* Заголовок */
+.settings-page h1 {
+/*    font-size: 24px;*/
+    text-align: center;
+/*    color: white;*/
+}
+
 
 .theme_sw {
     display: flex;
@@ -528,8 +584,9 @@ body {
     border-radius: 6px;
     border: none;
     font-size: 16px;
-    background: #222;
-    color: white;
+/*    background: #222;*/
+    background: #6f6f6f;
+    color: black;
     cursor: pointer;
 }
 
@@ -562,3 +619,89 @@ body {
 .hidden {
     display: none;
 }
+
+/* Main-page */
+.main-page {
+/*    display: flex;*/
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    width: 100vw;
+    text-align: center;
+    background: url('assets/vertical (1).jpg') no-repeat center center fixed;
+    background-size: cover;
+    color: white;
+    font-family: 'Arial', sans-serif;
+/*    padding: 20px;*/
+    position: relative;
+}
+
+/* Затемнение для улучшения читаемости */
+.main-page::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 0;
+}
+
+/* Все элементы остаются поверх затемнения */
+.main-page > * {
+    position: relative;
+    z-index: 1;
+}
+
+/* Фиксированное положение кнопки настроек */
+.settings-button {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 2; /* Поверх затемнения */
+}
+
+
+
+/* Заголовок */
+h1 {
+/*    font-size: 40px;*/
+    font-weight: bold;
+    margin-bottom: 20px;
+    text-shadow: 2px 2px 10px rgba(0, 0, 0, 0.5);
+}
+
+/* Блок цитаты */
+.quote-box {
+    margin-top: 30px;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(6px);
+    max-width: 400px;
+    text-align: center;
+    transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+}
+
+.quote-box:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 15px rgba(255, 255, 255, 0.2);
+}
+
+.quote-box h3 {
+    margin-bottom: 10px;
+    font-size: 18px;
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+
+#daily-quote {
+    font-size: 16px;
+    font-style: italic;
+    opacity: 0.9;
+}
+
+/*
+CSS 118 line
+background: linear-gradient(to right, #363c3c, #0a0d0b);
+*/
