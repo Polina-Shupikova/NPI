@@ -109,7 +109,8 @@ body {
   font-weight: 500;
   padding: 0.8em 1.3em 0.8em 0.9em;
   color: white;
-  background: linear-gradient(to right, #363c3c, #0a0d0b);
+/*  background: linear-gradient(to right, #363c3c, #0a0d0b);*/
+  background: linear-gradient(to right, #8f2727, rgb(81 18 18));
   border: none;
   letter-spacing: 0.05em;
   border-radius: 16px;
@@ -127,7 +128,8 @@ body {
 }
 
 .play-button:hover {
-    background: linear-gradient(to right, #2d2e2e, #000000);
+/*    background: linear-gradient(to right, #2d2e2e, #000000);*/
+    background: linear-gradient(to right, #6b0505, rgb(54 7 7))
 }
 
 .play-button:hover svg {
@@ -146,11 +148,13 @@ body {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  background-color: rgb(36, 36, 38);
+/*  background-color: rgb(36, 36, 38);*/
+  background-color: rgb(81 18 18);
   border-radius: 10px;
   cursor: pointer;
   border: none;
-  box-shadow: 0px 0px 0px 2px rgb(123, 123, 123);
+/*  box-shadow: 0px 0px 0px 2px rgb(123, 123, 123);*/
+  box-shadow: 0px 0px 0px 2px rgb(126 56 56);
 }
 .bar {
   width: 50%;
@@ -519,7 +523,8 @@ body::before {
 }
 
 .back-button {
-    background: linear-gradient(135deg, #ff0000, #ff3300);
+/*    background: linear-gradient(135deg, #ff0000, #ff3300);*/
+    background: linear-gradient(135deg, #740000, #9a3015);
     color: white;
     font-weight: bold;
     border: none;
@@ -527,7 +532,8 @@ body::before {
     border-radius: 10px;
     cursor: pointer;
     transition: all 0.3s ease-in-out;
-    box-shadow: 0 4px 15px rgba(255, 0, 0, 0.6);
+/*    box-shadow: 0 4px 15px rgba(255, 0, 0, 0.6);*/
+    box-shadow: 0 4px 15px rgb(172 0 0 / 60%);
     text-transform: uppercase;
     letter-spacing: 1px;
 }
@@ -590,7 +596,8 @@ h1 {
 .quote-box {
     margin-top: 30px;
     padding: 20px;
-    background: rgba(255, 255, 255, 0.15);
+/*    background: rgba(255, 255, 255, 0.15);*/
+    background: rgba(234, 0, 0, 0.16);
     border-radius: 12px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
     backdrop-filter: blur(6px);
@@ -622,7 +629,19 @@ h1 {
                  0 0 10px rgba(255, 255, 255, 0.6), 
                  0 0 15px rgba(255, 255, 255, 0.4);
 }
+.play-buttons{
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+/*.play-buttons {
+    display: grid;
+    grid-template-columns: auto auto;
+    gap: 10px;
+}*/
 
 /*
     font-family: Arial; -?
+
 */
