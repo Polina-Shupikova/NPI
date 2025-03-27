@@ -344,3 +344,15 @@ body {
         padding: 0 2px;
     }
 }
+
+/* Стиль для активной клетки */
+.crossword-cell.highlight {
+    background-color: #ffff99 !important;
+    box-shadow: 0 0 0 2px #4a6fa5;
+}
+
+/* Подсветка при фокусе с клавиатуры */
+.crossword-cell:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px #4a6fa5;
+}

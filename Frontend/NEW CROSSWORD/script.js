@@ -100,7 +100,45 @@ function initEventListeners() {
     document.getElementById('dark-theme').addEventListener('click', () => document.body.classList.add('dark-theme'));
     document.getElementById('font-size').addEventListener('change', handleFontSizeChange);
     document.getElementById('hint-button').addEventListener('click', giveHint);
+    document.addEventListener('keydown', handlePhysicalKeyPress);
 }
+
+function handlePhysicalKeyPress(e) {
+    if (!crossword.selectedCell) return;
+    
+    const { x, y } = crossword.selectedCell;
+    const cellData = crossword.grid[y][x];
+    if (!cellData) return;
+
+    // Обработка специальных клавиш
+    if (e.key === 'Backspace') {
+        clearCell();
+        return;
+    }
+    
+    if (e.key === 'Enter') {
+        showDefinitions();
+        return;
+    }
+    
+    if (e.key === ' ') {
+        giveHint();
+        return;
+    }
+
+    // Преобразование английской раскладки в русскую
+    let letter = e.key.toLowerCase();
+    if (RUSSIAN_LAYOUT[letter]) {
+        letter = RUSSIAN_LAYOUT[letter];
+    }
+
+    // Проверка что это русская буква
+    if (/[а-яё]/.test(letter)) {
+        handleKeyPress(letter.toUpperCase());
+        e.preventDefault();
+    }
+}
+
 
 function togglePages(hideId, showId) {
     document.getElementById(hideId).classList.add('hidden');
@@ -354,6 +392,7 @@ function renderCrossword() {
         for (let x = minX; x <= maxX; x++) {
             const cell = document.createElement('div');
             cell.className = 'crossword-cell';
+            cell.tabIndex = 0;
             
             if (crossword.grid[y][x]) {
                 const cellData = crossword.grid[y][x];
@@ -388,13 +427,17 @@ function renderCrossword() {
 function selectCell(x, y) {
     if (crossword.selectedCell) {
         const prevCell = document.querySelector(`.crossword-cell[data-x="${crossword.selectedCell.x}"][data-y="${crossword.selectedCell.y}"]`);
-        if (prevCell) prevCell.classList.remove('highlight');
+        if (prevCell) {
+            prevCell.classList.remove('highlight');
+            prevCell.blur();
+        }
     }
     
     if (crossword.grid[y][x]) {
         const cell = document.querySelector(`.crossword-cell[data-x="${x}"][data-y="${y}"]`);
         if (cell) {
             cell.classList.add('highlight');
+            cell.focus(); // Фокусируем клетку для клавиатурного ввода
             crossword.selectedCell = { x, y };
         }
     }
@@ -457,17 +500,39 @@ function handleKeyPress(letter) {
     if (!cellData) return;
     
     cellData.letter = letter;
+    cellData.isCorrect = (letter === cellData.correctLetter);
     
-    // Сразу проверяем правильность буквы
-    if (letter === cellData.correctLetter) {
-        crossword.grid[y][x].isCorrect = true;
-    } else {
-        crossword.grid[y][x].isCorrect = false;
-    }
+    // Автоматическое перемещение к следующей клетке
+    moveToNextCell(x, y, cellData.wordIndex);
     
     renderCrossword();
-    selectCell(x, y);
     checkWordCompletion(cellData.wordIndex);
+}
+
+// Новая функция для перемещения между клетками
+function moveToNextCell(x, y, wordIndex) {
+    const wordInfo = crossword.words[wordIndex];
+    const direction = wordInfo.direction;
+    let nextX = x, nextY = y;
+    
+    if (direction === 'horizontal') {
+        nextX = x + 1;
+        // Проверяем границы слова
+        if (nextX > wordInfo.x + wordInfo.word.length - 1) {
+            nextX = wordInfo.x;
+        }
+    } else {
+        nextY = y + 1;
+        // Проверяем границы слова
+        if (nextY > wordInfo.y + wordInfo.word.length - 1) {
+            nextY = wordInfo.y;
+        }
+    }
+    
+    // Проверяем что следующая клетка существует и доступна
+    if (crossword.grid[nextY] && crossword.grid[nextY][nextX]) {
+        selectCell(nextX, nextY);
+    }
 }
 
 function clearCell() {
