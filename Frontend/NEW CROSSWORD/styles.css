@@ -1,0 +1,346 @@
+:root {
+    --bg-color: #ffffff;
+    --text-color: #000000;
+    --primary-color: #4a6fa5;
+    --secondary-color: #f0f0f0;
+    --disabled-color: #cccccc;
+    --button-hover: #3a5a8f;
+    --correct-color: #a5d6a7;
+    --incorrect-color: #ffab91;
+}
+
+.dark-theme {
+    --bg-color: #1a1a1a;
+    --text-color: #f0f0f0;
+    --primary-color: #5d8acd;
+    --secondary-color: #2a2a2a;
+    --disabled-color: #444444;
+    --button-hover: #4d7abd;
+    --correct-color: #2e7d32;
+    --incorrect-color: #c62828;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    margin: 0;
+    padding: 0;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Главная страница */
+.main-page {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    text-align: center;
+}
+
+.settings-button {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+    cursor: pointer;
+}
+
+.play-button {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 15px 30px;
+    font-size: 24px;
+    border-radius: 5px;
+    margin: 30px 0;
+    cursor: pointer;
+}
+
+.quote-box {
+    background-color: var(--secondary-color);
+    padding: 20px;
+    border-radius: 5px;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+/* Страница настроек */
+.settings-page {
+    padding: 20px;
+}
+
+.theme-buttons {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.theme-button {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.light-theme-btn {
+    background-color: #f0f0f0;
+    color: #000000;
+}
+
+.dark-theme-btn {
+    background-color: #333333;
+    color: #ffffff;
+}
+
+.slider-container {
+    margin-bottom: 20px;
+}
+
+.slider-container label {
+    display: block;
+    margin-bottom: 5px;
+}
+
+.slider {
+    width: 100%;
+}
+
+.font-size-selector {
+    width: 100%;
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+}
+
+.back-button {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+/* Страница игры */
+.game-page {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    padding: 20px;
+}
+
+.game-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.level-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.hint-button {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+.hint-count {
+    text-align: center;
+    margin-top: 5px;
+}
+
+.game-board {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.crossword-grid {
+    display: grid;
+    gap: 2px;
+    margin: 0 auto;
+}
+
+/* Стили клеток кроссворда */
+.crossword-cell {
+    width: 28px;
+    height: 28px;
+    border: 1px solid var(--text-color);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 14px;
+    font-weight: bold;
+    background-color: var(--secondary-color);
+    color: black;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+/* Правильная буква (включая подсказки) */
+.crossword-cell.correct-letter {
+    background-color: #a5d6a7; /* Светло-зеленый */
+    color: #1b5e20;
+}
+
+/* Неправильная буква */
+.crossword-cell.incorrect-letter {
+    background-color: #ffab91; /* Светло-красный */
+    color: #bf360c;
+}
+
+/* Полностью угаданное слово */
+.crossword-cell.completed-word {
+    background-color: #2e7d32; /* Темно-зеленый */
+    color: white;
+    font-weight: bold;
+}
+
+/* Выделенная клетка */
+.crossword-cell.highlight {
+    background-color: #ffff99 !important; /* Ярко-желтый */
+    box-shadow: 0 0 5px rgba(0,0,0,0.3);
+}
+
+/* Клавиатура */
+.keyboard {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 5px;
+    padding: 10px;
+    background-color: var(--secondary-color);
+    border-radius: 5px;
+}
+
+.keyboard-key {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 12px;
+    cursor: pointer;
+    margin: 1px;
+    transition: background-color 0.2s;
+}
+
+/* Используемые буквы */
+.keyboard-key-used {
+    background-color: #ff6b6b; /* Красный */
+    color: white;
+}
+
+/* Неиспользуемые буквы */
+.keyboard-key-unused {
+    background-color: #cccccc; /* Серый */
+    color: #666666;
+    cursor: not-allowed;
+}
+
+.keyboard-key-unused:hover {
+    background-color: #cccccc !important;
+}
+
+/* Специальные кнопки */
+.keyboard-key[style*="width"] {
+    background-color: #ff6b6b !important; /* Красный */
+    color: white !important;
+    padding: 0 3px;
+    font-size: 11px;
+}
+
+.keyboard-key[style*="width"]:hover {
+    background-color: #e05555 !important; /* Темнее при наведении */
+}
+
+/* Окно определений */
+.definitions-box {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: var(--bg-color);
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+    z-index: 100;
+    max-width: 80%;
+    max-height: 80vh;
+    overflow-y: auto;
+    border: 2px solid var(--primary-color);
+}
+
+.definitions-box h3 {
+    margin-top: 0;
+    color: var(--primary-color);
+}
+
+.definition-item {
+    margin-bottom: 10px;
+    padding: 8px;
+    background-color: var(--secondary-color);
+    border-radius: 5px;
+}
+
+/* Общие классы */
+.hidden {
+    display: none;
+}
+
+.loading {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 20px;
+    font-size: 1.2em;
+}
+
+/* Адаптация для мобильных устройств */
+@media (max-width: 600px) {
+    .crossword-cell {
+        width: 24px;
+        height: 24px;
+        font-size: 12px;
+    }
+    
+    .keyboard-key {
+        width: 24px;
+        height: 24px;
+        font-size: 10px;
+    }
+    
+    .keyboard-key[style*="width"] {
+        width: auto !important;
+        font-size: 10px;
+        padding: 0 2px;
+    }
+}
