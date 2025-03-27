@@ -1,17 +1,16 @@
+function generate(){
+    generateCrossword();
+    generateKeyboard();
+}
+
 
 // Переключение между страницами
+
 document.getElementById('main-settings-button').addEventListener('click', () => {
     document.getElementById('main-page').classList.add('hidden');
     document.getElementById('settings-page').classList.remove('hidden');
     document.getElementById('settings-page').style.display = "flex";
 
-});
-
-document.getElementById('play-button').addEventListener('click', () => {
-    document.getElementById('main-page').classList.add('hidden');
-    document.getElementById('game-page').classList.remove('hidden');
-    generateCrossword();
-    generateKeyboard();
 });
 
 document.getElementById('back-button').addEventListener('click', () => {
@@ -20,10 +19,25 @@ document.getElementById('back-button').addEventListener('click', () => {
     document.getElementById('settings-page').style.display = "none";
 });
 
-document.getElementById('game-settings-button').addEventListener('click', () => {
-    document.getElementById('game-page').classList.add('hidden');
+document.getElementById('game-settings-button').addEventListener('click', () => { //Не сделано
+    // document.getElementById('game-page').classList.add('hidden');
     document.getElementById('settings-page').classList.remove('hidden');
 });
+
+document.getElementsByClassName('old')[0].addEventListener('click', () => {
+    // console.log("This element's classList contains old");
+    document.getElementById('main-page').classList.add('hidden');
+    document.getElementById('game-page-old').classList.remove('hidden');
+    generate();
+
+});
+
+document.getElementsByClassName('new')[0].addEventListener('click', () => {
+    // console.log("This element's classList contains new");
+    document.getElementById('main-page').classList.add('hidden');
+    document.getElementById('game-page-new').classList.remove('hidden');
+    generate();
+})
 
 
 // Генерация кроссворда
