@@ -20,6 +20,7 @@
     font-family: 'Beton';
     src: url('assets/Uk_Beton.woff2') format('woff2'),
         url('assets/Uk_Beton.woff') format('woff');
+    letter-spacing: 2px;
     font-weight: normal;
     font-style: normal;
     font-display: swap;
@@ -28,8 +29,8 @@
 
 body {
     font-size: 18px;
-/*    font-family: Arial, sans-serif;*/
     font-family: 'Beton';
+    letter-spacing: 2px;
     background-color: var(--bg-color);
     color: var(--text-color);
     margin: 0;
@@ -111,6 +112,8 @@ body {
     padding: 10px;
     border-radius: 5px;
     margin-bottom: 20px;
+    letter-spacing: 2px;
+    font-size: 16px;
 }
 
 .play-button {
@@ -121,7 +124,6 @@ body {
   font-weight: 500;
   padding: 0.8em 1.3em 0.8em 0.9em;
   color: white;
-/*  background: linear-gradient(to right, #363c3c, #0a0d0b);*/
   background: linear-gradient(to right, #8f2727, rgb(81 18 18));
   border: none;
   letter-spacing: 0.05em;
@@ -140,7 +142,6 @@ body {
 }
 
 .play-button:hover {
-/*    background: linear-gradient(to right, #2d2e2e, #000000);*/
     background: linear-gradient(to right, #6b0505, rgb(54 7 7))
 }
 
@@ -160,12 +161,10 @@ body {
   align-items: center;
   justify-content: center;
   gap: 6px;
-/*  background-color: rgb(36, 36, 38);*/
   background-color: rgb(81 18 18);
   border-radius: 10px;
   cursor: pointer;
   border: none;
-/*  box-shadow: 0px 0px 0px 2px rgb(123, 123, 123);*/
   box-shadow: 0px 0px 0px 2px rgb(126 56 56);
 }
 .bar {
@@ -431,6 +430,7 @@ body {
 
 #volume-label {
     font-weight: bold;
+    font-size: 18px;
     color: #11998e;
 }
 
@@ -627,12 +627,13 @@ h1 {
 .quote-box h3 {
     margin-bottom: 10px;
     font-weight: bold;
-    letter-spacing: 1px;
+    letter-spacing: 2px;
 }
 
 #daily-quote {
     font-style: italic;
     opacity: 0.9;
+    letter-spacing: 2px;
 }
 
 .glow-text {
