@@ -22,7 +22,7 @@ const LEVEL_WORDS = {
 
 let wordDatabase = [];
 let crossword = {
-    words: [],
+    words: [], // массив объектов {word, x, y, direction, letters[], definition, completed, countedAsFound}
     grid: [],
     size: 0,
     selectedCell: null,
@@ -281,10 +281,14 @@ function addWordToGrid(wordObj, position, direction, wordNumber) {
     
     crossword.usedWords.add(word);
     const wordInfo = {
-        word, x, y, direction,
+        word, 
+        x, 
+        y, 
+        direction,
         letters: [],
         definition,
-        completed: false
+        completed: false,
+        countedAsFound: false // явно добавляем поле
     };
     
     crossword.words.push(wordInfo);
@@ -593,6 +597,7 @@ function checkWordCompletion(wordIndex) {
     let completed = true;
     let correct = true;
     
+    // Проверяем все буквы в слове
     for (const { x, y } of wordInfo.letters) {
         const cell = crossword.grid[y][x];
         if (!cell.letter) {
@@ -606,8 +611,9 @@ function checkWordCompletion(wordIndex) {
     
     if (completed) {
         wordInfo.completed = correct;
-        if (correct) {
-            crossword.wordsFound++;
+        if (correct && !wordInfo.countedAsFound) {
+            wordInfo.countedAsFound = true; // помечаем как учтенное
+            crossword.wordsFound++; // увеличиваем счетчик
             
             if (crossword.wordsFound === crossword.wordsToFind) {
                 setTimeout(() => completeLevel(), 500);
@@ -615,7 +621,7 @@ function checkWordCompletion(wordIndex) {
                 setTimeout(() => alert(`Верно! Слово "${wordInfo.word}" угадано.`), 100);
             }
         }
-        renderCrossword(); // Перерисовываем для обновления стилей
+        renderCrossword();
     }
 }
 
