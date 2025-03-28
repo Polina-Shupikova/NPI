@@ -1,3 +1,63 @@
+async function loadSettings() {
+  try {
+    const response = await fetch('jsons/settings.json'); // Путь относительно HTML-файла
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+    let settings = await response.json();
+    settings = settings["Settings"];
+    console.log("Настройки загружены:", settings);
+
+    if (settings.theme == 'light') {
+        document.getElementById('theme_sw').checked = false;
+        document.body.classList.remove('dark-theme');
+    } else {
+        document.getElementById('theme_sw').checked = true;
+        document.body.classList.add('dark-theme');
+    }
+
+    document.getElementById('volume-slider').value = settings.volume;
+    document.getElementById('volume-label').textContent = settings.volume + '%';
+    document.getElementById('font-size').value = settings.fontSize;
+    
+    return settings;
+  } catch (error) {
+    console.error("Ошибка загрузки JSON:", error);
+    return null;
+  }
+}
+
+loadSettings();
+
+async function saveSettings() {
+  // Собираем текущие настройки из UI
+  let settings = {
+    Settings: {
+      theme: document.getElementById('theme_sw').checked ? 'dark' : 'light',
+      volume: parseInt(document.getElementById('volume-slider').value),
+      fontSize: document.getElementById('font-size').value
+    }
+  };
+
+  settings = JSON.stringify(settings);
+
+  console.log("Сохранение настроек:", settings);
+
+  try {
+    const response = await fetch('jsons/settings.json');
+
+    if (!response.ok) {
+      throw new Error(`Ошибка сохранения: ${response.status}`);
+    }
+    console.log("Настройки успешно сохранены на сервере");
+  } catch (error) {
+    console.error("Ошибка при сохранении на сервер:", error);
+  }
+}
+
+
+
+
 function generate(){
     generateCrossword();
     generateKeyboard();
@@ -64,6 +124,7 @@ document.getElementById('font-size').addEventListener('change', (e) => {
     } else if (size === 'large') {
         document.body.style.fontSize = '20px';
     }
+    saveSettings();
 });
 
 // Настройка темы (завершён)
@@ -73,6 +134,7 @@ document.getElementById('theme_sw').addEventListener('click', () => {
     } else{
         document.body.classList.add('dark-theme');
     }
+    saveSettings();
 })
 
 // Настройка звука
@@ -101,6 +163,8 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     setVolume(volumeSlider.value);
+
+    saveSettings();
 });
 
 // Загрузка цитаты дня (завершён)
