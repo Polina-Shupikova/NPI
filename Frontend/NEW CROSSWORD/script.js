@@ -100,7 +100,13 @@ function initEventListeners() {
     document.getElementById('dark-theme').addEventListener('click', () => document.body.classList.add('dark-theme'));
     document.getElementById('font-size').addEventListener('change', handleFontSizeChange);
     document.getElementById('hint-button').addEventListener('click', giveHint);
+    document.querySelector('.solved-definitions-toggle').addEventListener('click', toggleSolvedDefinitions);
     document.addEventListener('keydown', handlePhysicalKeyPress);
+}
+
+function toggleSolvedDefinitions() {
+    const panel = document.getElementById('solved-definitions');
+    panel.classList.toggle('collapsed');
 }
 
 function handlePhysicalKeyPress(e) {
@@ -198,6 +204,8 @@ function loadLevel() {
     document.getElementById('crossword-grid').innerHTML = `<div class="loading">Генерация уровня ${currentLevel}...</div>`;
     document.getElementById('keyboard').innerHTML = '';
     document.getElementById('definitions-list').innerHTML = '';
+    document.getElementById('solved-definitions-list').innerHTML = '';
+    document.getElementById('solved-definitions').classList.add('collapsed');
 
     setTimeout(() => {
         try {
@@ -612,6 +620,7 @@ function checkWordCompletion(wordIndex) {
             crossword.wordsFound++;
             
             highlightWord(wordIndex, 'completed-word');
+            addSolvedDefinition(wordInfo.word, wordInfo.definition);
             
             if (crossword.wordsFound === crossword.wordsToFind) {
                 setTimeout(() => completeLevel(), 500);
@@ -621,6 +630,23 @@ function checkWordCompletion(wordIndex) {
         }
         renderCrossword();
     }
+}
+
+function addSolvedDefinition(word, definition) {
+    const panel = document.getElementById('solved-definitions');
+    const list = document.getElementById('solved-definitions-list');
+    
+    if (panel.classList.contains('hidden')) {
+        panel.classList.remove('hidden');
+    }
+    
+    const item = document.createElement('div');
+    item.className = 'solved-definition-item';
+    item.innerHTML = `<strong>${word}:</strong> ${definition}`;
+    list.appendChild(item);
+    
+    // Прокручиваем к последнему добавленному элементу
+    panel.scrollTop = panel.scrollHeight;
 }
 
 function highlightWord(wordIndex, className) {
