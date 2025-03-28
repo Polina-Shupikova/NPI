@@ -16,9 +16,20 @@
     --button-hover: #4d7abd;
 }
 
+@font-face {
+    font-family: 'Beton';
+    src: url('assets/Uk_Beton.woff2') format('woff2'),
+        url('assets/Uk_Beton.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+
 body {
     font-size: 18px;
-    font-family: Arial, sans-serif;
+/*    font-family: Arial, sans-serif;*/
+    font-family: 'Beton';
     background-color: var(--bg-color);
     color: var(--text-color);
     margin: 0;
@@ -95,6 +106,7 @@ body {
 
 
 .font-size-selector {
+    font-family: Beton;
     width: 100%;
     padding: 10px;
     border-radius: 5px;
@@ -563,7 +575,8 @@ body::before {
     background: url('assets/vertical (1).jpg') no-repeat center center fixed;
     background-size: cover;
     color: white;
-    font-family: 'Arial', sans-serif;
+/*    font-family: 'Arial', sans-serif;*/
+    font-family: 'Beton';
     position: relative;
 }
 
@@ -625,10 +638,11 @@ h1 {
 .glow-text {
     color: #ffffff;
     text-align: center;
-    text-shadow: 0 0 5px rgba(255, 255, 255, 0.8), 
-                 0 0 10px rgba(255, 255, 255, 0.6), 
-                 0 0 15px rgba(255, 255, 255, 0.4);
+    text-shadow: 0 0 5px rgba(255, 0, 0, 0.8), 
+                 0 0 10px rgba(255, 0, 0, 0.6), 
+                 0 0 15px rgba(255, 0, 0, 0.4);
 }
+
 .play-buttons{
     display: flex;
     gap: 10px;
@@ -644,4 +658,20 @@ h1 {
 /*
     font-family: Arial; -?
 
+*/
+
+
+/*
+@keyframes shake {
+    0% { transform: translateX(0); }
+    20% { transform: translateX(-2px); }
+    40% { transform: translateX(2px); }
+    60% { transform: translateX(-2px); }
+    80% { transform: translateX(2px); }
+    100% { transform: translateX(0); }
+}
+
+#volume-slider {
+    animation: shake 0.2s infinite;
+}
 */

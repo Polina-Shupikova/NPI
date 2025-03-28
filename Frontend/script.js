@@ -81,6 +81,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const volumeLabel = document.getElementById("volume-label");
 
     function setVolume(value) {
+
+        let x = (Math.random() - 0.5) * 4;
+        let y = (Math.random() - 0.5) * 4;
+        // volumeSlider.style.transform = `translate(${x}px, ${y}px)`;
+        volumeLabel.style.transform = `translate(${y}px, ${x}px)`;
+
         const volume = value / 100;
         volumeLabel.textContent = value + "%";
         
@@ -114,3 +120,12 @@ const quotes = [
 ];
 
 document.getElementById('daily-quote').textContent = quotes[Math.floor(Math.random() * quotes.length)];
+
+// const slider = document.getElementById("volume-slider");
+// function shake() {
+//     let x = (Math.random() - 0.5) * 4; // Дрожание в пределах ±2px
+//     let y = (Math.random() - 0.5) * 4;
+//     slider.style.transform = `translate(${x}px, ${y}px)`;
+// }
+
+// setInterval(shake, 50); // Меняем позицию каждые 50 мс
