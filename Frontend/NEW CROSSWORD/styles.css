@@ -221,6 +221,10 @@ body {
     font-weight: bold;
 }
 
+.crossword-cell.current-word {
+    background-color: #e6f7ff !important;
+}
+
 /* Выделенная клетка */
 .crossword-cell.highlight {
     background-color: #ffff99 !important; /* Ярко-желтый */
