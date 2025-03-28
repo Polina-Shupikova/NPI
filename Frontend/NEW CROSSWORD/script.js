@@ -622,6 +622,16 @@ function checkWordCompletion(wordIndex) {
             highlightWord(wordIndex, 'completed-word');
             addSolvedDefinition(wordInfo.word, wordInfo.definition);
             
+            // Добавляем анимацию кубика
+            setTimeout(() => {
+                highlightWord(wordIndex, 'dice-animation');
+                setTimeout(() => {
+                    document.querySelectorAll('.dice-animation').forEach(el => {
+                        el.classList.remove('dice-animation');
+                    });
+                }, 800);
+            }, 100);
+
             if (crossword.wordsFound === crossword.wordsToFind) {
                 setTimeout(() => completeLevel(), 500);
             } else {
@@ -652,7 +662,13 @@ function addSolvedDefinition(word, definition) {
 function highlightWord(wordIndex, className) {
     for (const { x, y } of crossword.words[wordIndex].letters) {
         const cell = document.querySelector(`.crossword-cell[data-x="${x}"][data-y="${y}"]`);
-        if (cell) cell.classList.add(className);
+        if (cell) {
+            cell.classList.add(className);
+            // Перезапуск анимации при повторном добавлении
+            if (className === 'dice-animation') {
+                void cell.offsetWidth; // Триггер перезапуска анимации
+            }
+        }
     }
 }
 
