@@ -35,6 +35,64 @@ body {
     padding: 20px;
 }
 
+/* Страница настроек */
+.settings-page {
+    padding: 20px;
+}
+
+.theme-buttons {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.theme-button {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.light-theme-btn {
+    background-color: #f0f0f0;
+    color: #000000;
+}
+
+.dark-theme-btn {
+    background-color: #333333;
+    color: #ffffff;
+}
+
+.slider-container {
+    margin-bottom: 20px;
+}
+
+.slider-container label {
+    display: block;
+    margin-bottom: 5px;
+}
+
+.slider {
+    width: 100%;
+}
+
+.font-size-selector {
+    width: 100%;
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+}
+
+.back-button {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
 /* Страница игры */
 .game-page {
     display: flex;
@@ -103,13 +161,13 @@ body {
 
 /* Правильная буква (включая подсказки) */
 .crossword-cell.correct-letter {
-    background-color: var(--correct-color);
+    background-color: #a5d6a7;
     color: #1b5e20;
 }
 
 /* Неправильная буква */
 .crossword-cell.incorrect-letter {
-    background-color: var(--incorrect-color);
+    background-color: #ffab91;
     color: #bf360c;
 }
 

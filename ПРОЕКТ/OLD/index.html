@@ -39,6 +39,34 @@
         </div>
     </div>
 
+    <!-- Страница настроек -->
+    <div id="settings-page" class="container settings-page hidden">
+        <h1>Настройки</h1>
+        <div class="theme-buttons">
+            <button id="light-theme" class="theme-button light-theme-btn">Светлая тема</button>
+            <button id="dark-theme" class="theme-button dark-theme-btn">Темная тема</button>
+        </div>
+        
+        <div class="slider-container">
+            <label for="music-volume">Фоновая музыка:</label>
+            <input type="range" id="music-volume" class="slider" min="0" max="100" value="50">
+        </div>
+        
+        <div class="slider-container">
+            <label for="sound-volume">Отклик нажатий:</label>
+            <input type="range" id="sound-volume" class="slider" min="0" max="100" value="50">
+        </div>
+        
+        <label for="font-size">Размер шрифта:</label>
+        <select id="font-size" class="font-size-selector">
+            <option value="small">Маленький</option>
+            <option value="medium" selected>Средний</option>
+            <option value="large">Большой</option>
+        </select>
+        
+        <button id="back-button" class="back-button">Назад</button>
+    </div>
+
     <script src="script.js"></script>
 </body>
 </html>
