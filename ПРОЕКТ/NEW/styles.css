@@ -35,7 +35,6 @@ body {
     padding: 20px;
 }
 
-/* Страница настроек */
 .settings-page {
     padding: 20px;
 }
@@ -93,7 +92,6 @@ body {
     cursor: pointer;
 }
 
-/* Страница игры */
 .game-page {
     display: flex;
     flex-direction: column;
@@ -141,9 +139,9 @@ body {
     display: grid;
     gap: 2px;
     margin: 0 auto;
+    position: relative;
 }
 
-/* Стили клеток кроссворда */
 .crossword-cell {
     width: 28px;
     height: 28px;
@@ -157,21 +155,19 @@ body {
     color: black;
     cursor: pointer;
     transition: background-color 0.2s;
+    position: relative;
 }
 
-/* Правильная буква (включая подсказки) */
 .crossword-cell.correct-letter {
-    background-color: #a5d6a7;
+    background-color: var(--correct-color);
     color: #1b5e20;
 }
 
-/* Неправильная буква */
 .crossword-cell.incorrect-letter {
-    background-color: #ffab91;
+    background-color: var(--incorrect-color);
     color: #bf360c;
 }
 
-/* Полностью угаданное слово */
 .crossword-cell.completed-word {
     background-color: #2e7d32;
     color: white;
@@ -179,16 +175,37 @@ body {
 }
 
 .crossword-cell.current-word {
-    background-color: #e6f7ff !important;
+    background-color: rgba(230, 247, 255, 0.7) !important;
 }
 
-/* Выделенная клетка */
 .crossword-cell.highlight {
-    background-color: #ffff99 !important;
+    background-color: rgba(255, 255, 153, 0.7) !important;
     box-shadow: 0 0 5px rgba(0,0,0,0.3);
 }
 
-/* Клавиатура */
+.dark-theme .crossword-cell.highlight {
+    background-color: rgba(255, 255, 153, 0.8) !important;
+}
+
+.dark-theme .crossword-cell.current-word {
+    background-color: rgba(200, 230, 255, 0.7) !important;
+}
+
+.crossword-cell.multiple-words::after {
+    content: '';
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    width: 6px;
+    height: 6px;
+    background-color: var(--primary-color);
+    border-radius: 50%;
+}
+
+.crossword-cell.highlight.multiple-words::after {
+    background-color: white;
+}
+
 .keyboard {
     display: flex;
     flex-wrap: wrap;
@@ -215,13 +232,11 @@ body {
     transition: background-color 0.2s;
 }
 
-/* Используемые буквы */
 .keyboard-key-used {
     background-color: #ff6b6b;
     color: white;
 }
 
-/* Неиспользуемые буквы */
 .keyboard-key-unused {
     background-color: #cccccc;
     color: #666666;
@@ -232,7 +247,6 @@ body {
     background-color: #cccccc !important;
 }
 
-/* Специальные кнопки */
 .keyboard-key[style*="width"] {
     background-color: #ff6b6b !important;
     color: white !important;
@@ -244,7 +258,6 @@ body {
     background-color: #e05555 !important;
 }
 
-/* Окно определений */
 .definitions-box {
     position: fixed;
     top: 50%;
@@ -273,7 +286,6 @@ body {
     border-radius: 5px;
 }
 
-/* Solved definitions panel */
 .solved-definitions {
     position: fixed;
     right: 20px;
@@ -335,6 +347,56 @@ body {
     border-left: 3px solid var(--primary-color);
 }
 
+@keyframes diceRoll {
+    0% { transform: rotate(0deg) scale(1); }
+    25% { transform: rotate(90deg) scale(0.8); }
+    50% { transform: rotate(180deg) scale(1.2); }
+    75% { transform: rotate(270deg) scale(0.9); }
+    100% { transform: rotate(360deg) scale(1); }
+}
+
+.dice-animation {
+    animation: diceRoll 0.8s ease-out;
+    background-color: rgba(165, 214, 167, 0.9) !important;
+}
+
+@keyframes cellTrail {
+    0% { transform: scale(0.8); opacity: 0; }
+    50% { transform: scale(1.1); opacity: 1; }
+    100% { transform: scale(1); opacity: 0; }
+}
+
+.cell-trail {
+    position: absolute;
+    width: 28px;
+    height: 28px;
+    background-color: #FFEB3B;
+    border-radius: 3px;
+    pointer-events: none;
+    z-index: 5;
+    animation: cellTrail 0.4s ease-out forwards;
+}
+
+.dark-theme .cell-trail {
+    background-color: #FFC107;
+}
+
+.hidden {
+    display: none;
+}
+
+.loading {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 20px;
+    font-size: 1.2em;
+}
+
+.crossword-cell:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px #4a6fa5;
+}
+
 @media (max-width: 1000px) {
     .solved-definitions {
         position: static;
@@ -370,36 +432,4 @@ body {
         font-size: 10px;
         padding: 0 2px;
     }
-}
-
-/* Общие классы */
-.hidden {
-    display: none;
-}
-
-.loading {
-    grid-column: 1 / -1;
-    text-align: center;
-    padding: 20px;
-    font-size: 1.2em;
-}
-
-/* Подсветка при фокусе с клавиатуры */
-.crossword-cell:focus {
-    outline: none;
-    box-shadow: 0 0 0 3px #4a6fa5;
-}
-
-/* Анимация кубика */
-@keyframes diceRoll {
-    0% { transform: rotate(0deg) scale(1); }
-    25% { transform: rotate(90deg) scale(0.8); }
-    50% { transform: rotate(180deg) scale(1.2); }
-    75% { transform: rotate(270deg) scale(0.9); }
-    100% { transform: rotate(360deg) scale(1); }
-}
-
-.dice-animation {
-    animation: diceRoll 0.8s ease-out;
-    background-color: var(--correct-color) !important;
 }
