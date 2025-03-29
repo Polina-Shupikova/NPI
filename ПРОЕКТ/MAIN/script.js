@@ -1,37 +1,52 @@
-async function loadSettings() {
-  try {
-    const response = await fetch('jsons/settings.json'); // Путь относительно HTML-файла
-    if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`);
-    }
-    let settings = await response.json();
-    settings = settings["Settings"];
-    console.log("Настройки загружены:", settings);
+// Инициализация при загрузке страницы
+document.addEventListener('DOMContentLoaded', () => {
+  // Загружаем настройки
+  loadSettings();
+  
+  // Навешиваем обработчики изменений
+  document.getElementById('theme_sw').addEventListener('change', saveSettings);
+  document.getElementById('volume-slider').addEventListener('input', saveSettings);
+  document.getElementById('font-size').addEventListener('change', saveSettings);
+  
+  // Для громкости также обновляем label
+  document.getElementById('volume-slider').addEventListener('input', function() {
+    document.getElementById('volume-label').textContent = this.value + '%';
+  });
+});
+// async function loadSettings() {
+//   try {
+//     const response = await fetch('jsons/settings.json'); // Путь относительно HTML-файла
+//     if (!response.ok) {
+//       throw new Error(`HTTP error! Status: ${response.status}`);
+//     }
+//     let settings = await response.json();
+//     settings = settings["Settings"];
+//     console.log("Настройки загружены:", settings);
 
-    if (settings.theme == 'light') {
-        document.getElementById('theme_sw').checked = false;
-        document.body.classList.remove('dark-theme');
-    } else {
-        document.getElementById('theme_sw').checked = true;
-        document.body.classList.add('dark-theme');
-    }
+//     if (settings.theme == 'light') {
+//         document.getElementById('theme_sw').checked = false;
+//         document.body.classList.remove('dark-theme');
+//     } else {
+//         document.getElementById('theme_sw').checked = true;
+//         document.body.classList.add('dark-theme');
+//     }
 
-    document.getElementById('volume-slider').value = settings.volume;
-    document.getElementById('volume-label').textContent = settings.volume + '%';
-    document.getElementById('font-size').value = settings.fontSize;
+//     document.getElementById('volume-slider').value = settings.volume;
+//     document.getElementById('volume-label').textContent = settings.volume + '%';
+//     document.getElementById('font-size').value = settings.fontSize;
     
-    return settings;
-  } catch (error) {
-    console.error("Ошибка загрузки JSON:", error);
-    return null;
-  }
-}
+//     return settings;
+//   } catch (error) {
+//     console.error("Ошибка загрузки JSON:", error);
+//     return null;
+//   }
+// }
 
-loadSettings();
+// loadSettings();
 
 async function saveSettings() {
   // Собираем текущие настройки из UI
-  let settings = {
+  const settings = {
     Settings: {
       theme: document.getElementById('theme_sw').checked ? 'dark' : 'light',
       volume: parseInt(document.getElementById('volume-slider').value),
@@ -39,21 +54,78 @@ async function saveSettings() {
     }
   };
 
-  settings = JSON.stringify(settings);
-
-  console.log("Сохранение настроек:", settings);
-
   try {
-    const response = await fetch('jsons/settings.json');
-
-    if (!response.ok) {
-      throw new Error(`Ошибка сохранения: ${response.status}`);
-    }
-    console.log("Настройки успешно сохранены на сервере");
+    // В реальном приложении здесь должен быть fetch с методом POST для сохранения на сервер
+    // Но так как у нас нет сервера, будем сохранять в localStorage
+    localStorage.setItem('crosswordSettings', JSON.stringify(settings));
+    console.log("Настройки сохранены в localStorage:", settings);
+    
+    // В реальном приложении:
+    // const response = await fetch('jsons/settings.json', {
+    //   method: 'POST',
+    //   headers: {
+    //     'Content-Type': 'application/json',
+    //   },
+    //   body: JSON.stringify(settings)
+    // });
+    
+    // if (!response.ok) {
+    //   throw new Error(`Ошибка сохранения: ${response.status}`);
+    // }
+    
+    return true;
   } catch (error) {
-    console.error("Ошибка при сохранении на сервер:", error);
+    console.error("Ошибка при сохранении настроек:", error);
+    return false;
   }
 }
+
+// Функция для загрузки настроек
+async function loadSettings() {
+  try {
+    // Пытаемся загрузить из localStorage
+    const savedSettings = localStorage.getItem('crosswordSettings');
+    
+    if (savedSettings) {
+      const settings = JSON.parse(savedSettings).Settings;
+      console.log("Настройки загружены из localStorage:", settings);
+
+      // Применяем настройки к интерфейсу
+      document.getElementById('theme_sw').checked = settings.theme === 'dark';
+      document.body.classList.toggle('dark-theme', settings.theme === 'dark');
+      
+      document.getElementById('volume-slider').value = settings.volume;
+      document.getElementById('volume-label').textContent = settings.volume + '%';
+      
+      document.getElementById('font-size').value = settings.fontSize;
+      applyFontSize(settings.fontSize);
+      
+      return settings;
+    }
+    
+    // Если в localStorage нет, пробуем загрузить с сервера (в реальном приложении)
+    // const response = await fetch('jsons/settings.json');
+    // if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+    // const settings = (await response.json()).Settings;
+    
+    return null;
+  } catch (error) {
+    console.error("Ошибка загрузки настроек:", error);
+    return null;
+  }
+}
+
+// Применение размера шрифта
+function applyFontSize(size) {
+  if (size === 'small') {
+    document.body.style.fontSize = '16px';
+  } else if (size === 'medium') {
+    document.body.style.fontSize = '18px';
+  } else if (size === 'large') {
+    document.body.style.fontSize = '20px';
+  }
+}
+
 
 
 
