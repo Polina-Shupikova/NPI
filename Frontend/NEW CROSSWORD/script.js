@@ -10,17 +10,48 @@ const RUSSIAN_LAYOUT = {
     'm': 'ь', ',': 'б', '.': 'ю', '/': '.', '`': 'ё'
 };
 
-let currentLevel = 1;
-const MAX_BASE_LEVEL = 26;
-const LEVEL_WORDS = {
-    1: 3, 2: 3, 3: 4, 4: 4, 5: 5, 6: 5,
-    7: 6, 8: 6, 9: 7, 10: 7, 11: 8, 12: 8,
-    13: 9, 14: 9, 15: 10, 16: 10, 17: 11, 18: 11,
-    19: 12, 20: 12, 21: 13, 22: 13, 23: 14, 24: 14,
-    25: 15, 26: 15
+// Константы для типов слов
+const WORD_TYPES = {
+  EASY: 'easy',
+  HARD: 'hard'
 };
 
-let wordDatabase = [];
+// Конфигурация уровней
+const LEVEL_WORDS = {
+  1: { total: 3, easy: 3, hard: 0, minLength: 3, maxLength: 5 },
+  2: { total: 3, easy: 3, hard: 0, minLength: 3, maxLength: 5 },
+  3: { total: 4, easy: 3, hard: 1, minLength: 3, maxLength: 5 },
+  4: { total: 4, easy: 3, hard: 1, minLength: 3, maxLength: 5 },
+  5: { total: 5, easy: 4, hard: 1, minLength: 3, maxLength: 5 },
+  6: { total: 5, easy: 4, hard: 1, minLength: 3, maxLength: 5 },
+  7: { total: 6, easy: 4, hard: 2, minLength: 6, maxLength: 7 },
+  8: { total: 6, easy: 4, hard: 2, minLength: 6, maxLength: 7 },
+  9: { total: 7, easy: 5, hard: 2, minLength: 6, maxLength: 7 },
+  10: { total: 7, easy: 5, hard: 2, minLength: 6, maxLength: 7 },
+  11: { total: 8, easy: 6, hard: 2, minLength: 6, maxLength: 7 },
+  12: { total: 8, easy: 6, hard: 2, minLength: 6, maxLength: 7 },
+  13: { total: 9, easy: 6, hard: 3, minLength: 8, maxLength: 9 },
+  14: { total: 9, easy: 6, hard: 3, minLength: 8, maxLength: 9 },
+  15: { total: 10, easy: 7, hard: 3, minLength: 8, maxLength: 9 },
+  16: { total: 10, easy: 7, hard: 3, minLength: 8, maxLength: 9 },
+  17: { total: 11, easy: 7, hard: 4, minLength: 8, maxLength: 9 },
+  18: { total: 11, easy: 7, hard: 4, minLength: 8, maxLength: 9 },
+  19: { total: 12, easy: 8, hard: 4, minLength: 10, maxLength: 11 },
+  20: { total: 12, easy: 8, hard: 4, minLength: 10, maxLength: 11 },
+  21: { total: 13, easy: 9, hard: 4, minLength: 10, maxLength: 11 },
+  22: { total: 13, easy: 9, hard: 4, minLength: 10, maxLength: 11 },
+  23: { total: 14, easy: 9, hard: 5, minLength: 10, maxLength: 11 },
+  24: { total: 14, easy: 9, hard: 5, minLength: 10, maxLength: 11 },
+  25: { total: 15, easy: 10, hard: 5, minLength: 10, maxLength: 11 },
+  26: { total: 15, easy: 10, hard: 5, minLength: 12, maxLength: 15 }
+};
+
+let currentLevel = 1;
+let wordDatabase = {
+  easy: [],
+  hard: []
+};
+
 let crossword = {
     words: [], // массив объектов {word, x, y, direction, letters[], definition, completed, countedAsFound}
     grid: [],
@@ -39,7 +70,7 @@ async function initGame() {
         await loadWords();
         initEventListeners();
         loadDailyQuote();
-        console.log('Игра инициализирована. Слов в базе:', wordDatabase.length);
+        console.log('Игра инициализирована.');
     } catch (error) {
         console.error('Ошибка инициализации:', error);
         loadBackupWords();
@@ -50,40 +81,51 @@ async function initGame() {
 // Загрузка слов из JSON
 async function loadWords() {
     try {
-        const response = await fetch('words.json');
+        const [easyResponse, hardResponse] = await Promise.all([
+            fetch('easy_words.json'),
+            fetch('hard_words.json')
+        ]);
         
-        if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
+        if (!easyResponse.ok || !hardResponse.ok) {
+            throw new Error(`Ошибка HTTP! Статусы: easy_words - ${easyResponse.status}, hard_words - ${hardResponse.status}`);
         }
         
-        const data = await response.json();
+        const [easyData, hardData] = await Promise.all([
+            easyResponse.json(),
+            hardResponse.json()
+        ]);
         
-        if (!Array.isArray(data)) {
-            throw new Error("Файл JSON не содержит массив слов");
-        }
+        if (!Array.isArray(easyData)) throw new Error("easy_words.json не содержит массив слов");
+        if (!Array.isArray(hardData)) throw new Error("hard_words.json не содержит массив слов");
         
-        if (data.length === 0) {
-            throw new Error("Файл words.json пуст");
-        }
+        wordDatabase.easy = easyData;
+        wordDatabase.hard = hardData;
         
-        wordDatabase = data;
-        console.log("Успешно загружено слов:", wordDatabase.length);
+        console.log(`Успешно загружено: ${wordDatabase.easy.length} простых и ${wordDatabase.hard.length} сложных слов`);
         
     } catch (error) {
-        console.error("Ошибка загрузки words.json:", error.message);
+        console.error("Ошибка загрузки слов:", error.message);
         throw error;
     }
 }
 
 // Резервные слова
 function loadBackupWords() {
-    wordDatabase = [
+    wordDatabase.easy = [
         { word: "КОМПЬЮТЕР", definition: "Электронное устройство для обработки информации" },
         { word: "ПРОГРАММА", definition: "Набор инструкций для компьютера" },
         { word: "АЛГОРИТМ", definition: "Последовательность действий для решения задачи" },
-        { word: "БАЗАДАННЫХ", definition: "Организованная совокупность данных" },
-        { word: "ИНТЕРФЕЙС", definition: "Средство взаимодействия между системами" }
+        { word: "КЛАВИАТУРА", definition: "Устройство для ввода данных" },
+        { word: "МОНИТОР", definition: "Устройство вывода визуальной информации" }
     ];
+    
+    wordDatabase.hard = [
+        { word: "БАЗАДАННЫХ", definition: "Организованная совокупность данных" },
+        { word: "ИНТЕРФЕЙС", definition: "Средство взаимодействия между системами" },
+        { word: "ПРОГРАММИРОВАНИЕ", definition: "Процесс создания компьютерных программ" },
+        { word: "ИСКУССТВЕННЫЙИНТЕЛЛЕКТ", definition: "Способность машин к обучению и мышлению" }
+    ];
+    
     alert('Используется резервный набор слов. Для полной версии проверьте подключение.');
 }
 
@@ -185,7 +227,7 @@ function loadDailyQuote() {
 
 // Логика игры
 function startGame() {
-    if (wordDatabase.length < 3) {
+    if (wordDatabase.easy.length + wordDatabase.hard.length < 3) {
         alert('Недостаточно слов для начала игры. Минимум 3 слова.');
         return;
     }
@@ -195,7 +237,7 @@ function startGame() {
 }
 
 function getWordCountForLevel(level) {
-    return level <= MAX_BASE_LEVEL ? LEVEL_WORDS[level] : 15;
+    return LEVEL_WORDS[level]?.total || LEVEL_WORDS[26].total;
 }
 
 function loadLevel() {
@@ -209,7 +251,7 @@ function loadLevel() {
 
     setTimeout(() => {
         try {
-            if (generateCrossword(wordCount)) {
+            if (generateCrossword()) {
                 generateKeyboard();
                 showDefinitions();
             } else {
@@ -227,11 +269,16 @@ function showError(message) {
     togglePages('game-page', 'main-page');
 }
 
-function generateCrossword(wordCount) {
-    const maxWordLength = Math.max(...wordDatabase.map(w => w.word.length));
-    crossword.size = Math.max(15, maxWordLength + 3);
-    crossword.hints = wordCount;
-    crossword.wordsToFind = wordCount;
+function generateCrossword() {
+    const levelConfig = LEVEL_WORDS[currentLevel] || { 
+        ...LEVEL_WORDS[26], 
+        minLength: 12, 
+        maxLength: 15 
+    };
+    
+    crossword.size = Math.max(15, levelConfig.maxLength + 3);
+    crossword.hints = levelConfig.total;
+    crossword.wordsToFind = levelConfig.total;
     crossword.wordsFound = 0;
     crossword.words = [];
     crossword.grid = Array(crossword.size).fill().map(() => Array(crossword.size).fill(null));
@@ -241,7 +288,17 @@ function generateCrossword(wordCount) {
 
     for (let attempt = 0; attempt < 10; attempt++) {
         try {
-            const firstWordObj = getRandomWord();
+            // Сначала добавляем easy слова
+            let easyWordsAdded = 0;
+            let hardWordsAdded = 0;
+            
+            // Первое слово - всегда easy
+            const firstWordObj = getRandomWord(
+                WORD_TYPES.EASY, 
+                levelConfig.minLength, 
+                levelConfig.maxLength
+            );
+            
             if (!firstWordObj) continue;
             
             const center = Math.floor(crossword.size / 2) - Math.floor(firstWordObj.word.length / 2);
@@ -249,8 +306,31 @@ function generateCrossword(wordCount) {
             
             if (canPlaceWord(firstWordObj.word, startPos, 'horizontal')) {
                 addWordToGrid(firstWordObj, startPos, 'horizontal', 1);
+                easyWordsAdded++;
                 
-                if (generateConnectedWords(wordCount - 1)) {
+                // Пытаемся добавить остальные слова
+                while (easyWordsAdded < levelConfig.easy || hardWordsAdded < levelConfig.hard) {
+                    const needEasy = easyWordsAdded < levelConfig.easy;
+                    const wordType = needEasy ? WORD_TYPES.EASY : WORD_TYPES.HARD;
+                    
+                    const wordObj = getRandomWord(
+                        wordType, 
+                        levelConfig.minLength, 
+                        levelConfig.maxLength
+                    );
+                    
+                    if (!wordObj) break;
+                    
+                    if (tryAddConnectedWord(wordObj)) {
+                        if (wordType === WORD_TYPES.EASY) easyWordsAdded++;
+                        else hardWordsAdded++;
+                    } else {
+                        break;
+                    }
+                }
+                
+                // Если добавили все нужные слова - успех
+                if (easyWordsAdded >= levelConfig.easy && hardWordsAdded >= levelConfig.hard) {
                     renderCrossword();
                     return true;
                 }
@@ -259,25 +339,83 @@ function generateCrossword(wordCount) {
             console.error('Попытка генерации не удалась:', e);
         }
         
+        // Сбрасываем состояние для следующей попытки
         crossword.words = [];
         crossword.grid = Array(crossword.size).fill().map(() => Array(crossword.size).fill(null));
         crossword.definitions = [];
         crossword.usedWords.clear();
     }
+    
     return false;
 }
 
-function getRandomWord() {
-    const availableWords = wordDatabase.filter(w => 
+function getRandomWord(type, minLength, maxLength) {
+    const availableWords = wordDatabase[type].filter(w => 
         !crossword.usedWords.has(w.word) && 
-        w.word.length <= crossword.size - 2
+        w.word.length >= minLength && 
+        w.word.length <= maxLength
     );
     
     if (availableWords.length === 0) {
-        crossword.usedWords.clear();
-        return wordDatabase.find(w => w.word.length <= crossword.size - 2);
+        // Если нет слов нужного типа и длины, пробуем другой тип
+        const fallbackType = type === WORD_TYPES.EASY ? WORD_TYPES.HARD : WORD_TYPES.EASY;
+        const fallbackWords = wordDatabase[fallbackType].filter(w => 
+            !crossword.usedWords.has(w.word) && 
+            w.word.length >= minLength && 
+            w.word.length <= maxLength
+        );
+        
+        if (fallbackWords.length === 0) {
+            // Если вообще нет подходящих слов, пробуем расширить диапазон
+            const extendedMin = Math.max(3, minLength - 1);
+            const extendedMax = maxLength + 1;
+            const extendedWords = wordDatabase[type].filter(w => 
+                !crossword.usedWords.has(w.word) && 
+                w.word.length >= extendedMin && 
+                w.word.length <= extendedMax
+            );
+            
+            if (extendedWords.length === 0) {
+                // Если все еще нет слов, очищаем использованные и пробуем снова
+                crossword.usedWords.clear();
+                return getRandomWord(type, minLength, maxLength);
+            }
+            return extendedWords[Math.floor(Math.random() * extendedWords.length)];
+        }
+        return fallbackWords[Math.floor(Math.random() * fallbackWords.length)];
     }
+    
     return availableWords[Math.floor(Math.random() * availableWords.length)];
+}
+
+function tryAddConnectedWord(wordObj) {
+    for (const baseWord of crossword.words) {
+        for (let i = 0; i < baseWord.word.length; i++) {
+            const letter = baseWord.word[i];
+            if (wordObj.word.includes(letter)) {
+                const connectionIndex = wordObj.word.indexOf(letter);
+                const direction = baseWord.direction === 'horizontal' ? 'vertical' : 'horizontal';
+                
+                const x = direction === 'horizontal' 
+                    ? baseWord.x - connectionIndex 
+                    : baseWord.x + i;
+                const y = direction === 'horizontal' 
+                    ? baseWord.y + i 
+                    : baseWord.y - connectionIndex;
+                
+                if (canPlaceWord(wordObj.word, { x, y }, direction)) {
+                    addWordToGrid(
+                        wordObj, 
+                        { x, y }, 
+                        direction, 
+                        crossword.words.length + 1
+                    );
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
 }
 
 function addWordToGrid(wordObj, position, direction, wordNumber) {
@@ -318,53 +456,6 @@ function addWordToGrid(wordObj, position, direction, wordNumber) {
         length: word.length,
         definition
     });
-}
-
-function generateConnectedWords(count) {
-    let wordsAdded = 0;
-    let attempts = 0;
-    const maxAttempts = count * 25;
-    
-    while (wordsAdded < count && attempts < maxAttempts) {
-        attempts++;
-        const baseWord = crossword.words[Math.floor(Math.random() * crossword.words.length)];
-        const letterIndex = Math.floor(Math.random() * baseWord.word.length);
-        const letter = baseWord.word[letterIndex];
-        
-        const connectedWordObj = findWordWithLetter(letter, baseWord.word);
-        if (connectedWordObj && tryAddWordToGrid(connectedWordObj, baseWord, letterIndex, crossword.words.length + 1)) {
-            wordsAdded++;
-            attempts = 0;
-        }
-    }
-    return wordsAdded >= count;
-}
-
-function findWordWithLetter(letter, excludeWord) {
-    const candidates = wordDatabase.filter(item => 
-        item.word.includes(letter) && 
-        item.word !== excludeWord &&
-        !crossword.usedWords.has(item.word) &&
-        item.word.length <= crossword.size - 2
-    );
-    return candidates[Math.floor(Math.random() * candidates.length)];
-}
-
-function tryAddWordToGrid(wordObj, baseWord, letterIndex, wordNumber) {
-    const word = wordObj.word;
-    const baseLetter = baseWord.word[letterIndex];
-    const connectionIndex = word.indexOf(baseLetter);
-    if (connectionIndex === -1) return false;
-    
-    const direction = baseWord.direction === 'horizontal' ? 'vertical' : 'horizontal';
-    const x = direction === 'horizontal' ? baseWord.x - connectionIndex : baseWord.x + letterIndex;
-    const y = direction === 'horizontal' ? baseWord.y + letterIndex : baseWord.y - connectionIndex;
-    
-    if (canPlaceWord(word, { x, y }, direction)) {
-        addWordToGrid(wordObj, { x, y }, direction, wordNumber);
-        return true;
-    }
-    return false;
 }
 
 function canPlaceWord(word, position, direction) {
@@ -655,7 +746,6 @@ function addSolvedDefinition(word, definition) {
     item.innerHTML = `<strong>${word}:</strong> ${definition}`;
     list.appendChild(item);
     
-    // Прокручиваем к последнему добавленному элементу
     panel.scrollTop = panel.scrollHeight;
 }
 
@@ -664,9 +754,8 @@ function highlightWord(wordIndex, className) {
         const cell = document.querySelector(`.crossword-cell[data-x="${x}"][data-y="${y}"]`);
         if (cell) {
             cell.classList.add(className);
-            // Перезапуск анимации при повторном добавлении
             if (className === 'dice-animation') {
-                void cell.offsetWidth; // Триггер перезапуска анимации
+                void cell.offsetWidth;
             }
         }
     }
@@ -674,7 +763,7 @@ function highlightWord(wordIndex, className) {
 
 function completeLevel() {
     currentLevel++;
-    if (currentLevel <= MAX_BASE_LEVEL || confirm("Поздравляем! Хотите продолжить на следующем уровне?")) {
+    if (currentLevel <= 26 || confirm("Поздравляем! Хотите продолжить на следующем уровне?")) {
         loadLevel();
     } else {
         togglePages('game-page', 'main-page');
