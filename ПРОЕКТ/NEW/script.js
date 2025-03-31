@@ -1,3 +1,7 @@
+import { cloudStorage } from '@telegram-apps/sdk';
+
+cloudStorage.isSupported(); // boolean
+
 const RUSSIAN_LAYOUT = {
     'q': 'й', 'w': 'ц', 'e': 'у', 'r': 'к', 't': 'е', 'y': 'н', 
     'u': 'г', 'i': 'ш', 'o': 'щ', 'p': 'з', '[': 'х', ']': 'ъ',
@@ -825,5 +829,25 @@ function giveHint() {
         checkWordCompletion(crossword.activeWordIndex);
     }
 }
+
+function saveUserRecord(currentLevel) {
+    if (!window.Telegram?.WebApp?.CloudStorage) return;
+  
+    const userId = window.Telegram.WebApp.initDataUnsafe.user?.id;
+    if (!userId) return; // Если пользователь не авторизован
+  
+    // Сохраняем в Cloud Storage
+    window.Telegram.WebApp.CloudStorage.setItem(
+      `user_${userId}_record`, // Ключ (лучше привязывать к ID)
+      String(currentLevel),  // Данные (только строки!)
+      (error) => {
+        if (error) {
+          console.error("Ошибка сохранения:", error);
+        } else {
+          console.log("Рекорд сохранён!");
+        }
+      }
+    );
+  }
 
 document.addEventListener('DOMContentLoaded', initGame);
