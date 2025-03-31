@@ -6,19 +6,20 @@
     <title>Генератор кроссвордов</title>
     <style>
         body {
-          background-image: url('https://cdnn1.img.sputnik-abkhazia.info/img/102991/75/1029917516_47:130:1134:813_1400x0_80_0_0_22e4fc6166bb61d929eceaee2a1e624e.jpg');
-          background-repeat: no-repeat; /* Чтобы не повторялось */
-          background-size: cover; /* Растянуть на весь экран */
-          background-position: center; /* Центрировать */
+            background-image: url('https://cdnn1.img.sputnik-abkhazia.info/img/102991/75/1029917516_47:130:1134:813_1400x0_80_0_0_22e4fc6166bb61d929eceaee2a1e624e.jpg');
+            background-repeat: no-repeat;
+            background-size: cover;
+            background-position: center;
+            font-family: Arial, sans-serif;
         }
         h1 {
-          text-align: center;
-          margin-top: 20px;
-          columns: 1;
-          background-color: rgba(255, 255, 255, 0.7);
-          padding: 15px;
-          border-radius: 5px;
-          box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            margin-top: 20px;
+            columns: 1;
+            background-color: rgba(255, 255, 255, 0.7);
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
         }
         .controls {
             margin-bottom: 20px;
@@ -38,6 +39,7 @@
             background-color: rgba(220, 20, 60, 0.7);
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
             border: 1px solid rgba(255,255,255,0.2);
+            margin: 5px;
         }
         button:hover {
             background-color: rgba(220, 20, 60, 0.8);
@@ -106,6 +108,13 @@
         .cell input:focus {
             outline: 2px solid rgba(76, 175, 80, 0.5);
             background-color: rgba(240, 255, 240, 0.7);
+        }
+        .cell input.revealed {
+            background-color: #e0ffe0;
+        }
+        .cell input.readonly {
+            color: #2E8B57;
+            font-weight: bold;
         }
         .number {
             position: absolute;
@@ -179,12 +188,14 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
         .word-item {
-            margin-bottom: 5px;
+            margin-bottom: 10px;
             break-inside: avoid;
         }
         .hint {
             font-size: 12px;
             color: #666;
+            display: block;
+            margin-left: 20px;
         }
         .level-controls {
             display: flex;
@@ -212,49 +223,115 @@
             background: rgba(0,0,0,0.5);
             z-index: 999;
         }
-
-        /* Стиль для открытых букв */
-        .cell.revealed {
-            background-color: #e0ffe0;
+        #shop-modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.2);
+            z-index: 1000;
+            width: 350px;
+            max-width: 90%;
         }
-
-        /* Стиль для заблокированных кнопок */
-        .buy-hint:disabled {
-            background: #cccccc !important;
+        .hint-item {
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #f5f5f5;
+            border-radius: 5px;
+        }
+        .hint-item h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .hint-item p {
+            margin-bottom: 10px;
+            color: #666;
+        }
+        .hint-btn {
+            padding: 5px 10px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .hint-btn:disabled {
+            background: #cccccc;
             cursor: not-allowed;
         }
-
+        #close-shop {
+            margin-top: 10px;
+            padding: 8px 15px;
+            background: #f44336;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            width: 100%;
+        }
+        .hint-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 5px;
+        }
+         #loading {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            z-index: 1001;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
     <h1>Генератор кроссвордов</h1>
-<!-- Кнопка открытия магазина -->
-<button id="shop-button" style="position: fixed; top: 110px; left: 20px; padding: 10px; background: rgba(220, 20, 60, 0.7); color: white; border: none; border-radius: 5px; cursor: pointer;">
-    Магазин подсказок
-</button>
 
-<!-- Окно магазина (изначально скрыто) -->
-<div id="shop-modal" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 20px rgba(0,0,0,0.2); z-index: 1000; width: 300px;">
-    <h2>Магазин подсказок</h2>
-    <div id="coin-counter" style="margin-bottom: 15px; font-weight: bold;">Монеты: 0</div>
+    <!-- Кнопка магазина -->
+    <button id="shop-button" style="position: fixed; top: 110px; left: 20px;">
+        Магазин подсказок (<span id="coins-display">0</span> монет)
+    </button>
 
-    <div class="hint-item" style="margin-bottom: 15px; padding: 10px; background: #f5f5f5; border-radius: 5px;">
-        <h3>Открыть букву (10 монет)</h3>
-        <p>Показывает одну случайную букву в слове</p>
-        <button class="buy-hint" data-type="letter" style="padding: 5px 10px; background: #4CAF50; color: white; border: none; border-radius: 3px; cursor: pointer;">Купить</button>
+    <!-- Модальное окно магазина -->
+    <div id="shop-modal">
+        <h2>Магазин подсказок</h2>
+        <div id="coin-counter" style="margin-bottom: 15px; font-weight: bold;">Монеты: <span id="coins-count">0</span></div>
+
+        <div class="hint-item">
+            <h3>Открыть букву (10 монет)</h3>
+            <p>Показывает одну случайную букву в слове</p>
+            <div class="hint-buttons">
+                <button class="hint-btn buy-hint" data-type="letter">Купить</button>
+                <span>Доступно: <span id="letter-hints">0</span></span>
+            </div>
+        </div>
+
+        <div class="hint-item">
+            <h3>Открыть слово (30 монет)</h3>
+            <p>Показывает все буквы в одном слове</p>
+            <div class="hint-buttons">
+                <button class="hint-btn buy-hint" data-type="word">Купить</button>
+                <span>Доступно: <span id="word-hints">0</span></span>
+            </div>
+        </div>
+
+        <button id="close-shop">Закрыть</button>
     </div>
+    <div id="shop-overlay"></div>
 
-    <div class="hint-item" style="margin-bottom: 15px; padding: 10px; background: #f5f5f5; border-radius: 5px;">
-        <h3>Открыть слово (30 монет)</h3>
-        <p>Показывает все буквы в одном слове</p>
-        <button class="buy-hint" data-type="word" style="padding: 5px 10px; background: #4CAF50; color: white; border: none; border-radius: 3px; cursor: pointer;">Купить</button>
-    </div>
-
-    <button id="close-shop" style="margin-top: 10px; padding: 8px 15px; background: #f44336; color: white; border: none; border-radius: 3px; cursor: pointer;">Закрыть</button>
-</div>
     <div class="level-controls">
         <button id="prev-level">◄</button>
-        <div id="level-display">Уровень 1 (5 слов)</div>
+        <div id="level-display">Уровень 1 (до 5 слов)</div>
         <button id="next-level">►</button>
     </div>
 
@@ -315,11 +392,11 @@
     <script>
         // Конфигурация уровней
         const levels = [
-            { name: "Уровень 1", wordCount: 5, gridSize: 10 },
-            { name: "Уровень 2", wordCount: 7, gridSize: 12 },
-            { name: "Уровень 3", wordCount: 10, gridSize: 15 },
-            { name: "Уровень 4", wordCount: 12, gridSize: 18 },
-            { name: "Уровень 5", wordCount: 15, gridSize: 20 }
+            { name: "Уровень 1 до", wordCount: 5, gridSize: 10 },
+            { name: "Уровень 2 до", wordCount: 7, gridSize: 12 },
+            { name: "Уровень 3 до", wordCount: 10, gridSize: 15 },
+            { name: "Уровень 4 до", wordCount: 12, gridSize: 18 },
+            { name: "Уровень 5 до", wordCount: 15, gridSize: 20 }
         ];
 
         let currentLevel = 0;
@@ -350,12 +427,31 @@
         let placedWords = [];
         let currentActiveCell = null;
 
+        // Система монет и подсказок
+        let coins = 0;
+        let purchasedHints = {
+            letter: 0,
+            word: 0
+        };
+
         // Инициализация при загрузке страницы
         document.addEventListener('DOMContentLoaded', function() {
+            loadGameData();
+
             document.getElementById('generate-btn').addEventListener('click', generateCrossword);
             document.getElementById('check-btn').addEventListener('click', checkAnswers);
             document.getElementById('prev-level').addEventListener('click', prevLevel);
             document.getElementById('next-level').addEventListener('click', nextLevel);
+
+            // Обработчики для магазина
+            document.getElementById('shop-button').addEventListener('click', openShop);
+            document.getElementById('close-shop').addEventListener('click', closeShop);
+            document.querySelectorAll('.buy-hint').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const hintType = this.getAttribute('data-type');
+                    buyHint(hintType);
+                });
+            });
 
             // Обработчики для экранной клавиатуры
             document.querySelectorAll('.keyboard-key').forEach(key => {
@@ -377,10 +473,51 @@
             });
 
             updateLevelDisplay();
+            updateShopUI();
             generateCrossword();
         });
 
-        // Переключение на предыдущий уровень
+        // Функции магазина
+        function openShop() {
+            document.getElementById('shop-modal').style.display = 'block';
+            document.getElementById('shop-overlay').style.display = 'block';
+            updateShopUI();
+        }
+
+        function closeShop() {
+            document.getElementById('shop-modal').style.display = 'none';
+            document.getElementById('shop-overlay').style.display = 'none';
+        }
+
+        function updateShopUI() {
+            document.getElementById('coins-count').textContent = coins;
+            document.getElementById('coins-display').textContent = coins;
+            document.getElementById('letter-hints').textContent = purchasedHints.letter;
+            document.getElementById('word-hints').textContent = purchasedHints.word;
+
+            document.querySelectorAll('.buy-hint').forEach(btn => {
+                const price = getHintPrice(btn.getAttribute('data-type'));
+                btn.disabled = coins < price;
+            });
+        }
+
+        function getHintPrice(hintType) {
+            return hintType === 'letter' ? 10 : 30;
+        }
+
+        function buyHint(hintType) {
+            const price = getHintPrice(hintType);
+            if (coins >= price) {
+                coins -= price;
+                purchasedHints[hintType]++;
+                updateShopUI();
+                saveGameData();
+                renderWordList(); // Обновляем список слов для отображения новых подсказок
+                alert(`Вы купили подсказку "${hintType === 'letter' ? 'Открыть букву' : 'Открыть слово'}". Теперь у вас ${purchasedHints[hintType]} таких подсказок.`);
+            }
+        }
+
+        // Функции для работы с уровнями
         function prevLevel() {
             if (currentLevel > 0) {
                 currentLevel--;
@@ -389,7 +526,6 @@
             }
         }
 
-        // Переключение на следующий уровень
         function nextLevel() {
             if (currentLevel < levels.length - 1 && unlockedLevels.includes(currentLevel + 1)) {
                 currentLevel++;
@@ -398,78 +534,58 @@
             }
         }
 
-        // Обновление отображения текущего уровня
         function updateLevelDisplay() {
             const levelDisplay = document.getElementById('level-display');
             levelDisplay.textContent = `${levels[currentLevel].name} (${levels[currentLevel].wordCount} слов)`;
 
-            // Обновляем состояние кнопок
             document.getElementById('prev-level').disabled = currentLevel === 0;
             document.getElementById('next-level').disabled = currentLevel === levels.length - 1 || !unlockedLevels.includes(currentLevel + 1);
         }
 
         // Генерация кроссворда
         function generateCrossword() {
-            // Очищаем предыдущий кроссворд
             document.getElementById('crossword').innerHTML = '';
             document.getElementById('word-list').innerHTML = '';
             crossword = [];
             placedWords = [];
 
-            // Получаем настройки текущего уровня
             const currentLevelSettings = levels[currentLevel];
             const targetWordCount = currentLevelSettings.wordCount;
 
-            // Копируем и перемешиваем список слов
             const availableWords = [...wordList].sort(() => Math.random() - 0.5).slice(0, targetWordCount);
 
-            // Выбираем первое слово случайным образом
             const firstWord = availableWords.shift();
-
-            // Определяем начальную позицию первого слова (по центру)
             const startRow = Math.floor(currentLevelSettings.gridSize / 2);
             const startCol = Math.floor((currentLevelSettings.gridSize - firstWord.word.length) / 2);
 
-            // Добавляем первое слово горизонтально
             placeWord(firstWord, startRow, startCol, true);
 
-            // Пытаемся добавить остальные слова
             let attempts = 0;
             const maxAttempts = 100;
 
             while (availableWords.length > 0 && attempts < maxAttempts) {
                 attempts++;
 
-                // Выбираем случайное слово из оставшихся
                 const wordIndex = Math.floor(Math.random() * availableWords.length);
                 const word = availableWords[wordIndex];
 
-                // Пытаемся разместить слово
                 if (tryPlaceWord(word)) {
                     availableWords.splice(wordIndex, 1);
-                    attempts = 0; // Сброс счетчика при успешном размещении
+                    attempts = 0;
                 }
             }
 
-            // Определяем границы кроссворда
             determineCrosswordSize();
-
-            // Отрисовываем кроссворд
             renderCrossword();
-
-            // Отображаем список слов
             renderWordList();
 
-            // Разблокируем следующий уровень, если решено достаточно слов
             if (placedWords.length >= targetWordCount * 0.8 && !unlockedLevels.includes(currentLevel + 1) && currentLevel < levels.length - 1) {
                 unlockedLevels.push(currentLevel + 1);
                 updateLevelDisplay();
             }
         }
 
-        // Попытка разместить слово в кроссворде
         function tryPlaceWord(word) {
-            // Сначала пытаемся разместить слово, пересекающееся с уже размещенными
             for (const placedWord of placedWords) {
                 for (let i = 0; i < placedWord.word.length; i++) {
                     const letter = placedWord.word[i];
@@ -500,7 +616,6 @@
             return false;
         }
 
-        // Проверка возможности размещения слова
         function canPlaceWord(word, row, col, horizontal) {
             const currentLevelSettings = levels[currentLevel];
 
@@ -535,7 +650,6 @@
             return hasIntersection || placedWords.length === 0;
         }
 
-        // Размещение слова в кроссворде
         function placeWord(word, row, col, horizontal) {
             const placedWord = {
                 word: word.word,
@@ -568,7 +682,6 @@
             }
         }
 
-        // Определение размеров кроссворда
         function determineCrosswordSize() {
             let minRow = Infinity;
             let maxRow = -Infinity;
@@ -596,7 +709,6 @@
             };
         }
 
-        // Отрисовка кроссворда
         function renderCrossword() {
             const crosswordElement = document.getElementById('crossword');
             crosswordElement.innerHTML = '';
@@ -651,130 +763,135 @@
             }
         }
 
-        // Отрисовка списка слов
         function renderWordList() {
-    const wordListElement = document.getElementById('word-list');
-    wordListElement.innerHTML = '';
+            const wordListElement = document.getElementById('word-list');
+            wordListElement.innerHTML = '';
 
-    placedWords.forEach(word => {
-        const wordItem = document.createElement('div');
-        wordItem.className = 'word-item';
+            placedWords.forEach(word => {
+                const wordItem = document.createElement('div');
+                wordItem.className = 'word-item';
 
-        const wordNumber = document.createElement('span');
-        wordNumber.textContent = `${word.number}. `;
-        wordNumber.style.fontWeight = 'bold';
+                const wordNumber = document.createElement('span');
+                wordNumber.textContent = `${word.number}. `;
+                wordNumber.style.fontWeight = 'bold';
 
-        const wordHint = document.createElement('span');
-        wordHint.textContent = word.hint;
-        wordHint.className = 'hint';
+                const wordHint = document.createElement('span');
+                wordHint.textContent = word.hint;
+                wordHint.className = 'hint';
 
-        wordItem.appendChild(wordNumber);
-        wordItem.appendChild(wordHint);
+                wordItem.appendChild(wordNumber);
+                wordItem.appendChild(wordHint);
 
-        // Добавляем кнопки использования подсказок
-        if (purchasedHints.letter > 0) {
-            const letterBtn = document.createElement('button');
-            letterBtn.textContent = 'Исп. букву';
-            letterBtn.style.marginLeft = '10px';
-            letterBtn.style.padding = '2px 5px';
-            letterBtn.style.fontSize = '12px';
-            letterBtn.onclick = () => {
-                useLetterHintOnWord(word);
-            };
-            wordItem.appendChild(letterBtn);
+                // Добавляем кнопки использования подсказок, если они есть
+                if (purchasedHints.letter > 0) {
+                    const letterBtn = document.createElement('button');
+                    letterBtn.textContent = 'Исп. букву';
+                    letterBtn.style.marginLeft = '10px';
+                    letterBtn.style.padding = '2px 5px';
+                    letterBtn.style.fontSize = '12px';
+                    letterBtn.onclick = () => {
+                        useLetterHintOnWord(word);
+                    };
+                    wordItem.appendChild(letterBtn);
+                }
+
+                if (purchasedHints.word > 0) {
+                    const wordBtn = document.createElement('button');
+                    wordBtn.textContent = 'Исп. слово';
+                    wordBtn.style.marginLeft = '10px';
+                    wordBtn.style.padding = '2px 5px';
+                    wordBtn.style.fontSize = '12px';
+                    wordBtn.onclick = () => {
+                        useWordHintOnWord(word);
+                    };
+                    wordItem.appendChild(wordBtn);
+                }
+
+                wordListElement.appendChild(wordItem);
+            });
         }
 
-        if (purchasedHints.word > 0) {
-            const wordBtn = document.createElement('button');
-            wordBtn.textContent = 'Исп. слово';
-            wordBtn.style.marginLeft = '10px';
-            wordBtn.style.padding = '2px 5px';
-            wordBtn.style.fontSize = '12px';
-            wordBtn.onclick = () => {
-                useWordHintOnWord(word);
-            };
-            wordItem.appendChild(wordBtn);
-        }
+        function useLetterHintOnWord(word) {
+            if (purchasedHints.letter > 0) {
+                purchasedHints.letter--;
+                saveGameData();
+                updateShopUI();
 
-        wordListElement.appendChild(wordItem);
-    });
-}
+                // Находим все незаполненные клетки в этом слове
+                const emptyCells = [];
+                for (let i = 0; i < word.word.length; i++) {
+                    const row = word.horizontal ? word.row : word.row + i;
+                    const col = word.horizontal ? word.col + i : word.col;
+                    const input = document.querySelector(`input[data-row="${row}"][data-col="${col}"]`);
 
-function useLetterHintOnWord(word) {
-    if (purchasedHints.letter > 0) {
-        purchasedHints.letter--;
-        saveGameData();
+                    if (input && !input.value) {
+                        emptyCells.push(input);
+                    }
+                }
 
-        // Находим все незаполненные клетки в этом слове
-        const emptyCells = [];
-        for (let i = 0; i < word.word.length; i++) {
-            const row = word.horizontal ? word.row : word.row + i;
-            const col = word.horizontal ? word.col + i : word.col;
-            const input = document.querySelector(`input[data-row="${row}"][data-col="${col}"]`);
+                if (emptyCells.length > 0) {
+                    // Выбираем случайную незаполненную клетку
+                    const randomInput = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+                    const row = parseInt(randomInput.dataset.row);
+                    const col = parseInt(randomInput.dataset.col);
 
-            if (input && !input.value) {
-                emptyCells.push(input);
+                    randomInput.value = crossword[row][col].letter;
+                    randomInput.readOnly = true;
+                    randomInput.classList.add('readonly');
+                    randomInput.parentElement.classList.add('revealed');
+
+                    renderWordList(); // Обновляем список слов
+                } else {
+                    alert('В этом слове все буквы уже заполнены!');
+                    purchasedHints.letter++; // Возвращаем подсказку
+                    saveGameData();
+                    updateShopUI();
+                }
+            } else {
+                alert('У вас нет подсказок этого типа!');
+                openShop();
             }
         }
 
-        if (emptyCells.length > 0) {
-            // Выбираем случайную незаполненную клетку
-            const randomInput = emptyCells[Math.floor(Math.random() * emptyCells.length)];
-            const row = parseInt(randomInput.dataset.row);
-            const col = parseInt(randomInput.dataset.col);
+        function useWordHintOnWord(word) {
+            if (purchasedHints.word > 0) {
+                purchasedHints.word--;
+                saveGameData();
+                updateShopUI();
 
-            randomInput.value = crossword[row][col].letter;
-            randomInput.readOnly = true;
-            randomInput.parentElement.classList.add('revealed');
+                let hasEmptyCells = false;
+                for (let i = 0; i < word.word.length; i++) {
+                    const row = word.horizontal ? word.row : word.row + i;
+                    const col = word.horizontal ? word.col + i : word.col;
+                    const input = document.querySelector(`input[data-row="${row}"][data-col="${col}"]`);
 
-            renderWordList(); // Обновляем список слов
-        } else {
-            alert('В этом слове все буквы уже заполнены!');
-            purchasedHints.letter++; // Возвращаем подсказку
-            saveGameData();
-        }
-    } else {
-        alert('У вас нет подсказок этого типа!');
-        openShop();
-    }
-}
+                    if (input && !input.value) {
+                        hasEmptyCells = true;
+                        input.value = crossword[row][col].letter;
+                        input.readOnly = true;
+                        input.classList.add('readonly');
+                        input.parentElement.classList.add('revealed');
+                    }
+                }
 
-function useWordHintOnWord(word) {
-    if (purchasedHints.word > 0) {
-        purchasedHints.word--;
-        saveGameData();
+                if (!hasEmptyCells) {
+                    alert('В этом слове все буквы уже заполнены!');
+                    purchasedHints.word++; // Возвращаем подсказку
+                    saveGameData();
+                    updateShopUI();
+                }
 
-        let hasEmptyCells = false;
-        for (let i = 0; i < word.word.length; i++) {
-            const row = word.horizontal ? word.row : word.row + i;
-            const col = word.horizontal ? word.col + i : word.col;
-            const input = document.querySelector(`input[data-row="${row}"][data-col="${col}"]`);
-
-            if (input && !input.value) {
-                hasEmptyCells = true;
-                input.value = crossword[row][col].letter;
-                input.readOnly = true;
-                input.parentElement.classList.add('revealed');
+                renderWordList(); // Обновляем список слов
+            } else {
+                alert('У вас нет подсказок этого типа!');
+                openShop();
             }
         }
 
-        if (!hasEmptyCells) {
-            alert('В этом слове все буквы уже заполнены!');
-            purchasedHints.word++; // Возвращаем подсказку
-            saveGameData();
-        }
-
-        renderWordList(); // Обновляем список слов
-    } else {
-        alert('У вас нет подсказок этого типа!');
-        openShop();
-    }
-}
-
-        // Проверка ответов
         function checkAnswers() {
             let allCorrect = true;
             let correctCount = 0;
+            const totalCells = placedWords.reduce((sum, word) => sum + word.word.length, 0);
 
             document.querySelectorAll('#crossword .cell input').forEach(input => {
                 const row = parseInt(input.dataset.row);
@@ -794,22 +911,32 @@ function useWordHintOnWord(word) {
                 }
             });
 
+            // Начисляем монеты
             if (allCorrect) {
-                alert('Поздравляем! Вы правильно решили кроссворд!');
-                // Разблокируем следующий уровень, если он еще не разблокирован
+                const earnedCoins = placedWords.length * 2;
+                coins += earnedCoins;
+
                 if (currentLevel < levels.length - 1 && !unlockedLevels.includes(currentLevel + 1)) {
+                    coins += 10;
                     unlockedLevels.push(currentLevel + 1);
-                    updateLevelDisplay();
-                    alert('Доступен новый уровень!');
+                    alert(`Поздравляем! Новый уровень открыт! +10 бонусных монет! Всего заработано: ${earnedCoins + 10} монет`);
+                } else {
+                    alert(`Поздравляем! Вы заработали ${earnedCoins} монет!`);
                 }
             } else {
-                const totalCells = placedWords.reduce((sum, word) => sum + word.word.length, 0);
+                const earnedCoins = Math.floor(correctCount / 3);
+                if (earnedCoins > 0) {
+                    coins += earnedCoins;
+                    alert(`Вы заработали ${earnedCoins} монет!`);
+                }
                 const percentage = Math.round((correctCount / totalCells) * 100);
                 alert(`Есть ошибки. Правильно заполнено: ${percentage}%`);
             }
+
+            updateShopUI();
+            saveGameData();
         }
 
-        // Подсветка клавиш на экранной клавиатуре
         function highlightKeyboardKeys() {
             document.querySelectorAll('.keyboard-key').forEach(key => {
                 key.classList.remove('active');
@@ -823,7 +950,6 @@ function useWordHintOnWord(word) {
             });
         }
 
-        // Переход к следующей клетке
         function moveToNextCell() {
             if (!currentActiveCell) return;
 
@@ -862,207 +988,28 @@ function useWordHintOnWord(word) {
                 }
             }
         }
-        // Добавляем переменные для магазина
-let coins = 0;
-let purchasedHints = {
-    letter: 0,
-    word: 0
-};
 
-// Обработчики для магазина
-document.getElementById('shop-button').addEventListener('click', openShop);
-document.getElementById('close-shop').addEventListener('click', closeShop);
-document.querySelectorAll('.buy-hint').forEach(btn => {
-    btn.addEventListener('click', function() {
-        const hintType = this.getAttribute('data-type');
-        buyHint(hintType);
-    });
-});
-
-// Функции магазина
-function openShop() {
-    document.getElementById('shop-modal').style.display = 'block';
-    document.body.insertAdjacentHTML('beforeend', '<div id="shop-overlay"></div>');
-    document.getElementById('shop-overlay').style.display = 'block';
-    updateShopUI();
-}
-
-function closeShop() {
-    document.getElementById('shop-modal').style.display = 'none';
-    document.getElementById('shop-overlay').remove();
-}
-
-function updateShopUI() {
-    document.getElementById('coin-counter').textContent = `Монеты: ${coins}`;
-    document.querySelectorAll('.buy-hint').forEach(btn => {
-        const price = getHintPrice(btn.getAttribute('data-type'));
-        btn.disabled = coins < price;
-    });
-}
-
-function getHintPrice(hintType) {
-    return hintType === 'letter' ? 10 : 30;
-}
-
-function buyHint(hintType) {
-    const price = getHintPrice(hintType);
-    if (coins >= price) {
-        coins -= price;
-        purchasedHints[hintType]++;
-        updateShopUI();
-        alert(`Вы купили подсказку! Теперь у вас ${purchasedHints[hintType]} подсказок типа "${hintType}"`);
-        saveGameData();
-    }
-}
-
-// Функции для использования подсказок
-function useLetterHint() {
-    if (purchasedHints.letter > 0) {
-        purchasedHints.letter--;
-        revealRandomLetter();
-        saveGameData();
-    } else {
-        alert('У вас нет подсказок этого типа!');
-        openShop();
-    }
-}
-
-function useWordHint() {
-    if (purchasedHints.word > 0) {
-        purchasedHints.word--;
-        revealRandomWord();
-        saveGameData();
-    } else {
-        alert('У вас нет подсказок этого типа!');
-        openShop();
-    }
-}
-
-// Функции для раскрытия букв/слов
-function revealRandomLetter() {
-    const emptyCells = Array.from(document.querySelectorAll('#crossword .cell input:not([readonly])'))
-        .filter(input => !input.value);
-
-    if (emptyCells.length > 0) {
-        const randomCell = emptyCells[Math.floor(Math.random() * emptyCells.length)];
-        const row = parseInt(randomCell.dataset.row);
-        const col = parseInt(randomCell.dataset.col);
-
-        randomCell.value = crossword[row][col].letter;
-        randomCell.readOnly = true;
-        randomCell.parentElement.classList.add('revealed');
-    }
-}
-
-function revealRandomWord() {
-    const wordsWithHiddenLetters = placedWords.filter(word => {
-        for (let i = 0; i < word.word.length; i++) {
-            const row = word.horizontal ? word.row : word.row + i;
-            const col = word.horizontal ? word.col + i : word.col;
-            const input = document.querySelector(`input[data-row="${row}"][data-col="${col}"]`);
-            if (input && !input.value) return true;
+        // Сохранение и загрузка игры
+        function saveGameData() {
+            const gameData = {
+                coins,
+                purchasedHints,
+                unlockedLevels,
+                currentLevel
+            };
+            localStorage.setItem('crosswordGameData', JSON.stringify(gameData));
         }
-        return false;
-    });
 
-    if (wordsWithHiddenLetters.length > 0) {
-        const randomWord = wordsWithHiddenLetters[Math.floor(Math.random() * wordsWithHiddenLetters.length)];
-
-        for (let i = 0; i < randomWord.word.length; i++) {
-            const row = randomWord.horizontal ? randomWord.row : randomWord.row + i;
-            const col = randomWord.horizontal ? randomWord.col + i : randomWord.col;
-            const input = document.querySelector(`input[data-row="${row}"][data-col="${col}"]`);
-
-            if (input) {
-                input.value = crossword[row][col].letter;
-                input.readOnly = true;
-                input.parentElement.classList.add('revealed');
+        function loadGameData() {
+            const savedData = localStorage.getItem('crosswordGameData');
+            if (savedData) {
+                const gameData = JSON.parse(savedData);
+                coins = gameData.coins || 0;
+                purchasedHints = gameData.purchasedHints || { letter: 0, word: 0 };
+                unlockedLevels = gameData.unlockedLevels || [0];
+                currentLevel = gameData.currentLevel || 0;
             }
         }
-    }
-}
-
-// Модифицируем функцию checkAnswers() для начисления монет
-function checkAnswers() {
-if (allCorrect) {
-        const earnedCoins = placedWords.length * 2;
-        coins += earnedCoins;
-
-        // Бонус за переход на новый уровень
-        if (currentLevel < levels.length - 1 && !unlockedLevels.includes(currentLevel + 1)) {
-            coins += 10; // Бонусные 10 монет
-            unlockedLevels.push(currentLevel + 1);
-            alert(`Поздравляем! Новый уровень открыт! +10 бонусных монет! Всего заработано: ${earnedCoins + 10} монет`);
-        } else {
-            alert(`Поздравляем! Вы заработали ${earnedCoins} монет!`);
-        }
-    }
-    let allCorrect = true;
-    let correctCount = 0;
-    const totalCells = placedWords.reduce((sum, word) => sum + word.word.length, 0);
-
-    document.querySelectorAll('#crossword .cell input').forEach(input => {
-        const row = parseInt(input.dataset.row);
-        const col = parseInt(input.dataset.col);
-
-        if (crossword[row] && crossword[row][col]) {
-            const correctLetter = crossword[row][col].letter;
-            const userLetter = input.value.toUpperCase();
-
-            if (userLetter === correctLetter) {
-                input.style.backgroundColor = '#e0ffe0';
-                correctCount++;
-            } else {
-                input.style.backgroundColor = '#ffe0e0';
-                allCorrect = false;
-            }
-        }
-    });
-
-    // Начисляем монеты
-    if (allCorrect) {
-        const earnedCoins = placedWords.length * 2; // 2 монеты за каждое слово
-        coins += earnedCoins;
-        alert(`Поздравляем! Вы заработали ${earnedCoins} монет!`);
-    } else {
-        const earnedCoins = Math.floor(correctCount / 3); // 1 монета за каждые 3 правильные буквы
-        if (earnedCoins > 0) {
-            coins += earnedCoins;
-            alert(`Вы заработали ${earnedCoins} монет!`);
-        }
-    }
-
-    updateShopUI();
-    saveGameData();
-}
-
-    // Функции для сохранения/загрузки
-    function saveGameData() {
-        const gameData = {
-            coins,
-            purchasedHints,
-            unlockedLevels,
-            currentLevel
-        };
-        localStorage.setItem('crosswordGameData', JSON.stringify(gameData));
-    }
-
-    function loadGameData() {
-        const savedData = localStorage.getItem('crosswordGameData');
-        if (savedData) {
-            const gameData = JSON.parse(savedData);
-            coins = gameData.coins || 0;
-            purchasedHints = gameData.purchasedHints || { letter: 0, word: 0 };
-            unlockedLevels = gameData.unlockedLevels || [0];
-            currentLevel = gameData.currentLevel || 0;
-        }
-    }
-
-    // Добавляем вызов loadGameData() в DOMContentLoaded
-    document.addEventListener('DOMContentLoaded', function() {
-        loadGameData();
-        // ... остальной код инициализации ...
-    });
     </script>
 </body>
 </html>
