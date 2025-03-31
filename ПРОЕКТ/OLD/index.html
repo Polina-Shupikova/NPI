@@ -4,18 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Генератор кроссвордов</title>
-    <!-- <link rel="stylesheet" type="text/css" href="styles.css"> -->
-    <link rel="stylesheet" type="text/css" href="styles.css">
-<!--     <style>
-        
-    </style> -->
 </head>
 <body>
     <h1>Генератор кроссвордов</h1>
 
     <!-- Кнопка магазина -->
-     <!-- style="position: fixed; top: 110px; left: 20px;" -->
-    <button id="shop-button"> 
+    <button id="shop-button" style="position: fixed; top: 110px; left: 20px;">
         Магазин подсказок (<span id="coins-display">0</span> монет)
     </button>
 
@@ -120,39 +114,12 @@
         let unlockedLevels = [0]; // По умолчанию открыт только 1 уровень
 
         // Список слов для кроссворда
-        const wordList = [
-            { word: "КОМПЬЮТЕР", hint: "Электронное устройство для обработки данных" },
-            { word: "МОНИТОР", hint: "Устройство вывода информации" },
-            { word: "КЛАВИАТУРА", hint: "Устройство ввода текста" },
-            { word: "ПРОГРАММА", hint: "Набор инструкций для компьютера" },
-            { word: "СЕРВЕР", hint: "Компьютер, предоставляющий услуги другим" },
-            { word: "ИНТЕРНЕТ", hint: "Глобальная сеть соединенных компьютеров" },
-            { word: "БРАУЗЕР", hint: "Программа для просмотра веб-страниц" },
-            { word: "ФАЙЛ", hint: "Единица хранения информации" },
-            { word: "ПАПКА", hint: "Контейнер для файлов в файловой системе" },
-            { word: "ДИСК", hint: "Устройство хранения информации" },
-            { word: "ПРОЦЕССОР", hint: "Центральное обрабатывающее устройство" },
-            { word: "ОПЕРАЦИОНКА", hint: "Системное программное обеспечение" },
-            { word: "ВИРУС", hint: "Вредоносная программа" },
-            { word: "АЛГОРИТМ", hint: "Последовательность действий для решения задачи" },
-            { word: "БАЗАДАННЫХ", hint: "Организованная совокупность данных" }
-        ];
+        let wordList = [];
 
-        // Переменные для хранения состояния кроссворда
-        let crossword = [];
-        let crosswordSize = { rows: 0, cols: 0 };
-        let placedWords = [];
-        let currentActiveCell = null;
+        loadDatabase().then(() => {// Инициализация при загрузке страницы
 
-        // Система монет и подсказок
-        let coins = 0;
-        let purchasedHints = {
-            letter: 0,
-            word: 0
-        };
-
-        // Инициализация при загрузке страницы
-        document.addEventListener('DOMContentLoaded', function() {
+        console.log('12345')
+        {
             loadGameData();
 
             document.getElementById('generate-btn').addEventListener('click', generateCrossword);
@@ -192,7 +159,20 @@
             updateLevelDisplay();
             updateShopUI();
             generateCrossword();
-        });
+        }})
+
+        // Переменные для хранения состояния кроссворда
+        let crossword = [];
+        let crosswordSize = { rows: 0, cols: 0 };
+        let placedWords = [];
+        let currentActiveCell = null;
+
+        // Система монет и подсказок
+        let coins = 0;
+        let purchasedHints = {
+            letter: 0,
+            word: 0
+        };
 
         // Функции магазина
         function openShop() {
@@ -269,9 +249,11 @@
             const currentLevelSettings = levels[currentLevel];
             const targetWordCount = currentLevelSettings.wordCount;
 
+            console.log(targetWordCount, ...wordList, wordList)
             const availableWords = [...wordList].sort(() => Math.random() - 0.5).slice(0, targetWordCount);
-
+            console.log(availableWords)
             const firstWord = availableWords.shift();
+            console.log(firstWord)
             const startRow = Math.floor(currentLevelSettings.gridSize / 2);
             const startCol = Math.floor((currentLevelSettings.gridSize - firstWord.word.length) / 2);
 
@@ -727,6 +709,21 @@
                 currentLevel = gameData.currentLevel || 0;
             }
         }
+        async function loadDatabase() {
+        try {
+            const response = await fetch('database.json');
+            wordList = await response.json();
+            console.log('Database loaded:', wordList);
+        } catch (error) {
+            console.error('Error loading database:', error);
+            alert('Ошибка загрузки базы данных. Используется запасной список слов.');
+            // Запасной список слов на случай ошибки
+            wordList = [
+                { word: "КОМПЬЮТЕР", hint: "Электронное устройство для обработки данных" },
+                { word: "МОНИТОР", hint: "Устройство вывода информации" }
+            ];
+        }
+    }
     </script>
 </body>
 </html>
