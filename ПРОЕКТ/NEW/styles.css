@@ -433,3 +433,52 @@ body {
         padding: 0 2px;
     }
 }
+
+.level-complete-dialog {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.level-complete-dialog .dialog-content {
+    background-color: var(--bg-color);
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+    max-width: 80%;
+    text-align: center;
+    border: 2px solid var(--primary-color);
+}
+
+.level-complete-dialog h3 {
+    color: var(--primary-color);
+    margin-top: 0;
+}
+
+.level-complete-dialog .dialog-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.level-complete-dialog button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    background-color: var(--primary-color);
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.level-complete-dialog button:hover {
+    background-color: var(--button-hover);
+}

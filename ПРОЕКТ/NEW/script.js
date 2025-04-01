@@ -647,7 +647,7 @@ function handleKeyPress(letter) {
         moveToNextCell(x, y, crossword.activeWordIndex);
     }
     
-    checkWordCompletion(crossword.activeWordIndex);
+    checkAllWordsCompletion();
 }
 
 function moveToNextCell(x, y, wordIndex) {
@@ -704,7 +704,105 @@ function clearCell() {
     selectCell(x, y);
 }
 
-function checkWordCompletion(wordIndex) {
+function checkAllWordsCompletion() {
+    const newlyCompletedWords = [];
+    
+    // Проверяем все слова в кроссворде
+    for (let i = 0; i < crossword.words.length; i++) {
+        const wordInfo = crossword.words[i];
+        
+        // Пропускаем уже завершенные слова
+        if (wordInfo.completed) continue;
+        
+        let allLettersCorrect = true;
+        let allLettersFilled = true;
+        
+        // Проверяем все буквы слова
+        for (const {x, y} of wordInfo.letters) {
+            const cell = crossword.grid[y][x];
+            
+            if (!cell.letter) {
+                allLettersFilled = false;
+                break;
+            }
+            
+            if (cell.letter !== cell.correctLetter) {
+                allLettersCorrect = false;
+            }
+        }
+        
+        // Если слово полностью заполнено
+        if (allLettersFilled) {
+            wordInfo.completed = allLettersCorrect;
+            
+            // Если слово правильно угадано и еще не было засчитано
+            if (allLettersCorrect && !wordInfo.countedAsFound) {
+                wordInfo.countedAsFound = true;
+                crossword.wordsFound++;
+                newlyCompletedWords.push(wordInfo);
+                
+                // Визуальные эффекты для угаданного слова
+                highlightWord(i, 'completed-word');
+                addSolvedDefinition(wordInfo.word, wordInfo.definition);
+                
+                // Анимация для каждого угаданного слова
+                setTimeout(() => {
+                    highlightWord(i, 'dice-animation');
+                    setTimeout(() => {
+                        document.querySelectorAll('.dice-animation').forEach(el => {
+                            el.classList.remove('dice-animation');
+                        });
+                    }, 800);
+                }, 100);
+            }
+        }
+    }
+    
+    // Показываем сообщения для всех новых угаданных слов
+    if (newlyCompletedWords.length > 0) {
+        renderCrossword();
+        
+        // Для каждого нового угаданного слова показываем сообщение
+        newlyCompletedWords.forEach((wordInfo, index) => {
+            setTimeout(() => {
+                alert(`Верно! Слово "${wordInfo.word}" угадано.`);
+            }, 200 + (index * 300));
+        });
+        
+        // Проверяем завершение уровня
+        if (crossword.wordsFound === crossword.wordsToFind) {
+            setTimeout(() => showLevelCompleteDialog(), 500 + (newlyCompletedWords.length * 300));
+        }
+    }
+}
+
+function showLevelCompleteDialog() {
+    const dialog = document.createElement('div');
+    dialog.className = 'level-complete-dialog';
+    dialog.innerHTML = `
+        <div class="dialog-content">
+            <h3>Уровень ${currentLevel} пройден!</h3>
+            <div class="dialog-buttons">
+                <button id="next-level-btn">Следующий уровень</button>
+                <button id="menu-btn">В меню</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(dialog);
+    
+    document.getElementById('next-level-btn').addEventListener('click', () => {
+        dialog.remove();
+        completeLevel();
+    });
+    
+    document.getElementById('menu-btn').addEventListener('click', () => {
+        dialog.remove();
+        // Здесь можно добавить переход в меню
+    });
+}
+
+function checkSingleWordCompletion(wordIndex) {
     const wordInfo = crossword.words[wordIndex];
     let allLettersFilled = true;
     let allLettersCorrect = true;
@@ -722,6 +820,7 @@ function checkWordCompletion(wordIndex) {
     
     if (allLettersFilled) {
         wordInfo.completed = allLettersCorrect;
+        
         if (allLettersCorrect && !wordInfo.countedAsFound) {
             wordInfo.countedAsFound = true;
             crossword.wordsFound++;
@@ -744,7 +843,6 @@ function checkWordCompletion(wordIndex) {
                 setTimeout(() => alert(`Верно! Слово "${wordInfo.word}" угадано.`), 100);
             }
         }
-        renderCrossword();
     }
 }
 
@@ -762,11 +860,7 @@ function highlightWord(wordIndex, className) {
 
 function completeLevel() {
     currentLevel++;
-    if (currentLevel <= 26 || confirm("Поздравляем! Хотите продолжить на следующем уровне?")) {
-        loadLevel();
-    } else {
-        togglePages('game-page', 'main-page');
-    }
+    loadLevel();
 }
 
 function showDefinitions() {
@@ -829,10 +923,9 @@ function giveHint() {
     document.getElementById('hint-count').textContent = crossword.hints;
     renderCrossword();
     selectCell(x, y);
-    if (crossword.activeWordIndex !== null) {
-        checkWordCompletion(crossword.activeWordIndex);
+    checkAllWordsCompletion();
     }
-}
+
 
 function saveUserRecord(currentLevel) {
     if (!window.Telegram?.WebApp?.CloudStorage) return;
