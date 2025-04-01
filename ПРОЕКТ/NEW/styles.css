@@ -233,18 +233,29 @@ body {
 }
 
 .keyboard-key-used {
-    background-color: #ff6b6b;
-    color: white;
+    background-color: #ff6b6b !important; /* Всегда красный */
+    color: white !important;
+    cursor: pointer;
+    border: none;
+    transition: none; /* Убираем анимацию */
 }
 
 .keyboard-key-unused {
-    background-color: #cccccc;
-    color: #666666;
+    background-color: #cccccc !important; /* Серый для неиспользуемых букв */
+    color: #666666 !important;
     cursor: not-allowed;
+    opacity: 0.6;
+    border: none;
 }
 
 .keyboard-key-unused:hover {
     background-color: #cccccc !important;
+    transform: none !important;
+}
+
+.keyboard-key-unused:hover {
+    background-color: #cccccc !important;
+    transform: none !important;
 }
 
 .keyboard-key[style*="width"] {

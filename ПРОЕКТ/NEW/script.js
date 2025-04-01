@@ -603,16 +603,17 @@ function generateKeyboard() {
     
     for (const letter of russianLetters) {
         const key = document.createElement('button');
-        key.className = 'keyboard-key';
+        key.className = 'keyboard-key'; // Базовый класс
         key.textContent = letter;
         
         if (usedLetters.has(letter)) {
-            key.classList.add('keyboard-key-used');
+            key.classList.add('keyboard-key-used'); // Красный для используемых букв
+            key.addEventListener('click', () => handleKeyPress(letter));
         } else {
-            key.classList.add('keyboard-key-unused');
+            key.classList.add('keyboard-key-unused'); // Серый для неиспользуемых
+            key.disabled = true;
         }
         
-        key.addEventListener('click', () => handleKeyPress(letter));
         keyboard.appendChild(key);
     }
     
