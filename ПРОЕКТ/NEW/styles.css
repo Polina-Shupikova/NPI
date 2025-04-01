@@ -648,3 +648,333 @@ body {
     background-color: rgba(220, 20, 60, 0.7) !important;
     color: white !important;
 }
+
+:root {
+    /* Основные цвета в стиле "счастливого СССР" */
+    --bg-color: #fff5e6; /* Кремовый фон, мягкий и теплый */
+    --text-color: #2e2e2e; /* Темно-серый для текста, не слишком черный */
+    --primary-color: #d32f2f; /* Красный как символ СССР */
+    --secondary-color: #f9e0b7; /* Светло-золотистый для второстепенных элементов */
+    --disabled-color: #b0b0b0; /* Серый для неактивных элементов */
+    --button-hover: #b71c1c; /* Темно-красный для hover */
+    --correct-color: #ffd700; /* Золотой для правильных ответов */
+    --incorrect-color: #ff8a65; /* Мягкий оранжевый для ошибок */
+}
+
+.dark-theme {
+    /* Темная тема с советской эстетикой */
+    --bg-color: #2e2e2e; /* Темно-серый фон */
+    --text-color: #f9e0b7; /* Золотистый текст */
+    --primary-color: #e53935; /* Яркий красный */
+    --secondary-color: #4a4a4a; /* Темно-золотистый */
+    --disabled-color: #757575; /* Средний серый */
+    --button-hover: #c62828; /* Темный красный для hover */
+    --correct-color: #ffb300; /* Темный золотой */
+    --incorrect-color: #d81b60; /* Розово-красный для ошибок */
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    background-image: url('https://cdnn1.img.sputnik-abkhazia.info/img/102991/75/1029917516_47:130:1134:813_1400x0_80_0_0_22e4fc6166bb61d929eceaee2a1e624e.jpg');
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center;
+    margin: 0;
+    padding: 0;
+    color: var(--text-color);
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 20px auto;
+    padding: 25px;
+    background-color: rgba(255, 245, 230, 0.9); /* Полупрозрачный кремовый */
+    border-radius: 15px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+    border: 2px solid var(--primary-color);
+}
+
+.game-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    background-color: rgba(255, 245, 230, 0.95);
+    border-radius: 10px;
+    border-bottom: 3px solid var(--primary-color);
+}
+
+/* Кнопка "Назад" с советским стилем */
+.back-button {
+    padding: 12px 20px;
+    color: #fff;
+    background-color: var(--primary-color);
+    border: 2px solid #ffd700; /* Золотая обводка */
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.back-button:hover {
+    background-color: var(--button-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
+}
+
+.back-button::before {
+    content: '★'; /* Звезда как символ СССР */
+    position: absolute;
+    top: 50%;
+    left: -30px;
+    transform: translateY(-50%);
+    color: #ffd700;
+    font-size: 14px;
+    transition: 0.5s;
+}
+
+.back-button:hover::before {
+    left: calc(100% + 10px);
+}
+
+/* Стили для кнопок подсказок и настроек */
+.hint-button, .settings-button {
+    background-color: var(--primary-color);
+    color: #fff;
+    border: 2px solid var(--correct-color);
+    border-radius: 50%;
+    width: 45px;
+    height: 45px;
+    font-size: 22px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+}
+
+.hint-button:hover, .settings-button:hover {
+    background-color: var(--button-hover);
+    transform: scale(1.05);
+}
+
+.hint-count {
+    font-size: 14px;
+    color: var(--text-color);
+    margin-top: 5px;
+    text-align: center;
+}
+
+/* Сетка кроссворда */
+.crossword-grid {
+    background-color: rgba(255, 245, 230, 0.95);
+    border-radius: 10px;
+    padding: 15px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--secondary-color);
+}
+
+.crossword-cell {
+    width: 30px;
+    height: 30px;
+    border: 1px solid rgba(211, 47, 47, 0.5); /* Полупрозрачный красный */
+    background-color: rgba(255, 255, 255, 0.9);
+    color: var(--text-color);
+    font-size: 16px;
+    font-weight: bold;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-radius: 4px;
+}
+
+.crossword-cell.correct-letter {
+    background-color: var(--correct-color);
+    color: #2e2e2e;
+}
+
+.crossword-cell.incorrect-letter {
+    background-color: var(--incorrect-color);
+    color: #fff;
+}
+
+.crossword-cell.completed-word {
+    background-color: #388e3c; /* Зеленый для завершенных слов */
+    color: #fff;
+    border-color: #ffd700;
+}
+
+.crossword-cell.highlight {
+    background-color: rgba(255, 215, 0, 0.7) !important;
+    box-shadow: 0 0 8px rgba(211, 47, 47, 0.5);
+}
+
+.crossword-cell.current-word {
+    background-color: rgba(255, 235, 59, 0.5) !important;
+}
+
+/* Клавиатура */
+.keyboard {
+    background-color: rgba(255, 245, 230, 0.9);
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    margin-top: 20px;
+    border: 1px solid var(--primary-color);
+}
+
+.keyboard-key {
+    width: 32px;
+    height: 32px;
+    background-color: var(--secondary-color);
+    color: var(--text-color);
+    border: 1px solid var(--primary-color);
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: bold;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.keyboard-key-used {
+    background-color: var(--primary-color) !important;
+    color: #fff !important;
+}
+
+.keyboard-key-unused {
+    background-color: var(--disabled-color) !important;
+    color: #757575 !important;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.keyboard-key:hover:not(.keyboard-key-unused) {
+    background-color: var(--button-hover);
+    color: #fff;
+    transform: scale(1.05);
+}
+
+.keyboard-key[style*="width"] {
+    background-color: var(--primary-color) !important;
+    color: #fff !important;
+    padding: 0 5px;
+}
+
+/* Определения */
+.definitions-box {
+    background-color: rgba(255, 245, 230, 0.95);
+    border: 3px solid var(--primary-color);
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0 5px 25px rgba(0, 0, 0, 0.2);
+}
+
+.definitions-box h3 {
+    color: var(--primary-color);
+    font-weight: bold;
+    border-bottom: 2px solid var(--correct-color);
+    padding-bottom: 5px;
+}
+
+.definition-item {
+    background-color: var(--secondary-color);
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    border-left: 4px solid var(--primary-color);
+}
+
+/* Угаданные слова */
+.solved-definitions {
+    background-color: rgba(255, 245, 230, 0.95);
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--primary-color);
+}
+
+.solved-definitions-toggle {
+    color: var(--primary-color);
+    padding: 12px;
+    font-weight: bold;
+    border-bottom: 2px solid var(--correct-color);
+}
+
+.solved-definition-item {
+    background-color: var(--bg-color);
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    border-left: 4px solid var(--correct-color);
+}
+
+/* Анимации */
+@keyframes diceRoll {
+    0% { transform: rotate(0deg) scale(1); }
+    25% { transform: rotate(90deg) scale(0.9); }
+    50% { transform: rotate(180deg) scale(1.1); }
+    75% { transform: rotate(270deg) scale(0.9); }
+    100% { transform: rotate(360deg) scale(1); }
+}
+
+.dice-animation {
+    animation: diceRoll 0.8s ease-out;
+    background-color: rgba(255, 215, 0, 0.9) !important;
+}
+
+.cell-trail {
+    background-color: var(--correct-color);
+    border-radius: 4px;
+    animation: cellTrail 0.4s ease-out forwards;
+}
+
+/* Диалог завершения уровня */
+.level-complete-dialog .dialog-content {
+    background-color: rgba(255, 245, 230, 0.95);
+    border: 3px solid var(--primary-color);
+    border-radius: 15px;
+    padding: 25px;
+}
+
+.level-complete-dialog button {
+    background-color: var(--primary-color);
+    border: 2px solid var(--correct-color);
+    border-radius: 8px;
+    padding: 12px 20px;
+    font-weight: bold;
+}
+
+.level-complete-dialog button:hover {
+    background-color: var(--button-hover);
+    transform: translateY(-2px);
+}
+
+/* Медиа-запросы */
+@media (max-width: 1000px) {
+    .solved-definitions {
+        position: static;
+        width: 100%;
+        margin-top: 20px;
+    }
+}
+
+@media (max-width: 600px) {
+    .crossword-cell {
+        width: 26px;
+        height: 26px;
+        font-size: 14px;
+    }
+    .keyboard-key {
+        width: 28px;
+        height: 28px;
+        font-size: 12px;
+    }
+}
