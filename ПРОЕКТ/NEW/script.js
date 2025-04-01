@@ -8,43 +8,43 @@ const RUSSIAN_LAYOUT = {
 };
 
 const WORD_TYPES = {
-  EASY: 'easy',
-  HARD: 'hard'
+    EASY: 'easy',
+    HARD: 'hard'
 };
 
 const LEVEL_WORDS = {
-  1: { total: 3, easy: 3, hard: 0, minLength: 3, maxLength: 5 },
-  2: { total: 3, easy: 3, hard: 0, minLength: 3, maxLength: 5 },
-  3: { total: 4, easy: 3, hard: 1, minLength: 3, maxLength: 5 },
-  4: { total: 4, easy: 3, hard: 1, minLength: 3, maxLength: 5 },
-  5: { total: 5, easy: 4, hard: 1, minLength: 3, maxLength: 5 },
-  6: { total: 5, easy: 4, hard: 1, minLength: 3, maxLength: 5 },
-  7: { total: 6, easy: 4, hard: 2, minLength: 6, maxLength: 7 },
-  8: { total: 6, easy: 4, hard: 2, minLength: 6, maxLength: 7 },
-  9: { total: 7, easy: 5, hard: 2, minLength: 6, maxLength: 7 },
-  10: { total: 7, easy: 5, hard: 2, minLength: 6, maxLength: 7 },
-  11: { total: 8, easy: 6, hard: 2, minLength: 6, maxLength: 7 },
-  12: { total: 8, easy: 6, hard: 2, minLength: 6, maxLength: 7 },
-  13: { total: 9, easy: 6, hard: 3, minLength: 8, maxLength: 9 },
-  14: { total: 9, easy: 6, hard: 3, minLength: 8, maxLength: 9 },
-  15: { total: 10, easy: 7, hard: 3, minLength: 8, maxLength: 9 },
-  16: { total: 10, easy: 7, hard: 3, minLength: 8, maxLength: 9 },
-  17: { total: 11, easy: 7, hard: 4, minLength: 8, maxLength: 9 },
-  18: { total: 11, easy: 7, hard: 4, minLength: 8, maxLength: 9 },
-  19: { total: 12, easy: 8, hard: 4, minLength: 10, maxLength: 11 },
-  20: { total: 12, easy: 8, hard: 4, minLength: 10, maxLength: 11 },
-  21: { total: 13, easy: 9, hard: 4, minLength: 10, maxLength: 11 },
-  22: { total: 13, easy: 9, hard: 4, minLength: 10, maxLength: 11 },
-  23: { total: 14, easy: 9, hard: 5, minLength: 10, maxLength: 11 },
-  24: { total: 14, easy: 9, hard: 5, minLength: 10, maxLength: 11 },
-  25: { total: 15, easy: 10, hard: 5, minLength: 10, maxLength: 11 },
-  26: { total: 15, easy: 10, hard: 5, minLength: 12, maxLength: 15 }
+    1: { total: 3, easy: 3, hard: 0, minLength: 3, maxLength: 5 },
+    2: { total: 3, easy: 3, hard: 0, minLength: 3, maxLength: 5 },
+    3: { total: 4, easy: 3, hard: 1, minLength: 3, maxLength: 5 },
+    4: { total: 4, easy: 3, hard: 1, minLength: 3, maxLength: 5 },
+    5: { total: 5, easy: 4, hard: 1, minLength: 3, maxLength: 5 },
+    6: { total: 5, easy: 4, hard: 1, minLength: 3, maxLength: 5 },
+    7: { total: 6, easy: 4, hard: 2, minLength: 6, maxLength: 7 },
+    8: { total: 6, easy: 4, hard: 2, minLength: 6, maxLength: 7 },
+    9: { total: 7, easy: 5, hard: 2, minLength: 6, maxLength: 7 },
+    10: { total: 7, easy: 5, hard: 2, minLength: 6, maxLength: 7 },
+    11: { total: 8, easy: 6, hard: 2, minLength: 6, maxLength: 7 },
+    12: { total: 8, easy: 6, hard: 2, minLength: 6, maxLength: 7 },
+    13: { total: 9, easy: 6, hard: 3, minLength: 8, maxLength: 9 },
+    14: { total: 9, easy: 6, hard: 3, minLength: 8, maxLength: 9 },
+    15: { total: 10, easy: 7, hard: 3, minLength: 8, maxLength: 9 },
+    16: { total: 10, easy: 7, hard: 3, minLength: 8, maxLength: 9 },
+    17: { total: 11, easy: 7, hard: 4, minLength: 8, maxLength: 9 },
+    18: { total: 11, easy: 7, hard: 4, minLength: 8, maxLength: 9 },
+    19: { total: 12, easy: 8, hard: 4, minLength: 10, maxLength: 11 },
+    20: { total: 12, easy: 8, hard: 4, minLength: 10, maxLength: 11 },
+    21: { total: 13, easy: 9, hard: 4, minLength: 10, maxLength: 11 },
+    22: { total: 13, easy: 9, hard: 4, minLength: 10, maxLength: 11 },
+    23: { total: 14, easy: 9, hard: 5, minLength: 10, maxLength: 11 },
+    24: { total: 14, easy: 9, hard: 5, minLength: 10, maxLength: 11 },
+    25: { total: 15, easy: 10, hard: 5, minLength: 10, maxLength: 11 },
+    26: { total: 15, easy: 10, hard: 5, minLength: 12, maxLength: 15 }
 };
 
 let currentLevel = 1;
 let wordDatabase = {
-  easy: [],
-  hard: []
+    easy: [],
+    hard: []
 };
 
 let crossword = {
@@ -77,21 +77,18 @@ async function initGame() {
 
 async function loadWords() {
     try {
-        // Загружаем простые слова
         const easyResponse = await fetch('easy_words.json');
         if (!easyResponse.ok) throw new Error(`Ошибка HTTP при загрузке easy_words.json! Статус: ${easyResponse.status}`);
         
         const easyData = await easyResponse.json();
         if (!Array.isArray(easyData)) throw new Error("easy_words.json не содержит массив слов");
         
-        // Загружаем сложные слова
         const hardResponse = await fetch('hard_words.json');
         if (!hardResponse.ok) throw new Error(`Ошибка HTTP при загрузке hard_words.json! Статус: ${hardResponse.status}`);
         
         const hardData = await hardResponse.json();
         if (!Array.isArray(hardData)) throw new Error("hard_words.json не содержит массив слов");
         
-        // Сохраняем слова в соответствующие категории
         wordDatabase.easy = easyData;
         wordDatabase.hard = hardData;
         
@@ -118,11 +115,6 @@ function loadBackupWords() {
 }
 
 function initEventListeners() {
-    document.getElementById('game-settings-button').addEventListener('click', () => togglePages('game-page', 'settings-page'));
-    document.getElementById('back-button').addEventListener('click', () => togglePages('settings-page', 'game-page'));
-    document.getElementById('light-theme').addEventListener('click', () => document.body.classList.remove('dark-theme'));
-    document.getElementById('dark-theme').addEventListener('click', () => document.body.classList.add('dark-theme'));
-    document.getElementById('font-size').addEventListener('change', handleFontSizeChange);
     document.getElementById('hint-button').addEventListener('click', giveHint);
     document.querySelector('.solved-definitions-toggle').addEventListener('click', toggleSolvedDefinitions);
     document.addEventListener('keydown', handlePhysicalKeyPress);
@@ -192,16 +184,6 @@ function handlePhysicalKeyPress(e) {
         handleKeyPress(letter.toUpperCase());
         e.preventDefault();
     }
-}
-
-function togglePages(hideId, showId) {
-    document.getElementById(hideId).classList.add('hidden');
-    document.getElementById(showId).classList.remove('hidden');
-}
-
-function handleFontSizeChange(e) {
-    const sizes = { small: '14px', medium: '16px', large: '18px' };
-    document.body.style.fontSize = sizes[e.target.value];
 }
 
 function startGame() {
@@ -603,14 +585,14 @@ function generateKeyboard() {
     
     for (const letter of russianLetters) {
         const key = document.createElement('button');
-        key.className = 'keyboard-key'; // Базовый класс
+        key.className = 'keyboard-key';
         key.textContent = letter;
         
         if (usedLetters.has(letter)) {
-            key.classList.add('keyboard-key-used'); // Красный для используемых букв
+            key.classList.add('keyboard-key-used');
             key.addEventListener('click', () => handleKeyPress(letter));
         } else {
-            key.classList.add('keyboard-key-unused'); // Серый для неиспользуемых
+            key.classList.add('keyboard-key-unused');
             key.disabled = true;
         }
         
@@ -708,17 +690,14 @@ function clearCell() {
 function checkAllWordsCompletion() {
     const newlyCompletedWords = [];
     
-    // Проверяем все слова в кроссворде
     for (let i = 0; i < crossword.words.length; i++) {
         const wordInfo = crossword.words[i];
         
-        // Пропускаем уже завершенные слова
         if (wordInfo.completed) continue;
         
         let allLettersCorrect = true;
         let allLettersFilled = true;
         
-        // Проверяем все буквы слова
         for (const {x, y} of wordInfo.letters) {
             const cell = crossword.grid[y][x];
             
@@ -732,21 +711,17 @@ function checkAllWordsCompletion() {
             }
         }
         
-        // Если слово полностью заполнено
         if (allLettersFilled) {
             wordInfo.completed = allLettersCorrect;
             
-            // Если слово правильно угадано и еще не было засчитано
             if (allLettersCorrect && !wordInfo.countedAsFound) {
                 wordInfo.countedAsFound = true;
                 crossword.wordsFound++;
                 newlyCompletedWords.push(wordInfo);
                 
-                // Визуальные эффекты для угаданного слова
                 highlightWord(i, 'completed-word');
                 addSolvedDefinition(wordInfo.word, wordInfo.definition);
                 
-                // Анимация для каждого угаданного слова
                 setTimeout(() => {
                     highlightWord(i, 'dice-animation');
                     setTimeout(() => {
@@ -759,18 +734,15 @@ function checkAllWordsCompletion() {
         }
     }
     
-    // Показываем сообщения для всех новых угаданных слов
     if (newlyCompletedWords.length > 0) {
         renderCrossword();
         
-        // Для каждого нового угаданного слова показываем сообщение
         newlyCompletedWords.forEach((wordInfo, index) => {
             setTimeout(() => {
                 alert(`Верно! Слово "${wordInfo.word}" угадано.`);
             }, 200 + (index * 300));
         });
         
-        // Проверяем завершение уровня
         if (crossword.wordsFound === crossword.wordsToFind) {
             setTimeout(() => showLevelCompleteDialog(), 500 + (newlyCompletedWords.length * 300));
         }
@@ -785,7 +757,7 @@ function showLevelCompleteDialog() {
             <h3>Уровень ${currentLevel} пройден!</h3>
             <div class="dialog-buttons">
                 <button id="next-level-btn">Следующий уровень</button>
-                <button id="menu-btn">В меню</button>
+                <button id="menu-btn" onclick="location.href='../MAIN/index.html'">В меню</button>
             </div>
         </div>
     `;
@@ -799,7 +771,6 @@ function showLevelCompleteDialog() {
     
     document.getElementById('menu-btn').addEventListener('click', () => {
         dialog.remove();
-        // Здесь можно добавить переход в меню
     });
 }
 
@@ -925,27 +896,25 @@ function giveHint() {
     renderCrossword();
     selectCell(x, y);
     checkAllWordsCompletion();
-    }
-
+}
 
 function saveUserRecord(currentLevel) {
     if (!window.Telegram?.WebApp?.CloudStorage) return;
   
     const userId = window.Telegram.WebApp.initDataUnsafe.user?.id;
-    if (!userId) return; // Если пользователь не авторизован
+    if (!userId) return;
   
-    // Сохраняем в Cloud Storage
     window.Telegram.WebApp.CloudStorage.setItem(
-      `user_${userId}_record`, // Ключ (лучше привязывать к ID)
-      String(currentLevel),  // Данные (только строки!)
-      (error) => {
-        if (error) {
-          console.error("Ошибка сохранения:", error);
-        } else {
-          console.log("Рекорд сохранён!");
+        `user_${userId}_record`,
+        String(currentLevel),
+        (error) => {
+            if (error) {
+                console.error("Ошибка сохранения:", error);
+            } else {
+                console.log("Рекорд сохранён!");
+            }
         }
-      }
     );
-  }
+}
 
 document.addEventListener('DOMContentLoaded', initGame);

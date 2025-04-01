@@ -12,10 +12,9 @@
             <a href="../MAIN/index.html" id="back-button" class="back-button">Назад</a>
             <div class="level-info">
                 <span>Уровень: <span id="level-number">1</span></span>
-                <button id="hint-button" class="hint-button">?</button>
-                <span class="hint-count">Подсказки: <span id="hint-count">3</span></span>
+                <button id="hint-button" class="hint-button">Подсказка</button>
+                <span class="hint-count">Осталось: <span id="hint-count">3</span></span>
             </div>
-            <button id="game-settings-button" class="settings-button">⚙️</button>
         </div>
         
         <div class="game-board">
@@ -33,33 +32,6 @@
             <h3>Определения слов:</h3>
             <div id="definitions-list"></div>
         </div>
-    </div>
-
-    <div id="settings-page" class="container settings-page hidden">
-        <h1>Настройки</h1>
-        <div class="theme-buttons">
-            <button id="light-theme" class="theme-button light-theme-btn">Светлая тема</button>
-            <button id="dark-theme" class="theme-button dark-theme-btn">Темная тема</button>
-        </div>
-        
-        <div class="slider-container">
-            <label for="music-volume">Фоновая музыка:</label>
-            <input type="range" id="music-volume" class="slider" min="0" max="100" value="50">
-        </div>
-        
-        <div class="slider-container">
-            <label for="sound-volume">Отклик нажатий:</label>
-            <input type="range" id="sound-volume" class="slider" min="0" max="100" value="50">
-        </div>
-        
-        <label for="font-size">Размер шрифта:</label>
-        <select id="font-size" class="font-size-selector">
-            <option value="small">Маленький</option>
-            <option value="medium" selected>Средний</option>
-            <option value="large">Большой</option>
-        </select>
-        
-        <button id="back-button" class="back-button">Назад</button>
     </div>
 
     <script src="script.js"></script>
