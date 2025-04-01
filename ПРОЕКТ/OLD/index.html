@@ -6,19 +6,17 @@
     <title>Генератор кроссвордов</title>
 
     <link rel="stylesheet" href="styles.css">
-
 </head>
+
 <body>
-    <a href="../MAIN/index.html" id="back-button" style="position: fixed; top: 35px; right: 20px;">Назад</a>
+    <a href="../MAIN/index.html" id="back-button">Назад</a>
 
     <h1>Генератор кроссвордов</h1>
 
-    <!-- Кнопка магазина -->
-    <button id="shop-button" style="position: fixed; top: 110px; left: 20px;">
-        Магазин подсказок (<span id="coins-display">0</span> монет)
+    <button id="shop-button" style="position: absolute; top: 75px; left: 0px;">
+        Магазин (<span id="coins-display">0</span> монет)
     </button>
 
-    <!-- Модальное окно магазина -->
     <div id="shop-modal">
         <h2>Магазин подсказок</h2>
         <div id="coin-counter" style="margin-bottom: 15px; font-weight: bold;">Монеты: <span id="coins-count">0</span></div>
@@ -61,63 +59,77 @@
     </div>
 
     <div class="keyboard">
-        <div class="keyboard-row">
-            <button class="keyboard-key" data-key="Й">Й</button>
-            <button class="keyboard-key" data-key="Ц">Ц</button>
-            <button class="keyboard-key" data-key="У">У</button>
-            <button class="keyboard-key" data-key="К">К</button>
-            <button class="keyboard-key" data-key="Е">Е</button>
-            <button class="keyboard-key" data-key="Н">Н</button>
-            <button class="keyboard-key" data-key="Г">Г</button>
-            <button class="keyboard-key" data-key="Ш">Ш</button>
-            <button class="keyboard-key" data-key="Щ">Щ</button>
-            <button class="keyboard-key" data-key="З">З</button>
-            <button class="keyboard-key" data-key="Х">Х</button>
-            <button class="keyboard-key" data-key="Ъ">Ъ</button>
-        </div>
-        <div class="keyboard-row">
-            <button class="keyboard-key" data-key="Ф">Ф</button>
-            <button class="keyboard-key" data-key="Ы">Ы</button>
-            <button class="keyboard-key" data-key="В">В</button>
-            <button class="keyboard-key" data-key="А">А</button>
-            <button class="keyboard-key" data-key="П">П</button>
-            <button class="keyboard-key" data-key="Р">Р</button>
-            <button class="keyboard-key" data-key="О">О</button>
-            <button class="keyboard-key" data-key="Л">Л</button>
-            <button class="keyboard-key" data-key="Д">Д</button>
-            <button class="keyboard-key" data-key="Ж">Ж</button>
-            <button class="keyboard-key" data-key="Э">Э</button>
-        </div>
-        <div class="keyboard-row">
-            <button class="keyboard-key wide" data-key="BACKSPACE">←</button>
-            <button class="keyboard-key" data-key="Я">Я</button>
-            <button class="keyboard-key" data-key="Ч">Ч</button>
-            <button class="keyboard-key" data-key="С">С</button>
-            <button class="keyboard-key" data-key="М">М</button>
-            <button class="keyboard-key" data-key="И">И</button>
-            <button class="keyboard-key" data-key="Т">Т</button>
-            <button class="keyboard-key" data-key="Ь">Ь</button>
-            <button class="keyboard-key" data-key="Б">Б</button>
-            <button class="keyboard-key" data-key="Ю">Ю</button>
-            <button class="keyboard-key wide" data-key="ENTER">Enter</button>
-        </div>
-        <!-- Добавляем плашку и кнопку направления -->
-        <div class="keyboard-controls">
-            <div id="direction-display">Направление: Не выбрано</div>
-            <button id="toggle-direction-btn">Сменить направление</button>
+        <button id="toggle-keyboard-btn">Показать/Скрыть клавиатуру</button>
+        <div id="keyboard-content" class="keyboard-content">
+            <div class="keyboard-row">
+                <button class="keyboard-key" data-key="Й">Й</button>
+                <button class="keyboard-key" data-key="Ц">Ц</button>
+                <button class="keyboard-key" data-key="У">У</button>
+                <button class="keyboard-key" data-key="К">К</button>
+                <button class="keyboard-key" data-key="Е">Е</button>
+                <button class="keyboard-key" data-key="Н">Н</button>
+                <button class="keyboard-key" data-key="Г">Г</button>
+                <button class="keyboard-key" data-key="Ш">Ш</button>
+                <button class="keyboard-key" data-key="Щ">Щ</button>
+                <button class="keyboard-key" data-key="З">З</button>
+                <button class="keyboard-key" data-key="Х">Х</button>
+                <button class="keyboard-key" data-key="Ъ">Ъ</button>
+            </div>
+            <div class="keyboard-row">
+                <button class="keyboard-key" data-key="Ф">Ф</button>
+                <button class="keyboard-key" data-key="Ы">Ы</button>
+                <button class="keyboard-key" data-key="В">В</button>
+                <button class="keyboard-key" data-key="А">А</button>
+                <button class="keyboard-key" data-key="П">П</button>
+                <button class="keyboard-key" data-key="Р">Р</button>
+                <button class="keyboard-key" data-key="О">О</button>
+                <button class="keyboard-key" data-key="Л">Л</button>
+                <button class="keyboard-key" data-key="Д">Д</button>
+                <button class="keyboard-key" data-key="Ж">Ж</button>
+                <button class="keyboard-key" data-key="Э">Э</button>
+            </div>
+            <div class="keyboard-row">
+                <button class="keyboard-key wide" data-key="BACKSPACE">←</button>
+                <button class="keyboard-key" data-key="Я">Я</button>
+                <button class="keyboard-key" data-key="Ч">Ч</button>
+                <button class="keyboard-key" data-key="С">С</button>
+                <button class="keyboard-key" data-key="М">М</button>
+                <button class="keyboard-key" data-key="И">И</button>
+                <button class="keyboard-key" data-key="Т">Т</button>
+                <button class="keyboard-key" data-key="Ь">Ь</button>
+                <button class="keyboard-key" data-key="Б">Б</button>
+                <button class="keyboard-key" data-key="Ю">Ю</button>
+                <button class="keyboard-key wide" data-key="ENTER">Enter</button>
+            </div>
+            <div class="keyboard-controls">
+                <div id="direction-display">Направление: Не выбрано</div>
+                <button id="toggle-direction-btn">Сменить направление</button>
+            </div>
         </div>
     </div>
 
     <div id="word-list" class="word-list"></div>
 
     <script>
-        // Конфигурация уровней
         const levels = [
-            { name: "Уровень 1 до", wordCount: 5, gridSize: 10 },
-            { name: "Уровень 2 до", wordCount: 7, gridSize: 12 },
-            { name: "Уровень 3 до", wordCount: 10, gridSize: 15 },
-            { name: "Уровень 4 до", wordCount: 12, gridSize: 18 },
-            { name: "Уровень 5 до", wordCount: 15, gridSize: 20 }
+            { name: "Уровень 1 до", wordCount: 3, gridSize: 16 },
+            { name: "Уровень 2 до", wordCount: 4, gridSize: 16 },
+            { name: "Уровень 3 до", wordCount: 5, gridSize: 16 },
+            { name: "Уровень 4 до", wordCount: 6, gridSize: 16 },
+            { name: "Уровень 5 до", wordCount: 7, gridSize: 16 },
+            { name: "Уровень 6 до", wordCount: 8, gridSize: 16 },
+            { name: "Уровень 7 до", wordCount: 9, gridSize: 16 },
+            { name: "Уровень 8 до", wordCount: 10, gridSize: 16 },
+            { name: "Уровень 9 до", wordCount: 11, gridSize: 16 },
+            { name: "Уровень 10 до", wordCount: 12, gridSize: 16 },
+            { name: "Уровень 12 до", wordCount: 13, gridSize: 16 },
+            { name: "Уровень 13 до", wordCount: 14, gridSize: 16 },
+            { name: "Уровень 14 до", wordCount: 15, gridSize: 16 },
+            { name: "Уровень 15 до", wordCount: 16, gridSize: 16 },
+            { name: "Уровень 16 до", wordCount: 17, gridSize: 16 },
+            { name: "Уровень 17 до", wordCount: 18, gridSize: 16 },
+            { name: "Уровень 18 до", wordCount: 19, gridSize: 16 },
+            { name: "Уровень 19 до", wordCount: 20, gridSize: 16 }
         ];
 
         let currentLevel = 0;
@@ -127,18 +139,16 @@
         let crosswordSize = { rows: 0, cols: 0 };
         let placedWords = [];
         let currentActiveCell = null;
-        let currentInputDirection = null; // Направление ввода
+        let currentInputDirection = null;
         let coins = 0;
         let purchasedHints = { letter: 0, word: 0 };
 
-        // Функция переключения направления
         function toggleInputDirection() {
             if (!currentActiveCell) return;
             currentInputDirection = currentInputDirection === 'horizontal' ? 'vertical' : 'horizontal';
             updateDirectionDisplay();
         }
 
-        // Функция обновления плашки направления
         function updateDirectionDisplay() {
             const directionDisplay = document.getElementById('direction-display');
             if (currentInputDirection === 'horizontal') {
@@ -155,7 +165,6 @@
             }
         }
 
-        // Функция определения направления
         function detectInputDirection(row, col) {
             const leftFilled = crossword[row]?.[col - 1];
             const rightFilled = crossword[row]?.[col + 1];
@@ -175,7 +184,6 @@
         }
 
         loadDatabase().then(() => {
-            console.log('12345');
             loadGameData();
 
             document.getElementById('generate-btn').addEventListener('click', generateCrossword);
@@ -183,6 +191,10 @@
             document.getElementById('prev-level').addEventListener('click', prevLevel);
             document.getElementById('next-level').addEventListener('click', nextLevel);
             document.getElementById('toggle-direction-btn').addEventListener('click', toggleInputDirection);
+            document.getElementById('toggle-keyboard-btn').addEventListener('click', function() {
+                const keyboardContent = document.getElementById('keyboard-content');
+                keyboardContent.style.display = keyboardContent.style.display === 'none' ? 'block' : 'none';
+            });
 
             document.getElementById('shop-button').addEventListener('click', openShop);
             document.getElementById('close-shop').addEventListener('click', closeShop);
@@ -678,7 +690,12 @@
             }
 
             const nextInput = document.querySelector(`input[data-row="${nextRow}"][data-col="${nextCol}"]`);
-            if (nextInput) nextInput.focus();
+            if (nextInput) {
+                nextInput.focus();
+                if (/Mobi|Android/i.test(navigator.userAgent)) {
+                    nextInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }
         }
 
         function saveGameData() {
@@ -717,6 +734,5 @@
             }
         }
     </script>
-    <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'92953cbd1b25bd62',t:'MTc0MzQ4MDYzMS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
 </body>
 </html>

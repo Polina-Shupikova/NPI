@@ -4,20 +4,26 @@ body {
     background-size: cover;
     background-position: center;
     font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 10px;
+    min-height: 100vh;
 }
+
 h1 {
     text-align: center;
     margin-top: 20px;
-    columns: 1;
     background-color: rgba(255, 255, 255, 0.7);
-    padding: 15px;
+    padding: 10px;
     border-radius: 5px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    font-size: 1.5rem;
 }
+
 .controls {
     margin-bottom: 20px;
     text-align: center;
 }
+
 button {
     padding: 10px 15px;
     color: white;
@@ -33,21 +39,27 @@ button {
     box-shadow: 0 4px 15px rgba(0,0,0,0.1);
     border: 1px solid rgba(255,255,255,0.2);
     margin: 5px;
+    min-width: 40px;
+    touch-action: manipulation;
 }
+
 button:hover {
     background-color: rgba(220, 20, 60, 0.8);
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(0,0,0,0.15);
 }
+
 button:active {
     transform: translateY(1px);
 }
+
 button:disabled {
     background-color: rgba(204, 204, 204, 0.7);
     cursor: not-allowed;
     transform: none;
     box-shadow: none;
 }
+
 button::before {
     content: '';
     position: absolute;
@@ -58,20 +70,28 @@ button::before {
     background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
     transition: 0.5s;
 }
+
 button:hover::before {
     left: 100%;
 }
+
 #crossword-container {
     display: flex;
     justify-content: center;
     margin-bottom: 20px;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
 }
+
 #crossword {
     border: 2px solid rgba(51, 51, 51, 0.3);
     background-color: rgba(255, 255, 255, 0.8);
     border-radius: 5px;
     box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    display: inline-block;
 }
+
 .cell {
     width: 30px;
     height: 30px;
@@ -84,9 +104,11 @@ button:hover::before {
     background-color: rgba(255, 255, 255, 0.9);
     transition: background-color 0.3s;
 }
+
 .cell.black {
     background-color: rgba(51, 51, 51, 0.8);
 }
+
 .cell input {
     width: 100%;
     height: 100%;
@@ -97,17 +119,21 @@ button:hover::before {
     background-color: transparent;
     color: #333;
 }
+
 .cell input:focus {
     outline: 2px solid rgba(76, 175, 80, 0.5);
     background-color: rgba(240, 255, 240, 0.7);
 }
+
 .cell input.revealed {
     background-color: #e0ffe0;
 }
+
 .cell input.readonly {
     color: #2E8B57;
     font-weight: bold;
 }
+
 .number {
     position: absolute;
     top: 0;
@@ -115,16 +141,19 @@ button:hover::before {
     font-size: 10px;
     color: #333;
 }
+
 .keyboard {
     margin-top: 20px;
     display: flex;
     flex-direction: column;
     align-items: center;
 }
+
 .keyboard-row {
     display: flex;
     margin-bottom: 5px;
 }
+
 .keyboard-key {
     width: 40px;
     height: 40px;
@@ -145,12 +174,15 @@ button:hover::before {
     box-shadow: 0 4px 10px rgba(0,0,0,0.1);
     border: 1px solid rgba(255,255,255,0.2);
     color: #333;
+    touch-action: manipulation;
 }
+
 .keyboard-key:hover {
     background-color: rgba(208, 208, 208, 0.8);
     transform: translateY(-2px);
     box-shadow: 0 6px 15px rgba(0,0,0,0.15);
 }
+
 .keyboard-key::before {
     content: '';
     position: absolute;
@@ -161,34 +193,59 @@ button:hover::before {
     background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
     transition: 0.5s;
 }
+
 .keyboard-key:hover::before {
     left: 100%;
 }
+
 .keyboard-key.wide {
     width: 80px;
 }
+
 .keyboard-key.active {
     background-color: rgba(76, 175, 80, 0.7);
     color: white;
 }
+
+.keyboard-content {
+    display: block;
+}
+
 .word-list {
     margin-top: 20px;
-    columns: 3;
+    columns: 3; /* Оставляем 3 колонки для десктопов */
     background-color: rgba(255, 255, 255, 0.7);
     padding: 15px;
     border-radius: 5px;
     box-shadow: 0 4px 15px rgba(0,0,0,0.1);
 }
+
+/* Медиа-запросы для мобильных устройств */
+@media (max-width: 768px) {
+    .word-list {
+        columns: 2; /* Две колонки на экранах до 768px */
+        padding: 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    .word-list {
+        columns: 1; /* Одна колонка на очень маленьких экранах (до 480px) */
+    }
+}
+
 .word-item {
     margin-bottom: 10px;
     break-inside: avoid;
 }
+
 .hint {
     font-size: 12px;
     color: #666;
     display: block;
     margin-left: 20px;
 }
+
 .level-controls {
     display: flex;
     justify-content: center;
@@ -196,6 +253,7 @@ button:hover::before {
     margin-bottom: 20px;
     gap: 15px;
 }
+
 #level-display {
     font-weight: bold;
     min-width: 150px;
@@ -205,6 +263,7 @@ button:hover::before {
     border-radius: 4px;
     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
 }
+
 #shop-overlay {
     display: none;
     position: fixed;
@@ -215,6 +274,7 @@ button:hover::before {
     background: rgba(0,0,0,0.5);
     z-index: 999;
 }
+
 #shop-modal {
     display: none;
     position: fixed;
@@ -229,20 +289,24 @@ button:hover::before {
     width: 350px;
     max-width: 90%;
 }
+
 .hint-item {
     margin-bottom: 15px;
     padding: 10px;
     background: #f5f5f5;
     border-radius: 5px;
 }
+
 .hint-item h3 {
     margin-top: 0;
     color: #333;
 }
+
 .hint-item p {
     margin-bottom: 10px;
     color: #666;
 }
+
 .hint-btn {
     padding: 5px 10px;
     background: #4CAF50;
@@ -252,10 +316,12 @@ button:hover::before {
     cursor: pointer;
     font-size: 14px;
 }
+
 .hint-btn:disabled {
     background: #cccccc;
     cursor: not-allowed;
 }
+
 #close-shop {
     margin-top: 10px;
     padding: 8px 15px;
@@ -266,12 +332,13 @@ button:hover::before {
     cursor: pointer;
     width: 100%;
 }
+
 .hint-buttons {
     display: flex;
     gap: 10px;
     margin-top: 5px;
 }
-/* Новые стили для кнопки и плашки направления */
+
 .keyboard-controls {
     display: flex;
     justify-content: center;
@@ -279,6 +346,7 @@ button:hover::before {
     gap: 15px;
     margin-top: 15px;
 }
+
 #direction-display {
     font-weight: bold;
     text-align: center;
@@ -289,14 +357,17 @@ button:hover::before {
     min-width: 150px;
     transition: background-color 0.3s ease;
 }
+
 #direction-display.horizontal {
-    background-color: rgba(76, 175, 80, 0.7); /* Зеленый для горизонтального */
+    background-color: rgba(76, 175, 80, 0.7);
     color: white;
 }
+
 #direction-display.vertical {
-    background-color: rgba(33, 150, 243, 0.7); /* Синий для вертикального */
+    background-color: rgba(33, 150, 243, 0.7);
     color: white;
 }
+
 #toggle-direction-btn {
     padding: 10px 15px;
     color: white;
@@ -309,16 +380,17 @@ button:hover::before {
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
     border: 1px solid rgba(255,255,255,0.2);
 }
+
 #toggle-direction-btn:hover {
     background-color: rgba(220, 20, 60, 0.8);
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(0,0,0,0.15);
 }
+
 #toggle-direction-btn:active {
     transform: translateY(1px);
 }
 
-/* Стили для кнопки назад */
 #back-button {
     padding: 10px 15px;
     color: white;
@@ -327,15 +399,13 @@ button:hover::before {
     cursor: pointer;
     font-size: 16px;
     transition: all 0.3s ease;
-    position: relative;
-    overflow: hidden;
-    backdrop-filter: blur(5px);
+    position: fixed;
+    top: 35px;
+    right: 20px;
     background-color: rgba(220, 20, 60, 0.7);
     box-shadow: 0 4px 15px rgba(0,0,0,0.1);
     border: 1px solid rgba(255,255,255,0.2);
     text-decoration: none;
-    display: inline-block;
-    z-index: 100;
 }
 
 #back-button:hover {
@@ -348,17 +418,119 @@ button:hover::before {
     transform: translateY(1px);
 }
 
-#back-button::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-    transition: 0.5s;
+#toggle-keyboard-btn {
+    display: none;
 }
 
-#back-button:hover::before {
-    left: 100%;
+/* Медиа-запросы для мобильных устройств */
+@media (max-width: 768px) {
+    h1 {
+        font-size: 1.2rem;
+        padding: 8px;
+    }
+
+    .cell {
+        width: 25px;
+        height: 25px;
+        line-height: 25px;
+        font-size: 16px;
+    }
+
+    .cell input {
+        font-size: 16px;
+    }
+
+    .number {
+        font-size: 8px;
+    }
+
+    button, .keyboard-key {
+        padding: 6px 10px;
+        font-size: 12px;
+        margin: 2px;
+    }
+
+    .keyboard-key {
+        width: 35px;
+        height: 35px;
+    }
+
+    .keyboard-key.wide {
+        width: 70px;
+    }
+
+    .word-list {
+        columns: 1;
+        padding: 10px;
+    }
+
+    .level-controls, .keyboard-controls {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    #level-display, #direction-display {
+        min-width: 100px;
+        font-size: 14px;
+    }
+
+    #shop-button, #back-button {
+        top: 10px;
+        font-size: 12px;
+        padding: 6px 12px;
+    }
+
+    #shop-modal {
+        width: 90%;
+        padding: 15px;
+    }
+
+    .keyboard-content {
+        display: none;
+    }
+
+    #toggle-keyboard-btn {
+        display: block;
+        margin: 10px auto;
+        padding: 8px 15px;
+        background-color: rgba(220, 20, 60, 0.7);
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+}
+
+@media (max-width: 480px) {
+    .cell {
+        width: 20px;
+        height: 20px;
+        line-height: 20px;
+        font-size: 14px;
+    }
+
+    button, .keyboard-key {
+        padding: 5px 8px
+
+        font-size: 10px;
+    }
+
+    .keyboard-key {
+        width: 30px;
+        height: 30px;
+    }
+
+    .keyboard-row {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    h1 {
+        font-size: 1rem;
+    }
+
+    #level-display, #direction-display {
+        font-size: 12px;
+        padding: 6px 10px;
+    }
 }
