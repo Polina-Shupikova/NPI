@@ -482,3 +482,158 @@ body {
 .level-complete-dialog button:hover {
     background-color: var(--button-hover);
 }
+
+
+
+
+/* Обновленные стили для соответствия предыдущему дизайну */
+body {
+    background-image: url('https://cdnn1.img.sputnik-abkhazia.info/img/102991/75/1029917516_47:130:1134:813_1400x0_80_0_0_22e4fc6166bb61d929eceaee2a1e624e.jpg');
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center;
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: rgba(255, 255, 255, 0.8);
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.game-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 10px;
+    background-color: rgba(255, 255, 255, 0.7);
+    border-radius: 5px;
+}
+
+/* Стили для кнопки назад */
+.back-button {
+    padding: 10px 15px;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    backdrop-filter: blur(5px);
+    background-color: rgba(220, 20, 60, 0.7);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    text-decoration: none;
+    display: inline-block;
+}
+
+.back-button:hover {
+    background-color: rgba(220, 20, 60, 0.8);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+}
+
+.back-button:active {
+    transform: translateY(1px);
+}
+
+.back-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: 0.5s;
+}
+
+.back-button:hover::before {
+    left: 100%;
+}
+
+/* Обновленные стили для остальных элементов */
+.hint-button {
+    background-color: rgba(76, 175, 80, 0.7);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.settings-button {
+    background-color: rgba(33, 150, 243, 0.7);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+/* Обновленные стили для сетки кроссворда */
+.crossword-grid {
+    background-color: rgba(255, 255, 255, 0.8);
+    border-radius: 5px;
+    padding: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.crossword-cell {
+    background-color: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(221, 221, 221, 0.5);
+}
+
+.crossword-cell.correct-letter {
+    background-color: rgba(144, 238, 144, 0.5);
+}
+
+.crossword-cell.incorrect-letter {
+    background-color: rgba(255, 182, 193, 0.5);
+}
+
+.crossword-cell.completed-word {
+    background-color: #2e7d32;
+    color: white;
+}
+
+/* Обновленные стили для клавиатуры */
+.keyboard {
+    background-color: rgba(255, 255, 255, 0.7);
+    border-radius: 5px;
+    padding: 15px;
+    margin-top: 20px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.keyboard-key {
+    background-color: rgba(224, 224, 224, 0.7);
+    color: #333;
+    border: 1px solid rgba(255,255,255,0.2);
+    backdrop-filter: blur(5px);
+}
+
+.keyboard-key:hover {
+    background-color: rgba(208, 208, 208, 0.8);
+}
+
+.keyboard-key[style*="width"] {
+    background-color: rgba(220, 20, 60, 0.7) !important;
+    color: white !important;
+}
