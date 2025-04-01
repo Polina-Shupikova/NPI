@@ -1,3 +1,56 @@
+const isTelegramWebApp = () => {
+    return window.Telegram && Telegram.WebApp && Telegram.WebApp.initDataUnsafe;
+};
+
+// Функция для сохранения текущего уровня
+async function saveCurrentLevel(level) {
+    if (!isTelegramWebApp()) {
+        console.log("Not in Telegram WebApp, skipping save");
+        return;
+    }
+
+    try {
+        await Telegram.WebApp.CloudStorage.setItem(
+            'user_level', 
+            String(level),
+            (error) => {
+                if (error) {
+                    console.error("Ошибка сохранения уровня:", error);
+                } else {
+                    console.log("Уровень сохранён:", level);
+                }
+            }
+        );
+    } catch (error) {
+        console.error("Ошибка при сохранении:", error);
+    }
+}
+
+// Функция для загрузки сохранённого уровня
+async function loadSavedLevel() {
+    if (!isTelegramWebApp()) {
+        console.log("Not in Telegram WebApp, starting from level 1");
+        return 1;
+    }
+
+    try {
+        const result = await new Promise((resolve) => {
+            Telegram.WebApp.CloudStorage.getItem('user_level', (error, value) => {
+                if (error) {
+                    console.error("Ошибка загрузки уровня:", error);
+                    resolve(1);
+                } else {
+                    resolve(value ? parseInt(value) : 1);
+                }
+            });
+        });
+        return result;
+    } catch (error) {
+        console.error("Ошибка при загрузке:", error);
+        return 1;
+    }
+}
+
 const RUSSIAN_LAYOUT = {
     'q': 'й', 'w': 'ц', 'e': 'у', 'r': 'к', 't': 'е', 'y': 'н', 
     'u': 'г', 'i': 'ш', 'o': 'щ', 'p': 'з', '[': 'х', ']': 'ъ',
@@ -186,13 +239,37 @@ function handlePhysicalKeyPress(e) {
     }
 }
 
-function startGame() {
+async function startGame() {
     if (wordDatabase.easy.length + wordDatabase.hard.length < 3) {
         alert('Недостаточно слов для начала игры. Минимум 3 слова.');
         return;
     }
-    currentLevel = 1;
+    
+    // Загружаем сохранённый уровень
+    currentLevel = await loadSavedLevel();
     loadLevel();
+}
+
+// Модифицируйте функцию completeLevel
+async function completeLevel() {
+    currentLevel++;
+    // Сохраняем новый уровень
+    await saveCurrentLevel(currentLevel);
+    loadLevel();
+}
+
+// Обновите функцию initGame
+async function initGame() {
+    try {
+        await loadWords();
+        initEventListeners();
+        await startGame(); // Добавьте await
+    } catch (error) {
+        console.error('Ошибка инициализации:', error);
+        loadBackupWords();
+        initEventListeners();
+        await startGame(); // Добавьте await
+    }
 }
 
 function getWordCountForLevel(level) {
