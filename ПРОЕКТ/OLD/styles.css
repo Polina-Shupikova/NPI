@@ -4,61 +4,50 @@ body {
     background-size: cover;
     background-position: center;
     font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 10px; /* Added padding for mobile edges */
-    min-height: 100vh;
-    overflow-x: hidden; /* Prevent horizontal scrolling */
 }
-
 h1 {
     text-align: center;
     margin-top: 20px;
+    columns: 1;
     background-color: rgba(255, 255, 255, 0.7);
-    padding: 10px; /* Reduced padding */
+    padding: 15px;
     border-radius: 5px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    font-size: 24px; /* Default for desktop */
 }
-
 .controls {
     margin-bottom: 20px;
     text-align: center;
 }
-
 button {
-    padding: 8px 12px; /* Slightly smaller padding */
+    padding: 10px 15px;
     color: white;
     border: none;
     border-radius: 4px;
     cursor: pointer;
-    font-size: 14px; /* Smaller font */
+    font-size: 16px;
     transition: all 0.3s ease;
     position: relative;
     overflow: hidden;
     backdrop-filter: blur(5px);
     background-color: rgba(220, 20, 60, 0.7);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    margin: 3px; /* Reduced margin */
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    margin: 5px;
 }
-
 button:hover {
     background-color: rgba(220, 20, 60, 0.8);
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
 }
-
 button:active {
     transform: translateY(1px);
 }
-
 button:disabled {
     background-color: rgba(204, 204, 204, 0.7);
     cursor: not-allowed;
     transform: none;
     box-shadow: none;
 }
-
 button::before {
     content: '';
     position: absolute;
@@ -66,34 +55,23 @@ button::before {
     left: -100%;
     width: 100%;
     height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
     transition: 0.5s;
 }
-
 button:hover::before {
     left: 100%;
 }
-
 #crossword-container {
     display: flex;
-/*    max-width: 75%;*/
-    margin: 0 auto;
-    padding: 0;
     justify-content: center;
     margin-bottom: 20px;
-/*    width: 100%;*/
-/*    max-width: device-width;*/
 }
-
 #crossword {
     border: 2px solid rgba(51, 51, 51, 0.3);
     background-color: rgba(255, 255, 255, 0.8);
     border-radius: 5px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    max-width: 100%; /* Ensure it fits container */
-    max-width: device-width;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
 }
-
 .cell {
     width: 30px;
     height: 30px;
@@ -106,11 +84,9 @@ button:hover::before {
     background-color: rgba(255, 255, 255, 0.9);
     transition: background-color 0.3s;
 }
-
 .cell.black {
     background-color: rgba(51, 51, 51, 0.8);
 }
-
 .cell input {
     width: 100%;
     height: 100%;
@@ -121,21 +97,17 @@ button:hover::before {
     background-color: transparent;
     color: #333;
 }
-
 .cell input:focus {
     outline: 2px solid rgba(76, 175, 80, 0.5);
     background-color: rgba(240, 255, 240, 0.7);
 }
-
 .cell input.revealed {
     background-color: #e0ffe0;
 }
-
 .cell input.readonly {
     color: #2E8B57;
     font-weight: bold;
 }
-
 .number {
     position: absolute;
     top: 0;
@@ -143,26 +115,20 @@ button:hover::before {
     font-size: 10px;
     color: #333;
 }
-
 .keyboard {
     margin-top: 20px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    width: 100%;
 }
-
 .keyboard-row {
     display: flex;
     margin-bottom: 5px;
-    flex-wrap: wrap; /* Allow wrapping on small screens */
-    justify-content: center;
 }
-
 .keyboard-key {
     width: 40px;
     height: 40px;
-    margin: 2px; /* Reduced margin */
+    margin: 0 3px;
     border: none;
     border-radius: 5px;
     font-size: 16px;
@@ -176,17 +142,15 @@ button:hover::before {
     overflow: hidden;
     backdrop-filter: blur(5px);
     background-color: rgba(224, 224, 224, 0.7);
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
     color: #333;
 }
-
 .keyboard-key:hover {
     background-color: rgba(208, 208, 208, 0.8);
     transform: translateY(-2px);
-    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 6px 15px rgba(0,0,0,0.15);
 }
-
 .keyboard-key::before {
     content: '';
     position: absolute;
@@ -194,63 +158,53 @@ button:hover::before {
     left: -100%;
     width: 100%;
     height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
     transition: 0.5s;
 }
-
 .keyboard-key:hover::before {
     left: 100%;
 }
-
 .keyboard-key.wide {
     width: 80px;
 }
-
 .keyboard-key.active {
     background-color: rgba(76, 175, 80, 0.7);
     color: white;
 }
-
 .word-list {
     margin-top: 20px;
     columns: 3;
     background-color: rgba(255, 255, 255, 0.7);
     padding: 15px;
     border-radius: 5px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    width: 100%;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
 }
-
 .word-item {
     margin-bottom: 10px;
     break-inside: avoid;
 }
-
 .hint {
     font-size: 12px;
     color: #666;
     display: block;
     margin-left: 20px;
 }
-
 .level-controls {
     display: flex;
     justify-content: center;
     align-items: center;
     margin-bottom: 20px;
-    gap: 10px; /* Reduced gap */
+    gap: 15px;
 }
-
 #level-display {
     font-weight: bold;
-    min-width: 100px; /* Reduced width */
+    min-width: 150px;
     text-align: center;
     background-color: rgba(255, 255, 255, 0.7);
-    padding: 6px 10px; /* Reduced padding */
+    padding: 8px 15px;
     border-radius: 4px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
 }
-
 #shop-overlay {
     display: none;
     position: fixed;
@@ -258,10 +212,9 @@ button:hover::before {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(0,0,0,0.5);
     z-index: 999;
 }
-
 #shop-modal {
     display: none;
     position: fixed;
@@ -269,33 +222,27 @@ button:hover::before {
     left: 50%;
     transform: translate(-50%, -50%);
     background: white;
-    padding: 15px; /* Reduced padding */
+    padding: 20px;
     border-radius: 10px;
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 0 20px rgba(0,0,0,0.2);
     z-index: 1000;
-    width: 90%; /* Adjusted for mobile */
-    max-width: 300px; /* Smaller max-width */
+    width: 350px;
+    max-width: 90%;
 }
-
 .hint-item {
-    margin-bottom: 10px;
-    padding: 8px; /* Reduced padding */
+    margin-bottom: 15px;
+    padding: 10px;
     background: #f5f5f5;
     border-radius: 5px;
 }
-
 .hint-item h3 {
     margin-top: 0;
     color: #333;
-    font-size: 16px; /* Smaller font */
 }
-
 .hint-item p {
-    margin-bottom: 8px;
+    margin-bottom: 10px;
     color: #666;
-    font-size: 14px; /* Smaller font */
 }
-
 .hint-btn {
     padding: 5px 10px;
     background: #4CAF50;
@@ -303,14 +250,12 @@ button:hover::before {
     border: none;
     border-radius: 3px;
     cursor: pointer;
-    font-size: 12px; /* Smaller font */
+    font-size: 14px;
 }
-
 .hint-btn:disabled {
     background: #cccccc;
     cursor: not-allowed;
 }
-
 #close-shop {
     margin-top: 10px;
     padding: 8px 15px;
@@ -321,109 +266,54 @@ button:hover::before {
     cursor: pointer;
     width: 100%;
 }
-
 .hint-buttons {
     display: flex;
-    gap: 8px; /* Reduced gap */
+    gap: 10px;
     margin-top: 5px;
 }
-
-#loading {
-    display: none;
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: white;
-    padding: 15px; /* Reduced padding */
-    border-radius: 5px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    z-index: 1001;
-    font-weight: bold;
-    font-size: 14px; /* Smaller font */
+/* Новые стили для кнопки и плашки направления */
+.keyboard-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    margin-top: 15px;
 }
-
-/* Mobile-specific styles */
-@media (max-width: 480px) {
-    h1 {
-        font-size: 20px; /* Smaller heading */
-        padding: 8px;
-        margin-top: 10px;
-    }
-
-    button {
-        padding: 6px 10px; /* Even smaller padding */
-        font-size: 12px;
-        margin: 2px;
-    }
-
-    .controls, .level-controls {
-        flex-direction: column; /* Stack vertically */
-        gap: 5px;
-    }
-
-    #level-display {
-        min-width: 80px;
-        padding: 5px 8px;
-        font-size: 14px;
-    }
-
-    .cell {
-        width: 20px; /* Smaller cells */
-        height: 20px;
-        line-height: 20px;
-    }
-
-    .cell input {
-        font-size: 14px; /* Smaller input text */
-    }
-
-    .number {
-        font-size: 8px; /* Smaller number */
-        left: 1px;
-    }
-
-    .keyboard-key {
-        width: 30px; /* Smaller keys */
-        height: 30px;
-        font-size: 14px;
-        margin: 1px;
-    }
-
-    .keyboard-key.wide {
-        width: 60px; /* Adjusted wide key */
-    }
-
-    .word-list {
-        columns: 1; /* Single column for mobile */
-        padding: 10px;
-    }
-
-    .hint {
-        font-size: 10px;
-        margin-left: 10px;
-    }
-
-    #shop-modal {
-        padding: 10px;
-        max-width: 90%;
-    }
-
-    .hint-item h3 {
-        font-size: 14px;
-    }
-
-    .hint-item p {
-        font-size: 12px;
-    }
-
-    .hint-btn {
-        font-size: 10px;
-        padding: 4px 8px;
-    }
-
-    #close-shop {
-        padding: 6px 10px;
-        font-size: 12px;
-    }
+#direction-display {
+    font-weight: bold;
+    text-align: center;
+    background-color: rgba(255, 255, 255, 0.7);
+    padding: 8px 15px;
+    border-radius: 4px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    min-width: 150px;
+    transition: background-color 0.3s ease;
+}
+#direction-display.horizontal {
+    background-color: rgba(76, 175, 80, 0.7); /* Зеленый для горизонтального */
+    color: white;
+}
+#direction-display.vertical {
+    background-color: rgba(33, 150, 243, 0.7); /* Синий для вертикального */
+    color: white;
+}
+#toggle-direction-btn {
+    padding: 10px 15px;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.3s ease;
+    background-color: rgba(220, 20, 60, 0.7);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+}
+#toggle-direction-btn:hover {
+    background-color: rgba(220, 20, 60, 0.8);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+}
+#toggle-direction-btn:active {
+    transform: translateY(1px);
 }
