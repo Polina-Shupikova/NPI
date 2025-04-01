@@ -246,15 +246,47 @@ async function startGame() {
     }
     
     // Загружаем сохранённый уровень
-    currentLevel = await loadSavedLevel();
+    const savedLevel = await loadSavedLevel();
+    currentLevel = Math.min(savedLevel, MAX_LEVEL); // Не даём превысить максимальный уровень
     loadLevel();
 }
 
+// Обновите функцию showLevelCompleteDialog
+function showLevelCompleteDialog() {
+    const dialog = document.createElement('div');
+    dialog.className = 'level-complete-dialog';
+    dialog.innerHTML = `
+        <div class="dialog-content">
+            <h3>Уровень ${currentLevel} пройден!</h3>
+            <div class="dialog-buttons">
+                <button id="next-level-btn">Следующий уровень</button>
+                <button id="menu-btn">В меню</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(dialog);
+    
+    document.getElementById('next-level-btn').addEventListener('click', async () => {
+        dialog.remove();
+        await completeLevel();
+    });
+    
+    document.getElementById('menu-btn').addEventListener('click', async () => {
+        // Сохраняем прогресс перед выходом в меню
+        await saveCurrentLevel(currentLevel);
+        saveUserRecord(currentLevel);
+        location.href='../MAIN/index.html';
+    });
+}
+
+
 // Модифицируйте функцию completeLevel
 async function completeLevel() {
-    currentLevel++;
+        currentLevel++;
     // Сохраняем новый уровень
     await saveCurrentLevel(currentLevel);
+    saveUserRecord(currentLevel); // Сохраняем рекорд
     loadLevel();
 }
 
