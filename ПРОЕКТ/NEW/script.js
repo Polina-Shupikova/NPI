@@ -1,7 +1,3 @@
-import { cloudStorage } from '@telegram-apps/sdk';
-
-cloudStorage.isSupported(); // boolean
-
 const RUSSIAN_LAYOUT = {
     'q': 'й', 'w': 'ц', 'e': 'у', 'r': 'к', 't': 'е', 'y': 'н', 
     'u': 'г', 'i': 'ш', 'o': 'щ', 'p': 'з', '[': 'х', ']': 'ъ',
@@ -81,15 +77,23 @@ async function initGame() {
 
 async function loadWords() {
     try {
-        const response = await fetch('words.json');
-        if (!response.ok) throw new Error(`Ошибка HTTP! Статус: ${response.status}`);
+        // Загружаем простые слова
+        const easyResponse = await fetch('easy_words.json');
+        if (!easyResponse.ok) throw new Error(`Ошибка HTTP при загрузке easy_words.json! Статус: ${easyResponse.status}`);
         
-        const data = await response.json();
-        if (!Array.isArray(data)) throw new Error("words.json не содержит массив слов");
+        const easyData = await easyResponse.json();
+        if (!Array.isArray(easyData)) throw new Error("easy_words.json не содержит массив слов");
         
-        // Разделяем слова на easy и hard по длине
-        wordDatabase.easy = data.filter(word => word.word.length <= 7);
-        wordDatabase.hard = data.filter(word => word.word.length > 7);
+        // Загружаем сложные слова
+        const hardResponse = await fetch('hard_words.json');
+        if (!hardResponse.ok) throw new Error(`Ошибка HTTP при загрузке hard_words.json! Статус: ${hardResponse.status}`);
+        
+        const hardData = await hardResponse.json();
+        if (!Array.isArray(hardData)) throw new Error("hard_words.json не содержит массив слов");
+        
+        // Сохраняем слова в соответствующие категории
+        wordDatabase.easy = easyData;
+        wordDatabase.hard = hardData;
         
         console.log(`Успешно загружено: ${wordDatabase.easy.length} простых и ${wordDatabase.hard.length} сложных слов`);
     } catch (error) {
