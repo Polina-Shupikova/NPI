@@ -12,7 +12,22 @@
         Ваш браузер не поддерживает аудио.
     </audio>
     <script>
-        document.getElementById("background-music").volume = JSON.parse(localStorage.crosswordSettings).Settings.volume / 100;
+        let sett = JSON.parse(localStorage.crosswordSettings).Settings;
+        document.getElementById("background-music").volume = sett.volume / 100;
+        const size = sett.fontSize;
+        if (size === 'small') {
+            document.body.style.fontSize = '16px';
+        } else if (size === 'medium') {
+            document.body.style.fontSize = '18px';
+        } else if (size === 'large') {
+            document.body.style.fontSize = '20px';
+        }
+
+        if (sett.theme == 'dark') {
+            document.body.classList.add('dark-theme');
+        } else {
+            document.body.classList.remove('darktheme');
+        }
     </script>
 
     <div id="game-page" class="container game-page">
