@@ -247,7 +247,6 @@ async function startGame() {
     
     // Загружаем сохранённый уровень
     const savedLevel = await loadSavedLevel();
-    currentLevel = Math.min(savedLevel, MAX_LEVEL); // Не даём превысить максимальный уровень
     loadLevel();
 }
 
