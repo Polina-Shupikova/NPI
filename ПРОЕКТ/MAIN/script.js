@@ -1,6 +1,16 @@
+function include() {
+  var js = document.createElement("script");
+
+  js.type = "text/javascript";
+  js.src = "../getpost_data.js";
+
+  document.body.appendChild(js);
+}
+
 // Инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', () => {
   // Загружаем настройки
+  include()
   loadSettings();
   
   // Навешиваем обработчики изменений
@@ -16,36 +26,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById("background-music").volume = document.getElementById("volume-slider").value / 100;
 });
-// async function loadSettings() {
-//   try {
-//     const response = await fetch('jsons/settings.json'); // Путь относительно HTML-файла
-//     if (!response.ok) {
-//       throw new Error(`HTTP error! Status: ${response.status}`);
-//     }
-//     let settings = await response.json();
-//     settings = settings["Settings"];
-//     console.log("Настройки загружены:", settings);
-
-//     if (settings.theme == 'light') {
-//         document.getElementById('theme_sw').checked = false;
-//         document.body.classList.remove('dark-theme');
-//     } else {
-//         document.getElementById('theme_sw').checked = true;
-//         document.body.classList.add('dark-theme');
-//     }
-
-//     document.getElementById('volume-slider').value = settings.volume;
-//     document.getElementById('volume-label').textContent = settings.volume + '%';
-//     document.getElementById('font-size').value = settings.fontSize;
-    
-//     return settings;
-//   } catch (error) {
-//     console.error("Ошибка загрузки JSON:", error);
-//     return null;
-//   }
-// }
-
-// loadSettings();
 
 async function saveSettings() {
   // Собираем текущие настройки из UI
@@ -286,3 +266,9 @@ document.getElementById('daily-quote').textContent = quotes[Math.floor(Math.rand
 // function to_old(){
 //     document.location.href = 'pages/NEW/index.html';
 // }
+
+
+
+
+// 63 - save
+// 90 - load
