@@ -599,10 +599,18 @@ function canPlaceWord(word, position, direction) {
                                 return false;
                             }
                             
-                            // 6. Если слова разной ориентации, но не пересекаются - проверяем расстояние
-                            if (!wordsShareLetters(word, neighborWord.word)) {
-                                // Проверяем чтобы между словами была минимум 1 клетка
+                            // 6. Если слова разной ориентации, проверяем расстояние
+                            const isConnected = wordsShareLetters(word, neighborWord.word);
+                            if (!isConnected) {
+                                // Проверяем минимальное расстояние между словами
                                 if (Math.abs(dx) + Math.abs(dy) === 1) {
+                                    // Соседняя клетка непосредственно рядом
+                                    return false;
+                                }
+                                
+                                // Дополнительная проверка угловых соседей для слов без общих букв
+                                if ((dx !== 0 && dy !== 0) && 
+                                    (crossword.grid[ny]?.[cellX] || crossword.grid[cellY]?.[nx])) {
                                     return false;
                                 }
                             }
@@ -613,13 +621,38 @@ function canPlaceWord(word, position, direction) {
         }
     }
     
+    // 7. Дополнительная проверка для слов без общих букв - они не должны быть рядом
+    if (!crossword.words.some(w => wordsShareLetters(word, w.word))) {
+        // Проверяем буферную зону в 1 клетку вокруг всего слова
+        const bufferStartX = Math.max(0, x - 1);
+        const bufferEndX = direction === 'horizontal' ? Math.min(crossword.size - 1, x + length) : Math.min(crossword.size - 1, x + 1);
+        const bufferStartY = Math.max(0, y - 1);
+        const bufferEndY = direction === 'vertical' ? Math.min(crossword.size - 1, y + length) : Math.min(crossword.size - 1, y + 1);
+        
+        for (let by = bufferStartY; by <= bufferEndY; by++) {
+            for (let bx = bufferStartX; bx <= bufferEndX; bx++) {
+                if (crossword.grid[by]?.[bx]) {
+                    // Нашли занятую клетку в буферной зоне
+                    return false;
+                }
+            }
+        }
+    }
+    
     return true;
 }
 
 // Вспомогательная функция для проверки общих букв
 function wordsShareLetters(word1, word2) {
-    const set1 = new Set(word1.split(''));
-    return word2.split('').some(letter => set1.has(letter));
+    const letters1 = new Set(word1.split(''));
+    const letters2 = new Set(word2.split(''));
+    
+    for (const letter of letters1) {
+        if (letters2.has(letter)) {
+            return true;
+        }
+    }
+    return false;
 }
 
 function renderCrossword(force = false) {
