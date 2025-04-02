@@ -13,21 +13,25 @@ async function saveCurrentLevel(level) {
 
     try {
         return await new Promise((resolve) => {
-            Telegram.WebApp.CloudStorage.setItem('user_level', String(level), (error) => {
-                if (error) {
-                    console.error("Ошибка сохранения:", error);
-                    resolve(false);
-                } else {
-                    console.log("Уровень сохранён:", level);
-                    resolve(true);
+            Telegram.WebApp.CloudStorage.setItem(
+                'user_level', 
+                String(level), 
+                (error) => {
+                    if (error) {
+                        console.error("Ошибка сохранения:", error);
+                        resolve(false);
+                    } else {
+                        console.log("Уровень сохранён:", level);
+                        resolve(true);
+                    }
                 }
-            }
+            );
         });
     } catch (error) {
         console.error("Ошибка при сохранении:", error);
         return false;
     }
-}
+}  // <-- This closing brace was missing
 
 async function loadSavedLevel() {
     if (!isTelegramWebApp()) {
