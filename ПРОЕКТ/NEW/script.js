@@ -575,11 +575,17 @@ function canPlaceWord(word, position, direction) {
         
         // Проверка самой клетки
         const cell = crossword.grid[cellY]?.[cellX];
-        if (cell && cell.correctLetter !== word[i]) {
-            return false;
+        if (cell) {
+            // Если клетка уже занята, буквы должны совпадать
+            if (cell.correctLetter !== word[i]) {
+                return false;
+            }
+            
+            // Для уже занятых клеток пропускаем проверку соседей
+            continue;
         }
         
-        // 3. Проверка соседних клеток (в радиусе 1 клетки)
+        // 3. Проверка соседних клеток только для пустых клеток
         for (let dy = -1; dy <= 1; dy++) {
             for (let dx = -1; dx <= 1; dx++) {
                 if (dx === 0 && dy === 0) continue; // Пропускаем текущую клетку
@@ -587,53 +593,28 @@ function canPlaceWord(word, position, direction) {
                 const nx = cellX + dx;
                 const ny = cellY + dy;
                 
+                // Проверяем только существующие соседние клетки
                 if (nx >= 0 && ny >= 0 && nx < crossword.size && ny < crossword.size) {
                     const neighborCell = crossword.grid[ny][nx];
                     if (neighborCell) {
-                        // 4. Получаем все слова в соседней клетке
+                        // Получаем все слова в соседней клетке
                         const neighborWords = neighborCell.wordIndices.map(idx => crossword.words[idx]);
                         
                         for (const neighborWord of neighborWords) {
-                            // 5. Если ориентация совпадает - запрещаем размещение
+                            // Если ориентация совпадает - запрещаем размещение
                             if (neighborWord.direction === direction) {
                                 return false;
                             }
                             
-                            // 6. Если слова разной ориентации, проверяем расстояние
-                            const isConnected = wordsShareLetters(word, neighborWord.word);
-                            if (!isConnected) {
-                                // Проверяем минимальное расстояние между словами
+                            // Для слов без общих букв проверяем минимальное расстояние
+                            if (!wordsShareLetters(word, neighborWord.word)) {
+                                // Запрещаем непосредственных соседей (по горизонтали/вертикали)
                                 if (Math.abs(dx) + Math.abs(dy) === 1) {
-                                    // Соседняя клетка непосредственно рядом
-                                    return false;
-                                }
-                                
-                                // Дополнительная проверка угловых соседей для слов без общих букв
-                                if ((dx !== 0 && dy !== 0) && 
-                                    (crossword.grid[ny]?.[cellX] || crossword.grid[cellY]?.[nx])) {
                                     return false;
                                 }
                             }
                         }
                     }
-                }
-            }
-        }
-    }
-    
-    // 7. Дополнительная проверка для слов без общих букв - они не должны быть рядом
-    if (!crossword.words.some(w => wordsShareLetters(word, w.word))) {
-        // Проверяем буферную зону в 1 клетку вокруг всего слова
-        const bufferStartX = Math.max(0, x - 1);
-        const bufferEndX = direction === 'horizontal' ? Math.min(crossword.size - 1, x + length) : Math.min(crossword.size - 1, x + 1);
-        const bufferStartY = Math.max(0, y - 1);
-        const bufferEndY = direction === 'vertical' ? Math.min(crossword.size - 1, y + length) : Math.min(crossword.size - 1, y + 1);
-        
-        for (let by = bufferStartY; by <= bufferEndY; by++) {
-            for (let bx = bufferStartX; bx <= bufferEndX; bx++) {
-                if (crossword.grid[by]?.[bx]) {
-                    // Нашли занятую клетку в буферной зоне
-                    return false;
                 }
             }
         }
