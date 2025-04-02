@@ -131,8 +131,8 @@ async function initGame() {
 async function loadWords() {
     try {
         const [easyResponse, hardResponse] = await Promise.all([
-            fetch('easy_words.json'),
-            fetch('hard_words.json')
+            fetch('https://gist.githubusercontent.com/Ukinnne/7374dccab584f7903680e5a5bacb56a5/raw/easy_words.json'),
+            fetch('https://gist.githubusercontent.com/Ukinnne/d8b156ad91831540f90236961c5095c9/raw/hard_words.json')
         ]);
         
         if (!easyResponse.ok || !hardResponse.ok) {
