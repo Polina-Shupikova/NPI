@@ -1,5 +1,6 @@
 body {
     background-image: url('https://cdnn1.img.sputnik-abkhazia.info/img/102991/75/1029917516_47:130:1134:813_1400x0_80_0_0_22e4fc6166bb61d929eceaee2a1e624e.jpg');
+    background-attachment: fixed;
     background-repeat: no-repeat;
     background-size: cover;
     background-position: center;
@@ -7,6 +8,15 @@ body {
     margin: 0;
     padding: 10px;
     min-height: 100vh;
+}
+
+.header-container {
+    /* display: flex; */
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 20px;
+    position: relative;
 }
 
 h1 {
@@ -399,18 +409,18 @@ button:hover::before {
     cursor: pointer;
     font-size: 16px;
     transition: all 0.3s ease;
-    position: fixed;
-    top: 35px;
-    right: 20px;
     background-color: rgba(220, 20, 60, 0.7);
     box-shadow: 0 4px 15px rgba(0,0,0,0.1);
     border: 1px solid rgba(255,255,255,0.2);
     text-decoration: none;
+    position: static; /* Убираем фиксированное позиционирование */
+    margin-right: 15px;
 }
+
 
 #back-button:hover {
     background-color: rgba(220, 20, 60, 0.8);
-    transform: translateY(-2px);
+    /* transform: translateY(-2px); */
     box-shadow: 0 6px 20px rgba(0,0,0,0.15);
 }
 
@@ -424,6 +434,17 @@ button:hover::before {
 
 /* Медиа-запросы для мобильных устройств */
 @media (max-width: 768px) {
+    .header-container {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    #back-button {
+        margin-right: 0;
+        margin-bottom: 10px;
+        order: -1; /* Перемещаем кнопку выше заголовка */
+    }
+
     h1 {
         font-size: 1.2rem;
         padding: 8px;
@@ -532,5 +553,94 @@ button:hover::before {
     #level-display, #direction-display {
         font-size: 12px;
         padding: 6px 10px;
+    }
+}
+
+/* Добавьте в начало стилей для body */
+body {
+    background-image: url('https://cdnn1.img.sputnik-abkhazia.info/img/102991/75/1029917516_47:130:1134:813_1400x0_80_0_0_22e4fc6166bb61d929eceaee2a1e624e.jpg');
+    background-attachment: fixed;
+    background-size: cover;
+    background-position: center;
+    padding-top: 0; /* Убираем верхний отступ */
+    margin-top: 0;
+}
+
+/* Новые стили для шапки */
+.page-header {
+    background-color: white;
+    width: 100%;
+    padding: 15px 0;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.page-header h1 {
+    margin: 0;
+    padding: 0;
+    background-color: transparent;
+    box-shadow: none;
+    font-size: 1.5rem;
+}
+
+/* Обновленные стили для кнопки Назад */
+#back-button {
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    padding: 8px 15px;
+    background-color: rgba(220, 20, 60, 0.7);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 16px;
+    transition: all 0.3s;
+}
+
+#back-button:hover {
+    background-color: rgba(220, 20, 60, 0.9);
+}
+
+/* Фикс для основного контента */
+#crossword-container, .controls, .level-controls, .keyboard, .word-list {
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 95%;
+}
+
+/* Медиа-запросы для мобильных */
+@media (max-width: 768px) {
+    .page-header {
+        padding: 10px 0;
+    }
+    
+    .page-header h1 {
+        font-size: 1.2rem;
+        padding: 0 40px; /* Оставляем место для кнопки */
+        text-align: center;
+    }
+    
+    #back-button {
+        left: 10px;
+        padding: 6px 12px;
+        font-size: 14px;
+    }
+}
+
+@media (max-width: 480px) {
+    .page-header h1 {
+        font-size: 1rem;
+        padding: 0 35px;
+    }
+    
+    #back-button {
+        font-size: 12px;
+        padding: 5px 10px;
     }
 }
