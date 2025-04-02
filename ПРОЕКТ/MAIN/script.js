@@ -207,11 +207,13 @@ document.addEventListener("DOMContentLoaded", () => {
         const volume = value / 100;
         volumeLabel.textContent = value + "%";
         
-        const audioElement = document.querySelector("audio");
+        // const audioElement = document.querySelector("audio");
+        const audioElement = document.getElementById("background-music")
         if (audioElement) {
-            audioElement.volume = volume;
+          audioElement.volume = volume;
         }
-    }
+      
+      }
 
     volumeSlider.addEventListener("input", (event) => {
         setVolume(event.target.value);

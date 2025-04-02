@@ -14,6 +14,13 @@
 
 </head>
 <body class="">
+    <audio id="background-music" autoplay loop>
+        <source src="../assets/music (1).mp3" type="audio/mpeg">
+        Ваш браузер не поддерживает аудио.
+    </audio>
+
+
+
     <!-- Главная страница -->
     <div id="main-page" class="container main-page">
         
@@ -95,7 +102,7 @@
         
         
         <div class="volume-container">
-            <input type="range" id="volume-slider" min="0" max="100" value="50">
+            <input type="range" id="volume-slider" min="0" max="100" step="1" value="50">
             <span id="volume-label">50%</span>
         </div>
 
