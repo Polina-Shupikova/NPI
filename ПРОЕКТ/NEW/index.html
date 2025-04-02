@@ -7,6 +7,14 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+    <audio id="background-music" autoplay loop>
+        <source src="../assets/music.mp3" type="audio/mpeg">
+        Ваш браузер не поддерживает аудио.
+    </audio>
+    <script>
+        document.getElementById("background-music").volume = JSON.parse(localStorage.crosswordSettings).Settings.volume / 100;
+    </script>
+
     <div id="game-page" class="container game-page">
         <div class="game-header">
             <a href="../MAIN/index.html" id="back-button" class="back-button">Назад</a>
