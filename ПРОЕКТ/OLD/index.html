@@ -13,13 +13,13 @@
     <div class="header-container">
         <a href="../MAIN/index.html" id="back-button">Назад</a>
         <h1>Генератор кроссвордов</h1>
-        <button id="shop-button"> 
+        <button id="shop-button">
             <!-- style="position: absolute; top: 75px; left: 0px;" -->
             Магазин (<span id="coins-display">0</span> монет)
         </button>
     </div>
 
-    
+
 
     <div id="shop-modal">
         <h2>Магазин подсказок</h2>
@@ -688,6 +688,10 @@
             });
 
             if (!currentWord) return;
+            const isWordComplete = checkIfWordComplete(currentWord);
+        if (isWordComplete) {
+            checkWord(currentWord); // Автоматическая проверка слова
+        }
 
             let nextRow, nextCol;
             if (currentWord.horizontal) {
@@ -712,6 +716,113 @@
                 }
             }
         }
+        function checkIfWordComplete(word) {
+        for (let i = 0; i < word.word.length; i++) {
+            const row = word.horizontal ? word.row : word.row + i;
+            const col = word.horizontal ? word.col + i : word.col;
+            const input = document.querySelector(`input[data-row="${row}"][data-col="${col}"]`);
+            if (!input || !input.value) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // Проверяет конкретное слово и награждает монетами
+    function checkWord(word) {
+        let isCorrect = true;
+        let correctLetters = 0;
+
+        for (let i = 0; i < word.word.length; i++) {
+            const row = word.horizontal ? word.row : word.row + i;
+            const col = word.horizontal ? word.col + i : word.col;
+            const input = document.querySelector(`input[data-row="${row}"][data-col="${col}"]`);
+
+            if (input) {
+                const correctLetter = crossword[row][col].letter;
+                const userLetter = input.value.toUpperCase();
+
+                if (userLetter === correctLetter) {
+                    input.style.backgroundColor = 'rgba(144, 238, 144, 0.5)';
+                    correctLetters++;
+                } else {
+                    input.style.backgroundColor = 'rgba(255, 182, 193, 0.5)';
+                    isCorrect = false;
+                }
+            }
+        }
+
+        if (isCorrect) {
+            coins += 1; // Награда за правильное слово
+            updateShopUI();
+            saveGameData();
+
+            // Делаем клетки read-only после правильного ввода
+            for (let i = 0; i < word.word.length; i++) {
+                const row = word.horizontal ? word.row : word.row + i;
+                const col = word.horizontal ? word.col + i : word.col;
+                const input = document.querySelector(`input[data-row="${row}"][data-col="${col}"]`);
+                if (input) {
+                    input.readOnly = true;
+                    input.classList.add('readonly');
+                }
+            }
+
+            // Показываем уведомление
+            showNotification('Слово верно! +1 монета', 'success');
+        } else {
+            // Сбрасываем неправильные буквы
+            setTimeout(() => {
+                for (let i = 0; i < word.word.length; i++) {
+                    const row = word.horizontal ? word.row : word.row + i;
+                    const col = word.horizontal ? word.col + i : word.col;
+                    const input = document.querySelector(`input[data-row="${row}"][data-col="${col}"]`);
+                    if (input && input.style.backgroundColor === 'rgba(255, 182, 193, 0.5)') {
+                        input.value = '';
+                        input.style.backgroundColor = '';
+                    }
+                }
+                showNotification('Есть ошибки, попробуйте еще раз', 'error');
+            }, 1000);
+        }
+    }
+
+    // Функция для показа уведомлений
+    function showNotification(message, type) {
+        const notification = document.createElement('div');
+        notification.textContent = message;
+        notification.style.position = 'fixed';
+        notification.style.bottom = '20px';
+        notification.style.left = '50%';
+        notification.style.transform = 'translateX(-50%)';
+        notification.style.padding = '10px 20px';
+        notification.style.borderRadius = '5px';
+        notification.style.backgroundColor = type === 'success' ? '#4CAF50' : '#f44336';
+        notification.style.color = 'white';
+        notification.style.zIndex = '1000';
+        notification.style.boxShadow = '0 2px 10px rgba(0,0,0,0.2)';
+        notification.style.animation = 'fadeIn 0.3s, fadeOut 0.3s 2s forwards';
+
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+            notification.remove();
+        }, 2500);
+    }
+
+    // Добавляем стили для анимации уведомлений
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translate(-50%, 20px); }
+            to { opacity: 1; transform: translate(-50%, 0); }
+        }
+        @keyframes fadeOut {
+            from { opacity: 1; transform: translate(-50%, 0); }
+            to { opacity: 0; transform: translate(-50%, 20px); }
+        }
+    `;
+    document.head.appendChild(style);
 
         function saveGameData() {
             const gameData = {
