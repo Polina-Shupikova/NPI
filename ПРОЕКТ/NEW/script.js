@@ -244,16 +244,11 @@ function handlePhysicalKeyPress(e) {
 }
 
 async function startGame() {
-    if (wordDatabase.easy.length + wordDatabase.hard.length < 3) {
-        alert('Недостаточно слов для начала игры. Минимум 3 слова.');
-        return;
-    }
-    
-    // Загружаем сохранённый уровень и устанавливаем currentLevel
-    const savedLevel = await loadSavedLevel();
+    const savedLevel = await loadSavedLevel(); // Убедитесь, что есть await
     currentLevel = savedLevel;
-    loadLevel();
-}
+    console.log('Начальный уровень:', currentLevel); // Проверьте значение
+    loadLevel(); // Должен вызываться после установки currentLevel
+  }
 
 function showLevelCompleteDialog() {
     const dialog = document.createElement('div');
@@ -292,46 +287,32 @@ async function completeLevel() {
 }
 
 async function initGame() {
-    console.log(isTelegramWebApp())
     try {
-        await loadWords();
-        initEventListeners();
-        await startGame(); // Добавьте await
+      await loadWords();       // 1. Загрузка слов
+      initEventListeners();   // 2. Инициализация кнопок
+      await startGame();      // 3. Запуск игры
     } catch (error) {
-        console.error('Ошибка инициализации:', error);
-        loadBackupWords();
-        initEventListeners();
-        await startGame(); // Добавьте await
+      console.error('Ошибка:', error);
+      loadBackupWords();      // Fallback-слова
+      initEventListeners();
+      await startGame();
     }
-}
+  }
 
 function getWordCountForLevel(level) {
     return LEVEL_WORDS[level]?.total || LEVEL_WORDS[26].total;
 }
 
 function loadLevel() {
-    const wordCount = getWordCountForLevel(currentLevel);
-    document.getElementById('level-number').textContent = currentLevel;
-    document.getElementById('crossword-grid').innerHTML = `<div class="loading">Генерация уровня ${currentLevel}...</div>`;
-    document.getElementById('keyboard').innerHTML = '';
-    document.getElementById('definitions-list').innerHTML = '';
-    document.getElementById('solved-definitions-list').innerHTML = '';
-    document.getElementById('solved-definitions').classList.add('collapsed');
-
+    console.log('Загрузка уровня...'); // Проверьте, что это сообщение появляется
     setTimeout(() => {
-        try {
-            if (generateCrossword()) {
-                generateKeyboard();
-                showDefinitions();
-            } else {
-                showError('Не удалось сгенерировать кроссворд');
-            }
-        } catch (error) {
-            console.error('Ошибка генерации:', error);
-            showError('Ошибка при создании кроссворда');
-        }
+      if (generateCrossword()) {
+        console.log('Кроссворд сгенерирован'); // Должно появиться
+        generateKeyboard();
+        showDefinitions();
+      }
     }, 50);
-}
+  }
 
 function showError(message) {
     alert(message);
