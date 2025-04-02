@@ -425,6 +425,46 @@ body {
     }
 }
 
+@media (max-width: 480px) {
+    .container {
+        padding: 10px;
+    }
+    
+    .game-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .level-info {
+        margin-top: 10px;
+        width: 100%;
+    }
+    
+    .keyboard {
+        padding: 5px;
+        gap: 3px;
+    }
+    
+    .keyboard-key {
+        width: 24px;
+        height: 24px;
+        font-size: 12px;
+    }
+    
+    .keyboard-key[style*="width"] {
+        width: auto !important;
+        padding: 0 5px;
+        font-size: 10px;
+    }
+    
+    .solved-definitions {
+        position: static;
+        width: 100%;
+        margin-top: 15px;
+        transform: none !important;
+    }
+}
+
 @media (max-width: 600px) {
     .crossword-cell {
         width: 24px;

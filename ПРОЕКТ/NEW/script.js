@@ -543,33 +543,38 @@ function canPlaceWord(word, position, direction) {
     if (direction === 'horizontal' && x + length > crossword.size) return false;
     if (direction === 'vertical' && y + length > crossword.size) return false;
     
-    for (let i = 0; i < length; i++) {
+    // Проверяем минимальное расстояние между словами одинаковой ориентации
+    for (let i = -1; i <= length; i++) {
         const cellX = direction === 'horizontal' ? x + i : x;
         const cellY = direction === 'horizontal' ? y : y + i;
         
-        const cell = crossword.grid[cellY]?.[cellX];
-        if (cell && cell.correctLetter !== word[i]) return false;
-        
-        const neighbors = [
-            { dx: 0, dy: 1 }, { dx: 0, dy: -1 },
-            { dx: 1, dy: 0 }, { dx: -1, dy: 0 },
-            { dx: 1, dy: 1 }, { dx: -1, dy: -1 },
-            { dx: 1, dy: -1 }, { dx: -1, dy: 1 }
-        ];
-        
-        for (const { dx, dy } of neighbors) {
-            const nx = cellX + dx, ny = cellY + dy;
-            if (nx >= 0 && ny >= 0 && nx < crossword.size && ny < crossword.size) {
-                const neighborCell = crossword.grid[ny][nx];
-                if (neighborCell) {
-                    const neighborWord = crossword.words[neighborCell.wordIndices[0]];
-                    if (neighborWord.direction === direction) {
-                        return false;
+        // Проверяем соседние клетки
+        for (let dy = -1; dy <= 1; dy++) {
+            for (let dx = -1; dx <= 1; dx++) {
+                if (dx === 0 && dy === 0) continue; // Пропускаем текущую клетку
+                
+                const nx = cellX + dx;
+                const ny = cellY + dy;
+                
+                if (nx >= 0 && ny >= 0 && nx < crossword.size && ny < crossword.size) {
+                    const neighborCell = crossword.grid[ny][nx];
+                    if (neighborCell) {
+                        const neighborWord = crossword.words[neighborCell.wordIndices[0]];
+                        if (neighborWord.direction === direction) {
+                            return false;
+                        }
                     }
                 }
             }
         }
+        
+        // Проверяем основную клетку только если она в пределах слова
+        if (i >= 0 && i < length) {
+            const cell = crossword.grid[cellY]?.[cellX];
+            if (cell && cell.correctLetter !== word[i]) return false;
+        }
     }
+    
     return true;
 }
 
@@ -581,7 +586,7 @@ function renderCrossword(force = false) {
     const grid = document.getElementById('crossword-grid');
     grid.innerHTML = '';
 
-    // Находим границы кроссворда
+    // Находим границы кроссворда с запасом
     let minX = crossword.size, maxX = 0, minY = crossword.size, maxY = 0;
     for (let y = 0; y < crossword.size; y++) {
         for (let x = 0; x < crossword.size; x++) {
@@ -594,7 +599,7 @@ function renderCrossword(force = false) {
         }
     }
 
-    // Добавляем небольшие отступы от границ
+    // Добавляем отступы от границ
     minX = Math.max(0, minX - 1);
     maxX = Math.min(crossword.size - 1, maxX + 1);
     minY = Math.max(0, minY - 1);
@@ -603,9 +608,8 @@ function renderCrossword(force = false) {
     const gridWidth = maxX - minX + 1;
     const gridHeight = maxY - minY + 1;
 
-    // Рассчитываем максимальный размер ячейки, чтобы поместиться на экране
-    const maxCellSize = calculateMaxCellSize(gridWidth, gridHeight);
-    const cellSize = Math.min(30, maxCellSize); // Не более 30px
+    // Рассчитываем размер ячейки
+    const cellSize = calculateMaxCellSize(gridWidth, gridHeight);
 
     // Создаем ячейки кроссворда
     for (let y = minY; y <= maxY; y++) {
@@ -614,7 +618,7 @@ function renderCrossword(force = false) {
             cell.className = 'crossword-cell';
             cell.style.width = `${cellSize}px`;
             cell.style.height = `${cellSize}px`;
-            cell.style.fontSize = `${cellSize * 0.5}px`; // Адаптивный размер шрифта
+            cell.style.fontSize = `${Math.max(12, cellSize * 0.5)}px`;
             cell.tabIndex = 0;
 
             if (crossword.grid[y][x]) {
@@ -657,10 +661,8 @@ function renderCrossword(force = false) {
     // Устанавливаем размеры сетки
     grid.style.gridTemplateColumns = `repeat(${gridWidth}, ${cellSize}px)`;
     grid.style.gridTemplateRows = `repeat(${gridHeight}, ${cellSize}px)`;
-
-    // Центрируем кроссворд
-    grid.style.margin = '0 auto';
-    grid.style.maxWidth = '100%';
+    grid.style.maxWidth = `${gridWidth * cellSize}px`;
+    grid.style.maxHeight = `${gridHeight * cellSize}px`;
     grid.style.overflow = 'auto';
 
     // Восстанавливаем выделенную ячейку
@@ -671,19 +673,26 @@ function renderCrossword(force = false) {
 }
 
 function calculateMaxCellSize(gridWidth, gridHeight) {
-    // Получаем размеры области просмотра
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-
-    // Оставляем место для других элементов интерфейса
-    const availableWidth = viewportWidth * 0.9;
-    const availableHeight = viewportHeight * 0.7;
-
+    // Получаем размеры области просмотра с учетом безопасных зон
+    const viewportWidth = Math.min(window.innerWidth, document.documentElement.clientWidth);
+    const viewportHeight = Math.min(window.innerHeight, document.documentElement.clientHeight);
+    
+    // Оставляем место для других элементов интерфейса (заголовок, клавиатура и т.д.)
+    const headerHeight = 100; // Примерная высота заголовка
+    const keyboardHeight = 150; // Примерная высота клавиатуры
+    const padding = 20; // Отступы
+    
+    const availableWidth = viewportWidth - 2 * padding;
+    const availableHeight = viewportHeight - headerHeight - keyboardHeight - 2 * padding;
+    
     // Рассчитываем максимальный размер ячейки
     const maxWidth = Math.floor(availableWidth / gridWidth);
     const maxHeight = Math.floor(availableHeight / gridHeight);
-
-    return Math.min(maxWidth, maxHeight, 30); // Ограничиваем максимальный размер 30px
+    
+    // Ограничиваем минимальный размер ячейки для удобства нажатия
+    const minCellSize = 20;
+    
+    return Math.max(minCellSize, Math.min(maxWidth, maxHeight, 30));
 }
 
 // Добавляем обработчик изменения размера окна
