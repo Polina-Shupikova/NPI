@@ -2,33 +2,31 @@ const isTelegramWebApp = () => {
     return window.Telegram && Telegram.WebApp && Telegram.WebApp.initDataUnsafe;
 };
 
-console.log(Telegram.WebApp.CloudStorage); // Должен вернуть объект
-console.log("User ID:", Telegram.WebApp.initDataUnsafe.user?.id);
-
+// Функция для сохранения текущего уровня
 async function saveCurrentLevel(level) {
     if (!isTelegramWebApp()) {
         console.log("Not in Telegram WebApp, skipping save");
-        return false;
+        return;
     }
 
     try {
-        return await new Promise((resolve) => {
-            Telegram.WebApp.CloudStorage.setItem('user_level', String(level), (error) => {
+        await Telegram.WebApp.CloudStorage.setItem(
+            'user_level', 
+            String(level),
+            (error) => {
                 if (error) {
-                    console.error("Ошибка сохранения:", error);
-                    resolve(false);
+                    console.error("Ошибка сохранения уровня:", error);
                 } else {
                     console.log("Уровень сохранён:", level);
-                    resolve(true);
                 }
             }
-        });
+        );
     } catch (error) {
         console.error("Ошибка при сохранении:", error);
-        return false;
     }
 }
 
+// Функция для загрузки сохранённого уровня
 async function loadSavedLevel() {
     if (!isTelegramWebApp()) {
         console.log("Not in Telegram WebApp, starting from level 1");
@@ -39,17 +37,16 @@ async function loadSavedLevel() {
         const result = await new Promise((resolve) => {
             Telegram.WebApp.CloudStorage.getItem('user_level', (error, value) => {
                 if (error) {
-                    console.error("Ошибка загрузки:", error);
+                    console.error("Ошибка загрузки уровня:", error);
                     resolve(1);
                 } else {
                     resolve(value ? parseInt(value) : 1);
                 }
             });
         });
-        console.log("Загружен уровень:", result); // Добавьте эту строку
         return result;
     } catch (error) {
-        console.error("Ошибка загрузки:", error);
+        console.error("Ошибка при загрузке:", error);
         return 1;
     }
 }
@@ -117,6 +114,19 @@ let crossword = {
 };
 
 const usedLettersCache = {};
+
+async function initGame() {
+    try {
+        await loadWords();
+        initEventListeners();
+        startGame();
+    } catch (error) {
+        console.error('Ошибка инициализации:', error);
+        loadBackupWords();
+        initEventListeners();
+        startGame();
+    }
+}
 
 async function loadWords() {
     try {
@@ -245,12 +255,12 @@ async function startGame() {
         return;
     }
     
-    // Загружаем сохранённый уровень и устанавливаем currentLevel
+    // Загружаем сохранённый уровень
     const savedLevel = await loadSavedLevel();
-    currentLevel = savedLevel;
     loadLevel();
 }
 
+// Обновите функцию showLevelCompleteDialog
 function showLevelCompleteDialog() {
     const dialog = document.createElement('div');
     dialog.className = 'level-complete-dialog';
@@ -279,16 +289,18 @@ function showLevelCompleteDialog() {
     });
 }
 
+
+// Модифицируйте функцию completeLevel
 async function completeLevel() {
-    currentLevel++;
+        currentLevel++;
     // Сохраняем новый уровень
     await saveCurrentLevel(currentLevel);
     saveUserRecord(currentLevel); // Сохраняем рекорд
     loadLevel();
 }
 
+// Обновите функцию initGame
 async function initGame() {
-    console.log(isTelegramWebApp())
     try {
         await loadWords();
         initEventListeners();
