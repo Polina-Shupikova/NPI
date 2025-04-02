@@ -2,7 +2,9 @@ const isTelegramWebApp = () => {
     return window.Telegram && Telegram.WebApp && Telegram.WebApp.initDataUnsafe;
 };
 
-// Функция для сохранения текущего уровня
+const userId = Telegram.WebApp.initDataUnsafe.user?.id;
+const storageKey = userId ? `user_${userId}_level` : 'user_level';
+
 async function saveCurrentLevel(level) {
     if (!isTelegramWebApp()) {
         console.log("Not in Telegram WebApp, skipping save");
@@ -16,6 +18,7 @@ async function saveCurrentLevel(level) {
             (error) => {
                 if (error) {
                     console.error("Ошибка сохранения уровня:", error);
+                    alert("Не удалось сохранить прогресс. Попробуйте позже.");
                 } else {
                     console.log("Уровень сохранён:", level);
                 }
@@ -23,10 +26,10 @@ async function saveCurrentLevel(level) {
         );
     } catch (error) {
         console.error("Ошибка при сохранении:", error);
+        alert("Произошла ошибка при сохранении прогресса.");
     }
 }
 
-// Функция для загрузки сохранённого уровня
 async function loadSavedLevel() {
     if (!isTelegramWebApp()) {
         console.log("Not in Telegram WebApp, starting from level 1");
@@ -38,9 +41,9 @@ async function loadSavedLevel() {
             Telegram.WebApp.CloudStorage.getItem('user_level', (error, value) => {
                 if (error) {
                     console.error("Ошибка загрузки уровня:", error);
-                    resolve(1);
+                    resolve(1); // Возвращаем уровень 1 при ошибке
                 } else {
-                    resolve(value ? parseInt(value) : 1);
+                    resolve(value ? parseInt(value) : 1); // Если данных нет, начинаем с уровня 1
                 }
             });
         });
@@ -254,9 +257,10 @@ async function startGame() {
         alert('Недостаточно слов для начала игры. Минимум 3 слова.');
         return;
     }
-    
+
     // Загружаем сохранённый уровень
     const savedLevel = await loadSavedLevel();
+    currentLevel = savedLevel;
     loadLevel();
 }
 
@@ -290,13 +294,11 @@ function showLevelCompleteDialog() {
 }
 
 
-// Модифицируйте функцию completeLevel
 async function completeLevel() {
-        currentLevel++;
-    // Сохраняем новый уровень
-    await saveCurrentLevel(currentLevel);
+    currentLevel++;
+    await saveCurrentLevel(currentLevel); // Сохраняем новый уровень
     saveUserRecord(currentLevel); // Сохраняем рекорд
-    loadLevel();
+    loadLevel(); // Загружаем следующий уровень
 }
 
 // Обновите функцию initGame
@@ -1013,19 +1015,22 @@ function giveHint() {
 }
 
 function saveUserRecord(currentLevel) {
-    if (!window.Telegram?.WebApp?.CloudStorage) return;
-  
-    const userId = window.Telegram.WebApp.initDataUnsafe.user?.id;
-    if (!userId) return;
-  
-    window.Telegram.WebApp.CloudStorage.setItem(
+    if (!isTelegramWebApp()) return;
+
+    const userId = Telegram.WebApp.initDataUnsafe.user?.id;
+    if (!userId) {
+        console.log("User ID not available");
+        return;
+    }
+
+    Telegram.WebApp.CloudStorage.setItem(
         `user_${userId}_record`,
         String(currentLevel),
         (error) => {
             if (error) {
-                console.error("Ошибка сохранения:", error);
+                console.error("Ошибка сохранения рекорда:", error);
             } else {
-                console.log("Рекорд сохранён!");
+                console.log("Рекорд сохранён для пользователя:", userId);
             }
         }
     );
