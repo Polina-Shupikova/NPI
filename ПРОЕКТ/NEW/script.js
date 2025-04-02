@@ -3,11 +3,9 @@ function isTelegramWebApp() {
 }
 
 function getLevelConfig(level) {
-    if (level <= 26) {
-        return LEVEL_WORDS[level];
-    } else {
-        return LEVEL_WORDS[26]; // Для уровней выше 26 используем параметры 26 уровня
-    }
+    const maxLevel = 26;
+    const actualLevel = Math.min(level, maxLevel);
+    return LEVEL_WORDS[actualLevel] || LEVEL_WORDS[maxLevel];
 }
 
 async function saveCurrentLevel(level) {
@@ -137,12 +135,12 @@ async function initGame() {
     try {
         await loadWords();
         initEventListeners();
-        startGame();
+        await startGame();
     } catch (error) {
         console.error('Ошибка инициализации:', error);
         loadBackupWords();
         initEventListeners();
-        startGame();
+        await startGame();
     }
 }
 
@@ -382,45 +380,41 @@ function generateCrossword() {
         return false;
     }
 
-    // Генерация кроссворда (остальной код без изменений)
-    // ...
-    return true;
-}
+    // Генерация первого слова
+    const firstWordType = levelConfig.easy > 0 ? WORD_TYPES.EASY : WORD_TYPES.HARD;
+    const firstWord = getRandomWord(firstWordType, levelConfig.minLength, levelConfig.maxLength);
+    if (!firstWord) return false;
 
-function getRandomWord(type, minLength, maxLength) {
-    const availableWords = wordDatabase[type].filter(w => 
-        !crossword.usedWords.has(w.word) && 
-        w.word.length >= minLength && 
-        w.word.length <= maxLength
-    );
+    const startX = Math.floor((crossword.size - firstWord.word.length) / 2);
+    const startY = Math.floor(crossword.size / 2);
+    const direction = Math.random() > 0.5 ? 'horizontal' : 'vertical';
     
-    if (availableWords.length === 0) {
-        const fallbackType = type === WORD_TYPES.EASY ? WORD_TYPES.HARD : WORD_TYPES.EASY;
-        const fallbackWords = wordDatabase[fallbackType].filter(w => 
-            !crossword.usedWords.has(w.word) && 
-            w.word.length >= minLength && 
-            w.word.length <= maxLength
-        );
+    addWordToGrid(firstWord, { x: startX, y: startY }, direction, 1);
+
+    // Генерация остальных слов
+    let attempts = 0;
+    const maxAttempts = 100;
+    let wordsAdded = 1;
+    const requiredWords = levelConfig.total;
+
+    while (wordsAdded < requiredWords && attempts < maxAttempts) {
+        const type = wordsAdded < levelConfig.easy ? WORD_TYPES.EASY : WORD_TYPES.HARD;
+        const wordObj = getRandomWord(type, levelConfig.minLength, levelConfig.maxLength);
         
-        if (fallbackWords.length === 0) {
-            const extendedMin = Math.max(3, minLength - 1);
-            const extendedMax = maxLength + 1;
-            const extendedWords = wordDatabase[type].filter(w => 
-                !crossword.usedWords.has(w.word) && 
-                w.word.length >= extendedMin && 
-                w.word.length <= extendedMax
-            );
-            
-            if (extendedWords.length === 0) {
-                crossword.usedWords.clear();
-                return getRandomWord(type, minLength, maxLength);
-            }
-            return extendedWords[Math.floor(Math.random() * extendedWords.length)];
+        if (wordObj && tryAddConnectedWord(wordObj)) {
+            wordsAdded++;
         }
-        return fallbackWords[Math.floor(Math.random() * fallbackWords.length)];
+        attempts++;
     }
-    
-    return availableWords[Math.floor(Math.random() * availableWords.length)];
+
+    // Если не удалось добавить все слова, очищаем и пробуем снова
+    if (wordsAdded < requiredWords) {
+        console.log(`Не удалось добавить все слова (добавлено ${wordsAdded} из ${requiredWords}), пробуем снова`);
+        return generateCrossword();
+    }
+
+    renderCrossword();
+    return true;
 }
 
 function tryAddConnectedWord(wordObj) {
@@ -829,31 +823,6 @@ function checkAllWordsCompletion() {
     }
 }
 
-function showLevelCompleteDialog() {
-    const dialog = document.createElement('div');
-    dialog.className = 'level-complete-dialog';
-    dialog.innerHTML = `
-        <div class="dialog-content">
-            <h3>Уровень ${currentLevel} пройден!</h3>
-            <div class="dialog-buttons">
-                <button id="next-level-btn">Следующий уровень</button>
-                <button id="menu-btn" onclick="location.href='../MAIN/index.html'">В меню</button>
-            </div>
-        </div>
-    `;
-    
-    document.body.appendChild(dialog);
-    
-    document.getElementById('next-level-btn').addEventListener('click', () => {
-        dialog.remove();
-        completeLevel();
-    });
-    
-    document.getElementById('menu-btn').addEventListener('click', () => {
-        dialog.remove();
-    });
-}
-
 function checkSingleWordCompletion(wordIndex) {
     const wordInfo = crossword.words[wordIndex];
     let allLettersFilled = true;
@@ -910,8 +879,13 @@ function highlightWord(wordIndex, className) {
     }
 }
 
-function completeLevel() {
+async function completeLevel() {
     currentLevel++;
+    const saved = await saveCurrentLevel(currentLevel);
+    if (!saved) {
+        alert("Не удалось сохранить прогресс. Попробуйте снова.");
+    }
+    saveUserRecord(currentLevel);
     loadLevel();
 }
 
