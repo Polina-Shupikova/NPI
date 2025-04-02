@@ -43,7 +43,7 @@ const LEVEL_WORDS = {
 };
 
 const CROSSWORD_SIZE = 30;
-const MAX_ATTEMPTS = 100;
+const MAX_ATTEMPTS_PER_WORD = 100;
 
 let currentLevel = 1;
 let wordDatabase = {
@@ -64,21 +64,64 @@ let crossword = {
     activeWordIndex: null
 };
 
-const usedLettersCache = {};
+/* ========== ОСНОВНЫЕ ФУНКЦИИ ГЕНЕРАЦИИ ========== */
 
-/* ========== ГЕНЕРАЦИЯ КРОССВОРДА ========== */
-function tryPlaceFirstWord(levelConfig) {
+async function generateCrossword(levelConfig) {
+    console.log(`Генерация кроссворда уровня ${currentLevel}...`);
+    
+    // Инициализация кроссворда
+    resetCrossword();
+    
+    // 1. Размещаем первое слово
+    if (!await placeFirstWord(levelConfig)) {
+        console.error("Не удалось разместить первое слово");
+        return false;
+    }
+    
+    // 2. Размещаем остальные слова
+    let wordsPlaced = 1;
+    let totalAttempts = 0;
+    const maxTotalAttempts = levelConfig.total * MAX_ATTEMPTS_PER_WORD;
+    
+    while (wordsPlaced < levelConfig.total && totalAttempts < maxTotalAttempts) {
+        totalAttempts++;
+        
+        const wordType = wordsPlaced >= levelConfig.easy ? WORD_TYPES.HARD : WORD_TYPES.EASY;
+        const wordObj = getRandomWord(wordType, levelConfig.minLength, levelConfig.maxLength);
+        
+        if (wordObj && tryPlaceWord(wordObj)) {
+            wordsPlaced++;
+            console.log(`Размещено слово ${wordsPlaced}/${levelConfig.total}: ${wordObj.word}`);
+            totalAttempts = 0;
+        }
+        
+        // Добавляем небольшую задержку, чтобы не блокировать интерфейс
+        if (totalAttempts % 50 === 0) await new Promise(resolve => setTimeout(resolve, 0));
+    }
+    
+    if (wordsPlaced < levelConfig.total) {
+        console.error(`Удалось разместить только ${wordsPlaced} из ${levelConfig.total} слов`);
+        return false;
+    }
+    
+    // Оптимизация и отрисовка
+    trimGrid();
+    console.log("Кроссворд успешно сгенерирован!");
+    return true;
+}
+
+async function placeFirstWord(levelConfig) {
     const wordType = levelConfig.easy > 0 ? WORD_TYPES.EASY : WORD_TYPES.HARD;
     const wordObj = getRandomWord(wordType, levelConfig.minLength, levelConfig.maxLength);
     if (!wordObj) return false;
 
-    // Пробуем разные позиции для первого слова
-    const center = Math.floor(CROSSWORD_SIZE / 2) - Math.floor(wordObj.word.length / 2);
+    // Пробуем разные варианты размещения первого слова
+    const center = Math.floor(CROSSWORD_SIZE / 2);
     const positions = [
-        { x: center, y: center, direction: 'horizontal' },
-        { x: center, y: center, direction: 'vertical' },
-        { x: Math.max(0, center - 3), y: center, direction: 'horizontal' },
-        { x: center, y: Math.max(0, center - 3), direction: 'vertical' }
+        { x: center - Math.floor(wordObj.word.length / 2), y: center, direction: 'horizontal' },
+        { x: center, y: center - Math.floor(wordObj.word.length / 2), direction: 'vertical' },
+        { x: 5, y: 5, direction: 'horizontal' },
+        { x: 5, y: 5, direction: 'vertical' }
     ];
 
     for (const pos of positions) {
@@ -91,182 +134,34 @@ function tryPlaceFirstWord(levelConfig) {
     return false;
 }
 
-function generateCrossword(levelConfig) {
-    console.log('Начало генерации кроссворда для уровня', currentLevel);
-    
-    // Инициализация кроссворда
-    resetCrossword();
-    
-    // 1. Размещаем первое слово по центру
-    let firstWordPlaced = false;
-    let firstWordAttempts = 0;
-    const maxFirstWordAttempts = 50;
-    
-    while (!firstWordPlaced && firstWordAttempts < maxFirstWordAttempts) {
-        firstWordAttempts++;
-        firstWordPlaced = tryPlaceFirstWord(levelConfig);
-    }
-    
-    if (!firstWordPlaced) {
-        console.error('Не удалось разместить первое слово после', maxFirstWordAttempts, 'попыток');
-        return false;
-    }
-
-    // 2. Размещаем остальные слова
-    let wordsPlaced = 1;
-    let totalAttempts = 0;
-    const maxTotalAttempts = levelConfig.total * 100;
-    
-    while (wordsPlaced < levelConfig.total && totalAttempts < maxTotalAttempts) {
-        totalAttempts++;
-        
-        // Определяем тип следующего слова
-        const needHard = wordsPlaced >= levelConfig.easy;
-        const wordType = needHard ? WORD_TYPES.HARD : WORD_TYPES.EASY;
-        
-        // Получаем случайное слово с расширенными параметрами, если нужно
-        const wordObj = getRandomWordExtended(wordType, levelConfig.minLength, levelConfig.maxLength, wordsPlaced);
-        if (!wordObj) continue;
-
-        // Пробуем разместить слово
-        if (tryPlaceWord(wordObj)) {
-            wordsPlaced++;
-            console.log(`Размещено слово ${wordsPlaced}/${levelConfig.total}:`, wordObj.word);
-            totalAttempts = 0; // Сбрасываем счетчик после успешного размещения
-        }
-    }
-
-    if (wordsPlaced < levelConfig.total) {
-        console.error(`Удалось разместить только ${wordsPlaced} из ${levelConfig.total} слов`);
-        return false;
-    }
-
-    // Оптимизируем сетку
-    trimGrid();
-    console.log('Кроссворд успешно сгенерирован!');
-    return true;
-}
-
-function resetCrossword() {
-    crossword = {
-        words: [],
-        grid: Array(CROSSWORD_SIZE).fill().map(() => Array(CROSSWORD_SIZE).fill(null)),
-        size: CROSSWORD_SIZE,
-        selectedCell: null,
-        definitions: [],
-        hints: 3,
-        usedWords: new Set(),
-        wordsToFind: getLevelConfig(currentLevel).total,
-        wordsFound: 0,
-        activeWordIndex: null
-    };
-}
-
-function getNextWordType(levelConfig, wordsPlaced) {
-    const needHard = wordsPlaced >= levelConfig.easy;
-    return needHard ? WORD_TYPES.HARD : WORD_TYPES.EASY;
-}
-
-function placeFirstWord(levelConfig) {
-    const wordType = levelConfig.easy > 0 ? WORD_TYPES.EASY : WORD_TYPES.HARD;
-    const wordObj = getRandomWord(wordType, levelConfig.minLength, levelConfig.maxLength);
-    if (!wordObj) return false;
-
-    const center = Math.floor(CROSSWORD_SIZE / 2) - Math.floor(wordObj.word.length / 2);
-    const position = { x: center, y: center };
-
-    if (canPlaceWord(wordObj.word, position, 'horizontal')) {
-        addWordToGrid(wordObj, position, 'horizontal', 1);
-        return true;
-    }
-    return false;
-}
-
-function calculatePlacementScore(word, pos, direction) {
-    let score = 0;
-    const {x, y} = pos;
-    
-    for (let i = 0; i < word.length; i++) {
-        const cellX = direction === 'horizontal' ? x + i : x;
-        const cellY = direction === 'horizontal' ? y : y + i;
-        
-        if (crossword.grid[cellY][cellX]) {
-            // Бонус за пересечение с существующим словом
-            score += 5;
+function tryPlaceWord(wordObj) {
+    // Ищем все возможные пересечения с существующими словами
+    for (const baseWord of shuffleArray(crossword.words)) {
+        for (let i = 0; i < baseWord.word.length; i++) {
+            const baseLetter = baseWord.word[i];
+            const letterIndices = getAllIndices(wordObj.word, baseLetter);
             
-            // Дополнительный бонус за пересечение с несколькими словами
-            if (crossword.grid[cellY][cellX].wordIndices.length > 1) {
-                score += 2;
-            }
-        } else {
-            // Штраф за отсутствие пересечения
-            score -= 1;
-        }
-    }
-    
-    return score;
-}
-
-function findBestWordPlacement(word) {
-    let bestScore = -1;
-    let bestPlacement = null;
-    
-    for (const existingWord of shuffleArray([...crossword.words])) {
-        const intersections = findWordIntersections(word, existingWord);
-        
-        for (const placement of intersections) {
-            if (canPlaceWord(word, placement.pos, placement.direction)) {
-                const score = calculatePlacementScore(word, placement.pos, placement.direction);
-                if (score > bestScore) {
-                    bestScore = score;
-                    bestPlacement = placement;
+            if (letterIndices.length > 0) {
+                const direction = baseWord.direction === 'horizontal' ? 'vertical' : 'horizontal';
+                
+                for (const j of letterIndices) {
+                    const x = direction === 'horizontal' 
+                        ? baseWord.x + i - j 
+                        : baseWord.x + i;
+                        
+                    const y = direction === 'horizontal' 
+                        ? baseWord.y 
+                        : baseWord.y + i - j;
+                    
+                    if (canPlaceWord(wordObj.word, {x, y}, direction)) {
+                        addWordToGrid(wordObj, {x, y}, direction, crossword.words.length + 1);
+                        return true;
+                    }
                 }
             }
         }
     }
-    
-    return bestPlacement;
-}
-
-function tryPlaceWord(wordObj) {
-    // Сначала пробуем разместить с максимальным количеством пересечений
-    const bestPlacement = findBestWordPlacement(wordObj.word);
-    if (bestPlacement) {
-        addWordToGrid(wordObj, bestPlacement.pos, bestPlacement.direction, crossword.words.length + 1);
-        return true;
-    }
-    
     return false;
-}
-
-function findWordIntersections(newWord, existingWord) {
-    const intersections = [];
-    
-    for (let i = 0; i < existingWord.word.length; i++) {
-        const existingLetter = existingWord.word[i];
-        const newWordLetterIndices = getAllIndices(newWord, existingLetter);
-        
-        if (newWordLetterIndices.length > 0) {
-            const direction = existingWord.direction === 'horizontal' ? 'vertical' : 'horizontal';
-            
-            for (const j of newWordLetterIndices) {
-                const x = direction === 'horizontal' 
-                    ? existingWord.x + i - j 
-                    : existingWord.x + i;
-                    
-                const y = direction === 'horizontal' 
-                    ? existingWord.y 
-                    : existingWord.y + i - j;
-
-                intersections.push({
-                    pos: {x, y},
-                    direction
-                });
-            }
-        }
-    }
-    
-    return intersections;
 }
 
 function canPlaceWord(word, position, direction) {
@@ -279,37 +174,26 @@ function canPlaceWord(word, position, direction) {
     if (direction === 'vertical' && y + length > CROSSWORD_SIZE) return false;
 
     let hasIntersection = false;
-    let cellsToCheck = [];
 
-    // Сначала собираем все клетки для проверки
     for (let i = 0; i < length; i++) {
         const cellX = direction === 'horizontal' ? x + i : x;
         const cellY = direction === 'horizontal' ? y : y + i;
-        cellsToCheck.push({cellX, cellY, letter: word[i]});
-    }
 
-    // Затем проверяем все клетки
-    for (const {cellX, cellY, letter} of cellsToCheck) {
         const cell = crossword.grid[cellY][cellX];
-        
         if (cell) {
-            if (cell.correctLetter !== letter) return false;
+            if (cell.correctLetter !== word[i]) return false;
             hasIntersection = true;
             continue;
         }
 
-        // Проверка соседей
-        const neighbors = [
-            [0, 1], [1, 0], [0, -1], [-1, 0] // Только горизонтальные/вертикальные
-        ];
-
-        for (const [dx, dy] of neighbors) {
+        // Проверка соседей (кроме диагоналей)
+        for (const [dx, dy] of [[0,1],[1,0],[0,-1],[-1,0]]) {
             const nx = cellX + dx;
             const ny = cellY + dy;
 
             if (nx >= 0 && nx < CROSSWORD_SIZE && ny >= 0 && ny < CROSSWORD_SIZE) {
                 const neighbor = crossword.grid[ny][nx];
-                if (neighbor && neighbor.correctLetter !== letter) {
+                if (neighbor && neighbor.correctLetter !== word[i]) {
                     return false;
                 }
             }
@@ -317,9 +201,7 @@ function canPlaceWord(word, position, direction) {
     }
 
     // Для не первого слова требуется хотя бы одно пересечение
-    if (crossword.words.length > 0 && !hasIntersection) return false;
-
-    return true;
+    return crossword.words.length === 0 || hasIntersection;
 }
 
 function addWordToGrid(wordObj, position, direction, wordNumber) {
@@ -366,37 +248,49 @@ function addWordToGrid(wordObj, position, direction, wordNumber) {
     });
 }
 
-function getRandomWordExtended(type, minLen, maxLen, wordsPlaced) {
-    // Сначала пробуем найти слово с точными параметрами
-    let word = getRandomWord(type, minLen, maxLen);
-    if (word) return word;
+function getRandomWord(type, minLength, maxLength) {
+    // Сначала ищем слова с точной длиной
+    let availableWords = wordDatabase[type].filter(w => 
+        !crossword.usedWords.has(w.word) && 
+        w.word.length >= minLength && 
+        w.word.length <= maxLength
+    );
     
-    // Если не нашли, расширяем диапазон длин
-    const extendedMin = Math.max(3, minLen - 2);
-    const extendedMax = maxLen + 2;
-    word = getRandomWord(type, extendedMin, extendedMax);
-    if (word) return word;
-    
-    // Если все еще не нашли, пробуем другой тип слов
-    const altType = type === WORD_TYPES.EASY ? WORD_TYPES.HARD : WORD_TYPES.EASY;
-    word = getRandomWord(altType, extendedMin, extendedMax);
-    if (word) return word;
-    
-    // Если слов совсем нет, очищаем использованные слова для этого типа
-    console.log('Очищаем использованные слова для типа', type);
-    for (const w of crossword.words) {
-        if ((type === WORD_TYPES.EASY && wordDatabase.easy.some(e => e.word === w.word)) ||
-            (type === WORD_TYPES.HARD && wordDatabase.hard.some(h => h.word === w.word))) {
-            crossword.usedWords.delete(w.word);
-        }
+    // Если не нашли, расширяем диапазон
+    if (availableWords.length === 0) {
+        availableWords = wordDatabase[type].filter(w => 
+            !crossword.usedWords.has(w.word) && 
+            w.word.length >= Math.max(3, minLength - 2) && 
+            w.word.length <= maxLength + 2
+        );
     }
     
-    return getRandomWord(type, minLen, maxLen);
+    // Если все еще не нашли, пробуем другой тип
+    if (availableWords.length === 0 && type === WORD_TYPES.HARD) {
+        availableWords = wordDatabase[WORD_TYPES.EASY].filter(w => 
+            !crossword.usedWords.has(w.word) && 
+            w.word.length >= minLength && 
+            w.word.length <= maxLength
+        );
+    }
+    
+    // Если слов совсем нет, очищаем использованные слова этого типа
+    if (availableWords.length === 0) {
+        for (const w of crossword.words) {
+            if (wordDatabase[type].some(d => d.word === w.word)) {
+                crossword.usedWords.delete(w.word);
+            }
+        }
+        return getRandomWord(type, minLength, maxLength);
+    }
+    
+    return availableWords[Math.floor(Math.random() * availableWords.length)];
 }
 
 function trimGrid() {
     let minX = CROSSWORD_SIZE, maxX = 0, minY = CROSSWORD_SIZE, maxY = 0;
     
+    // Находим границы занятых клеток
     for (let y = 0; y < CROSSWORD_SIZE; y++) {
         for (let x = 0; x < CROSSWORD_SIZE; x++) {
             if (crossword.grid[y][x]) {
@@ -408,11 +302,13 @@ function trimGrid() {
         }
     }
     
+    // Добавляем небольшие отступы
     minX = Math.max(0, minX - 1);
     maxX = Math.min(CROSSWORD_SIZE - 1, maxX + 1);
     minY = Math.max(0, minY - 1);
     maxY = Math.min(CROSSWORD_SIZE - 1, maxY + 1);
     
+    // Создаем новую обрезанную сетку
     const newGrid = [];
     for (let y = minY; y <= maxY; y++) {
         const row = [];
@@ -422,6 +318,7 @@ function trimGrid() {
         newGrid.push(row);
     }
     
+    // Обновляем координаты слов
     for (const word of crossword.words) {
         word.x -= minX;
         word.y -= minY;
@@ -437,8 +334,28 @@ function trimGrid() {
 
 /* ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ========== */
 
+function resetCrossword() {
+    crossword = {
+        words: [],
+        grid: Array(CROSSWORD_SIZE).fill().map(() => Array(CROSSWORD_SIZE).fill(null)),
+        size: CROSSWORD_SIZE,
+        selectedCell: null,
+        definitions: [],
+        hints: 3,
+        usedWords: new Set(),
+        wordsToFind: getLevelConfig(currentLevel).total,
+        wordsFound: 0,
+        activeWordIndex: null
+    };
+}
+
 function shuffleArray(array) {
-    return array.sort(() => Math.random() - 0.5);
+    const newArray = [...array];
+    for (let i = newArray.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+    }
+    return newArray;
 }
 
 function getAllIndices(word, letter) {
@@ -476,10 +393,30 @@ function renderCrossword() {
                     cell.classList.add('multiple-words');
                 }
                 
+                // Добавляем номер слова (для первой буквы)
+                const isFirstLetter = crossword.words.some(w => 
+                    (w.direction === 'horizontal' && w.x === x && w.y === y) ||
+                    (w.direction === 'vertical' && w.x === x && w.y === y)
+                );
+                
+                if (isFirstLetter) {
+                    const wordNumber = crossword.words.find(w => 
+                        (w.direction === 'horizontal' && w.x === x && w.y === y) ||
+                        (w.direction === 'vertical' && w.x === x && w.y === y)
+                    ).number;
+                    
+                    const numberSpan = document.createElement('span');
+                    numberSpan.className = 'word-number';
+                    numberSpan.textContent = wordNumber;
+                    cell.appendChild(numberSpan);
+                }
+                
                 if (cellData.letter) {
                     cell.textContent = cellData.letter;
-                    cell.classList.add(cellData.letter === cellData.correctLetter ? 
-                        'correct-letter' : 'incorrect-letter');
+                    cell.classList.add(
+                        cellData.letter === cellData.correctLetter ? 
+                        'correct-letter' : 'incorrect-letter'
+                    );
                     
                     if (crossword.words[cellData.wordIndices[0]].completed) {
                         cell.classList.add('completed-word');
@@ -500,6 +437,7 @@ function renderCrossword() {
     grid.style.gridTemplateColumns = `repeat(${crossword.size}, ${cellSize}px)`;
     grid.style.gridTemplateRows = `repeat(${crossword.size}, ${cellSize}px)`;
     
+    // Восстанавливаем выделение
     if (crossword.selectedCell) {
         selectCell(crossword.selectedCell.x, crossword.selectedCell.y);
     }
@@ -509,51 +447,48 @@ function calculateMaxCellSize() {
     const gridWidth = crossword.size;
     const gridHeight = crossword.size;
     
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
+    const availableWidth = window.innerWidth - 40;
+    const availableHeight = window.innerHeight - 250; // Учитываем место для других элементов
     
-    const maxWidth = Math.floor((viewportWidth - 40) / gridWidth);
-    const maxHeight = Math.floor((viewportHeight - 200) / gridHeight);
+    const maxWidth = Math.floor(availableWidth / gridWidth);
+    const maxHeight = Math.floor(availableHeight / gridHeight);
     
     return Math.min(40, Math.max(20, Math.min(maxWidth, maxHeight)));
 }
 
-function selectCell(x, y, wordIndex = null) {
+/* ========== ИГРОВАЯ ЛОГИКА ========== */
+
+function selectCell(x, y) {
+    // Снимаем предыдущее выделение
     document.querySelectorAll('.crossword-cell').forEach(cell => {
         cell.classList.remove('highlight', 'current-word');
     });
     
-    const cellData = crossword.grid[y]?.[x];
+    const cellData = crossword.grid[y][x];
     if (!cellData) return;
     
     const cell = document.querySelector(`.crossword-cell[data-x="${x}"][data-y="${y}"]`);
     if (!cell) return;
     
-    if (wordIndex !== null) {
-        crossword.activeWordIndex = wordIndex;
-    } else if (cellData.wordIndices.length === 1) {
+    // Устанавливаем активное слово
+    if (cellData.wordIndices.length > 0) {
         crossword.activeWordIndex = cellData.wordIndices[0];
-    } else if (!crossword.activeWordIndex || !cellData.wordIndices.includes(crossword.activeWordIndex)) {
-        crossword.activeWordIndex = cellData.wordIndices[0];
+        highlightCurrentWord();
     }
     
     cell.classList.add('highlight');
     crossword.selectedCell = { x, y };
-    
-    highlightCurrentWord();
 }
 
 function highlightCurrentWord() {
     if (crossword.activeWordIndex === null) return;
     
-    const activeWord = crossword.words[crossword.activeWordIndex];
-    for (const {x, y} of activeWord.letters) {
+    const word = crossword.words[crossword.activeWordIndex];
+    for (const {x, y} of word.letters) {
         const cell = document.querySelector(`.crossword-cell[data-x="${x}"][data-y="${y}"]`);
         if (cell) cell.classList.add('current-word');
     }
 }
-
-/* ========== ИГРОВАЯ ЛОГИКА ========== */
 
 function handleKeyPress(letter) {
     if (!crossword.selectedCell) return;
@@ -565,42 +500,51 @@ function handleKeyPress(letter) {
     cellData.letter = letter;
     renderCrossword();
     
+    // Проверяем правильность
     if (letter === cellData.correctLetter) {
-        moveToNextCell(x, y, crossword.activeWordIndex);
+        moveToNextCell(x, y);
     }
     
     checkAllWordsCompletion();
 }
 
-function moveToNextCell(x, y, wordIndex) {
-    const word = crossword.words[wordIndex];
+function moveToNextCell(x, y) {
+    if (crossword.activeWordIndex === null) return;
+    
+    const word = crossword.words[crossword.activeWordIndex];
     const direction = word.direction;
     
     let nextX = direction === 'horizontal' ? x + 1 : x;
     let nextY = direction === 'horizontal' ? y : y + 1;
     
+    // Проверяем границы слова
     if ((direction === 'horizontal' && nextX >= word.x + word.word.length) ||
         (direction === 'vertical' && nextY >= word.y + word.word.length)) {
-        findNextWord(wordIndex);
+        findNextWord();
         return;
     }
     
-    if (crossword.grid[nextY]?.[nextX]?.wordIndices.includes(wordIndex)) {
-        selectCell(nextX, nextY, wordIndex);
+    // Проверяем, что следующая клетка принадлежит слову
+    if (crossword.grid[nextY]?.[nextX]?.wordIndices.includes(crossword.activeWordIndex)) {
+        selectCell(nextX, nextY);
     } else {
-        findNextWord(wordIndex);
+        findNextWord();
     }
 }
 
-function findNextWord(currentWordIndex) {
-    for (let i = 1; i <= crossword.words.length; i++) {
-        const idx = (currentWordIndex + i) % crossword.words.length;
-        const word = crossword.words[idx];
-        
+function findNextWord() {
+    if (crossword.words.length === 0) return;
+    
+    let nextIndex = crossword.activeWordIndex !== null ? 
+        (crossword.activeWordIndex + 1) % crossword.words.length : 0;
+    
+    for (let i = 0; i < crossword.words.length; i++) {
+        const word = crossword.words[nextIndex];
         if (!word.completed) {
-            selectCell(word.letters[0].x, word.letters[0].y, idx);
+            selectCell(word.letters[0].x, word.letters[0].y);
             return;
         }
+        nextIndex = (nextIndex + 1) % crossword.words.length;
     }
 }
 
@@ -660,6 +604,8 @@ function highlightWord(wordIndex, className) {
 
 function generateKeyboard() {
     const keyboard = document.getElementById('keyboard');
+    if (!keyboard) return;
+    
     keyboard.innerHTML = '';
     
     const letters = 'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ';
@@ -683,16 +629,15 @@ function generateKeyboard() {
     
     // Добавляем специальные кнопки
     const specialKeys = [
-        { text: '⌫', action: clearCell },
-        { text: '📖', action: showDefinitions },
-        { text: 'Подсказка', action: giveHint, width: '80px' }
+        { text: '⌫', action: clearCell, cls: 'keyboard-key-special' },
+        { text: '📖', action: showDefinitions, cls: 'keyboard-key-special' },
+        { text: 'Подсказка', action: giveHint, cls: 'keyboard-key-hint' }
     ];
     
     for (const key of specialKeys) {
         const btn = document.createElement('button');
-        btn.className = 'keyboard-key keyboard-key-special';
+        btn.className = `keyboard-key ${key.cls}`;
         btn.textContent = key.text;
-        if (key.width) btn.style.width = key.width;
         btn.addEventListener('click', key.action);
         keyboard.appendChild(btn);
     }
@@ -727,11 +672,19 @@ function clearCell() {
 function showDefinitions() {
     const box = document.getElementById('definitions-box');
     const list = document.getElementById('definitions-list');
+    if (!box || !list) return;
+    
     list.innerHTML = '';
     
-    for (const def of crossword.definitions) {
+    // Сортируем определения по номеру
+    const sortedDefinitions = [...crossword.definitions].sort((a, b) => a.number - b.number);
+    
+    for (const def of sortedDefinitions) {
         const item = document.createElement('div');
         item.className = 'definition-item';
+        if (crossword.words[def.number - 1]?.completed) {
+            item.classList.add('completed-definition');
+        }
         item.innerHTML = `
             <strong>${def.number}. (${def.direction}, ${def.length} букв):</strong>
             ${def.definition}
@@ -745,6 +698,7 @@ function showDefinitions() {
 function addSolvedDefinition(word, definition) {
     const panel = document.getElementById('solved-definitions');
     const list = document.getElementById('solved-definitions-list');
+    if (!panel || !list) return;
     
     const item = document.createElement('div');
     item.className = 'solved-definition-item';
@@ -776,10 +730,95 @@ function giveHint() {
     
     cell.letter = cell.correctLetter;
     crossword.hints--;
-    document.getElementById('hint-count').textContent = crossword.hints;
+    updateHintCount();
     
     renderCrossword();
     checkAllWordsCompletion();
+}
+
+function updateHintCount() {
+    const hintElement = document.getElementById('hint-count');
+    if (hintElement) {
+        hintElement.textContent = crossword.hints;
+    }
+}
+
+/* ========== УПРАВЛЕНИЕ ИГРОЙ ========== */
+
+async function startGame() {
+    console.log("Запуск игры...");
+    
+    // Загружаем уровень
+    currentLevel = await loadSavedLevel();
+    console.log("Текущий уровень:", currentLevel);
+    
+    // Загружаем слова
+    if (wordDatabase.easy.length + wordDatabase.hard.length < 3) {
+        loadBackupWords();
+    }
+    
+    // Показываем индикатор загрузки
+    showLoadingIndicator();
+    
+    // Пробуем сгенерировать кроссворд
+    const levelConfig = getLevelConfig(currentLevel);
+    let attempts = 0;
+    const maxAttempts = 5;
+    
+    let success = false;
+    while (attempts < maxAttempts && !success) {
+        attempts++;
+        console.log(`Попытка генерации ${attempts}/${maxAttempts}`);
+        success = await generateCrossword(levelConfig);
+    }
+    
+    // Скрываем индикатор загрузки
+    hideLoadingIndicator();
+    
+    if (success) {
+        renderCrossword();
+        generateKeyboard();
+        showDefinitions();
+        updateHintCount();
+    } else {
+        showGenerationError();
+    }
+}
+
+function showLoadingIndicator() {
+    let loader = document.getElementById('loading-indicator');
+    if (!loader) {
+        loader = document.createElement('div');
+        loader.id = 'loading-indicator';
+        loader.innerHTML = '<div class="loader">Генерация кроссворда...</div>';
+        document.body.appendChild(loader);
+    }
+    loader.style.display = 'flex';
+}
+
+function hideLoadingIndicator() {
+    const loader = document.getElementById('loading-indicator');
+    if (loader) loader.style.display = 'none';
+}
+
+function showGenerationError() {
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'error-message';
+    errorDiv.innerHTML = `
+        <p>Не удалось создать кроссворд. Возможные причины:</p>
+        <ul>
+            <li>Недостаточно слов в базе данных</li>
+            <li>Слишком сложные параметры уровня</li>
+        </ul>
+        <button id="retry-button">Попробовать снова</button>
+    `;
+    
+    document.body.appendChild(errorDiv);
+    
+    document.getElementById('retry-button').addEventListener('click', () => {
+        errorDiv.remove();
+        startGame();
+    });
 }
 
 function showLevelCompleteDialog() {
@@ -807,197 +846,12 @@ function showLevelCompleteDialog() {
     });
 }
 
-/* ========== ИНИЦИАЛИЗАЦИЯ ИГРЫ ========== */
-
-async function initGame() {
-    console.log("Инициализация игры...");
-    
-    if (isTelegramWebApp()) {
-        Telegram.WebApp.expand();
-        Telegram.WebApp.enableClosingConfirmation();
-    }
-    
-    try {
-        await loadWords();
-        initEventListeners();
-        await startGame();
-    } catch (error) {
-        console.error('Ошибка инициализации:', error);
-        loadBackupWords();
-        initEventListeners();
-        await startGame();
-    }
-}
-
-function showLoadingIndicator() {
-    const loader = document.createElement('div');
-    loader.id = 'loading-indicator';
-    loader.innerHTML = '<div class="loader">Генерация кроссворда...</div>';
-    document.body.appendChild(loader);
-}
-
-function hideLoadingIndicator() {
-    const loader = document.getElementById('loading-indicator');
-    if (loader) loader.remove();
-}
-
-function showGenerationErrorDialog() {
-    const dialog = document.createElement('div');
-    dialog.className = 'error-dialog';
-    dialog.innerHTML = `
-        <div class="dialog-content">
-            <h3>Не удалось создать кроссворд</h3>
-            <p>Попробуйте один из вариантов:</p>
-            <div class="dialog-buttons">
-                <button id="try-again-btn">Попробовать снова</button>
-                <button id="simplify-level-btn">Упростить уровень</button>
-                <button id="change-words-btn">Изменить набор слов</button>
-            </div>
-        </div>
-    `;
-    
-    document.body.appendChild(dialog);
-    
-    document.getElementById('try-again-btn').addEventListener('click', () => {
-        dialog.remove();
-        startGame();
-    });
-    
-    document.getElementById('simplify-level-btn').addEventListener('click', () => {
-        dialog.remove();
-        simplifyLevel();
-    });
-    
-    document.getElementById('change-words-btn').addEventListener('click', () => {
-        dialog.remove();
-        changeWordSet();
-    });
-}
-
-async function simplifyLevel() {
-    const levelConfig = getLevelConfig(currentLevel);
-    const simplifiedConfig = {
-        ...levelConfig,
-        total: Math.max(3, levelConfig.total - 2),
-        hard: Math.max(0, levelConfig.hard - 1)
-    };
-    
-    if (generateCrossword(simplifiedConfig)) {
-        renderCrossword();
-        generateKeyboard();
-        showDefinitions();
-    } else {
-        await startGame();
-    }
-}
-
-async function changeWordSet() {
-    try {
-        await loadWords();
-        await startGame();
-    } catch (error) {
-        console.error('Ошибка загрузки слов:', error);
-        loadBackupWords();
-        await startGame();
-    }
-}
-
-async function startGame() {
-    currentLevel = await loadSavedLevel();
-    console.log("Начинаем игру с уровня:", currentLevel);
-    
-    const levelConfig = getLevelConfig(currentLevel);
-    let attempts = 0;
-    const maxAttempts = 10; // Увеличили количество попыток
-    
-    // Показываем индикатор загрузки
-    showLoadingIndicator();
-    
-    while (attempts < maxAttempts) {
-        attempts++;
-        console.log(`Попытка генерации ${attempts}/${maxAttempts}`);
-        
-        if (generateCrossword(levelConfig)) {
-            hideLoadingIndicator();
-            renderCrossword();
-            generateKeyboard();
-            showDefinitions();
-            return;
-        }
-        
-        // Добавляем небольшую задержку между попытками
-        await new Promise(resolve => setTimeout(resolve, 50));
-    }
-    
-    hideLoadingIndicator();
-    console.error("Не удалось сгенерировать кроссворд после", maxAttempts, "попыток");
-    
-    // Пробуем использовать резервные слова
-    if (wordDatabase.easy.length + wordDatabase.hard.length < levelConfig.total) {
-        loadBackupWords();
-        await startGame();
-        return;
-    }
-    
-    // Если все равно не получилось, предлагаем варианты
-    showGenerationErrorDialog();
-}
-
-async function loadLevel() {
-    const levelConfig = getLevelConfig(currentLevel);
-    if (generateCrossword(levelConfig)) {
-        renderCrossword();
-        generateKeyboard();
-        showDefinitions();
-    } else {
-        setTimeout(loadLevel, 100);
-    }
-}
-
 async function completeLevel() {
     const newLevel = currentLevel + 1;
     await saveCurrentLevel(newLevel);
     await saveUserRecord(newLevel);
     currentLevel = newLevel;
-    loadLevel();
-}
-
-function initEventListeners() {
-    document.getElementById('hint-button').addEventListener('click', giveHint);
-    document.addEventListener('keydown', handlePhysicalKeyPress);
-}
-
-function handlePhysicalKeyPress(e) {
-    if (!crossword.selectedCell) return;
-    
-    const {x, y} = crossword.selectedCell;
-    const cellData = crossword.grid[y][x];
-    if (!cellData) return;
-
-    if (e.key === 'Backspace') {
-        clearCell();
-        return;
-    }
-    
-    if (e.key === 'Enter') {
-        showDefinitions();
-        return;
-    }
-    
-    if (e.key === ' ') {
-        giveHint();
-        return;
-    }
-
-    let letter = e.key.toLowerCase();
-    if (RUSSIAN_LAYOUT[letter]) {
-        letter = RUSSIAN_LAYOUT[letter];
-    }
-
-    if (/[а-яё]/.test(letter)) {
-        handleKeyPress(letter.toUpperCase());
-        e.preventDefault();
-    }
+    await startGame();
 }
 
 /* ========== РАБОТА С ДАННЫМИ ========== */
@@ -1009,7 +863,9 @@ async function loadWords() {
             fetch('hard_words.json')
         ]);
         
-        if (!easyResponse.ok || !hardResponse.ok) throw new Error('Ошибка загрузки слов');
+        if (!easyResponse.ok || !hardResponse.ok) {
+            throw new Error('Ошибка загрузки файлов со словами');
+        }
         
         wordDatabase.easy = await easyResponse.json();
         wordDatabase.hard = await hardResponse.json();
@@ -1028,12 +884,16 @@ function loadBackupWords() {
     wordDatabase.easy = [
         { word: "КОМПЬЮТЕР", definition: "Электронное устройство для обработки информации" },
         { word: "ПРОГРАММА", definition: "Набор инструкций для компьютера" },
-        { word: "АЛГОРИТМ", definition: "Последовательность действий для решения задачи" }
+        { word: "АЛГОРИТМ", definition: "Последовательность действий для решения задачи" },
+        { word: "СЕРВЕР", definition: "Компьютер, предоставляющий услуги другим компьютерам" },
+        { word: "БРАУЗЕР", definition: "Программа для просмотра веб-страниц" }
     ];
     
     wordDatabase.hard = [
         { word: "БАЗАДАННЫХ", definition: "Организованная совокупность данных" },
-        { word: "ИНТЕРФЕЙС", definition: "Средство взаимодействия между системами" }
+        { word: "ИНТЕРФЕЙС", definition: "Средство взаимодействия между системами" },
+        { word: "ПРОТОКОЛ", definition: "Стандарт передачи данных" },
+        { word: "ФРЕЙМВОРК", definition: "Структура программной системы" }
     ];
     
     console.log('Используется резервный набор слов');
