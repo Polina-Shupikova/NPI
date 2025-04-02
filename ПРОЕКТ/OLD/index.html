@@ -113,6 +113,14 @@
     <div id="word-list" class="word-list"></div>
 
     <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const wordItems = document.querySelectorAll('.word-item');
+            wordItems.forEach((item, index) => {
+                // Добавляем задержку анимации для каждого элемента
+                item.style.animationDelay = `${index * 0.1}s`;
+            });
+        });
+
         const levels = [
             { name: "Уровень 1 до", wordCount: 3, gridSize: 16 },
             { name: "Уровень 2 до", wordCount: 4, gridSize: 16 },

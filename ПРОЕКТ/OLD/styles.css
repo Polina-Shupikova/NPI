@@ -644,3 +644,96 @@ body {
         padding: 5px 10px;
     }
 }
+
+
+/* Основные стили для контейнера списка */
+.word-list {
+    margin: 25px auto;
+    columns: 2;
+    column-gap: 30px;
+    background: rgba(255, 255, 255, 0.85);
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    max-width: 800px;
+    break-inside: avoid;
+}
+
+/* Стили для каждого элемента списка */
+.word-item {
+    margin-bottom: 15px;
+    break-inside: avoid;
+    background: white;
+    padding: 12px 15px;
+    border-radius: 8px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    animation: fadeIn 0.4s ease forwards;
+    opacity: 0;
+}
+
+/* Эффекты при наведении */
+.word-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    background: #f9f9f9;
+}
+
+/* Акцентная полоса слева */
+.word-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(to bottom, #dc143c, #ff6b6b);
+    transition: width 0.3s ease;
+}
+
+.word-item:hover::before {
+    width: 6px;
+}
+
+/* Стили для номера слова */
+.word-item span[style*="font-weight: bold"] {
+    color: #dc143c;
+    font-size: 16px;
+    margin-right: 8px;
+    display: inline-block;
+    min-width: 25px;
+    font-weight: bold !important;
+}
+
+/* Стили для текста подсказки */
+.hint {
+    font-size: 14px;
+    color: #444;
+    line-height: 1.5;
+    display: inline;
+    position: relative;
+    padding-left: 5px;
+    word-break: break-word;
+}
+
+/* Анимация появления */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Адаптация для разных устройств */
+@media (max-width: 768px) {
+    .word-list {
+        columns: 1;
+        padding: 15px;
+    }
+    
+    .word-item {
+        padding: 10px 12px;
+    }
+}
