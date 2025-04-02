@@ -740,3 +740,103 @@ body {
         padding: 10px 12px;
     }
 }
+
+/* Обновленные стили для шапки */
+.page-header {
+    background-color: white;
+    width: 100%;
+    padding: 15px 0;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.page-header h1 {
+    margin: 0;
+    padding: 0;
+    background-color: transparent;
+    box-shadow: none;
+    font-size: 1.5rem;
+}
+
+/* Обновленные стили для кнопки Назад */
+#back-button {
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    padding: 8px 15px;
+    background-color: rgba(220, 20, 60, 0.7);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 16px;
+    transition: all 0.3s;
+}
+
+/* Новые стили для кнопки Магазин */
+#shop-button {
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    padding: 8px 15px;
+    /* background-color: rgba(33, 150, 243, 0.7); */
+    color: white;
+    border: none;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 16px;
+    transition: all 0.3s;
+    margin: 0;
+}
+
+/* #shop-button:hover {
+    background-color: rgba(33, 150, 243, 0.9);
+} */
+
+/* Медиа-запросы для мобильных */
+@media (max-width: 768px) {
+    .page-header {
+        padding: 10px 0;
+    }
+
+    .page-header h1 {
+        font-size: 1.2rem;
+        padding: 0 60px; /* Оставляем место для кнопок */
+        text-align: center;
+    }
+
+    #back-button {
+        left: 10px;
+        padding: 6px 12px;
+        font-size: 14px;
+    }
+
+    #shop-button {
+        right: 10px;
+        padding: 6px 12px;
+        font-size: 14px;
+    }
+}
+
+@media (max-width: 480px) {
+    .page-header h1 {
+        font-size: 1rem;
+        padding: 0 50px;
+    }
+
+    #back-button {
+        font-size: 12px;
+        padding: 5px 10px;
+    }
+
+    #shop-button {
+        font-size: 12px;
+        padding: 5px 10px;
+    }
+}
