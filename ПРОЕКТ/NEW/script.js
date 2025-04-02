@@ -221,6 +221,9 @@ function handlePhysicalKeyPress(e) {
     }
     
     if (e.key === 'Backspace') {
+        const { x, y } = crossword.selectedCell;
+        const cellData = crossword.grid[y][x];
+        if (!cellData?.letter || cellData.letter === cellData.correctLetter) return;
         clearCell();
         return;
     }
@@ -734,17 +737,13 @@ function handleKeyPress(letter) {
     if (!crossword.selectedCell || crossword.activeWordIndex === null) return;
     const { x, y } = crossword.selectedCell;
     const cellData = crossword.grid[y][x];
-    if (!cellData) return;
+    if (!cellData || (cellData.letter && cellData.letter === cellData.correctLetter)) return;
     
     const activeWord = crossword.words[crossword.activeWordIndex];
     cellData.letter = letter;
     
     renderCrossword();
-    
-    if (letter === cellData.correctLetter) {
-        moveToNextCell(x, y, crossword.activeWordIndex);
-    }
-    
+    moveToNextCell(x, y, crossword.activeWordIndex);
     checkAllWordsCompletion();
 }
 
@@ -792,7 +791,7 @@ function clearCell() {
     if (!crossword.selectedCell) return;
     const { x, y } = crossword.selectedCell;
     const cellData = crossword.grid[y][x];
-    if (!cellData?.letter) return;
+    if (!cellData?.letter || cellData.letter === cellData.correctLetter) return;
     
     cellData.letter = null;
     if (crossword.activeWordIndex !== null) {
