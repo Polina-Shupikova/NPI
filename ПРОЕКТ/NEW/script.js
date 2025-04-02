@@ -294,13 +294,29 @@ function handlePhysicalKeyPress(e) {
 
 async function startGame() {
     if (wordDatabase.easy.length + wordDatabase.hard.length < 3) {
-        alert('Недостаточно слов для начала игры. Минимум 3 слова.');
-        return;
+        loadBackupWords();
     }
     
     currentLevel = await loadSavedLevel();
     console.log("Начинаем игру с уровня:", currentLevel);
-    loadLevel();
+    
+    let attempts = 0;
+    const maxAttempts = 5;
+    const levelConfig = getLevelConfig(currentLevel);
+    
+    while (attempts < maxAttempts) {
+        if (generateCrossword(levelConfig)) {
+            generateKeyboard();
+            showDefinitions();
+            return;
+        }
+        attempts++;
+        console.log(`Попытка генерации ${attempts} не удалась, пробуем снова...`);
+    }
+    
+    console.error("Не удалось сгенерировать кроссворд после нескольких попыток");
+    alert("Извините, не удалось создать кроссворд. Пожалуйста, попробуйте еще раз.");
+    loadLevel(); // Попробуем снова
 }
 
 async function completeLevel() {
@@ -356,43 +372,59 @@ function showError(message) {
 }
 
 function generateCrossword(levelConfig) {
-    // Увеличиваем размер сетки для больших уровней
-    crossword.size = Math.max(
-        15,
-        levelConfig.maxLength + Math.floor(levelConfig.total / 2) + 3
-    );
+    crossword = {
+        words: [],
+        grid: Array.from({ length: 15 }, () => Array(15).fill(null)),
+        size: 15,
+        selectedCell: null,
+        definitions: [],
+        hints: 3,
+        usedWords: new Set(),
+        wordsToFind: levelConfig.total,
+        wordsFound: 0,
+        activeWordIndex: null
+    };
+
+    // Сначала размещаем первое слово по центру
+    const firstWordType = levelConfig.easy > 0 ? WORD_TYPES.EASY : WORD_TYPES.HARD;
+    const firstWord = getRandomWord(firstWordType, levelConfig.minLength, levelConfig.maxLength);
     
-    // Остальная инициализация...
-    
-    let attempts = 0;
-    const maxAttempts = 200; // Увеличили количество попыток
-    
-    while (attempts < maxAttempts) {
-        // ... существующая логика ...
-        
-        // После размещения первого слова добавляем проверку
-        if (crossword.words.length === 1) {
-            // Сдвигаем все слово на 1 клетку от края если нужно
-            const firstWord = crossword.words[0];
-            if (firstWord.x === 0 || firstWord.y === 0) {
-                const newX = firstWord.x === 0 ? 1 : firstWord.x;
-                const newY = firstWord.y === 0 ? 1 : firstWord.y;
-                
-                if (canPlaceWord(firstWord.word, {x: newX, y: newY}, firstWord.direction)) {
-                    // Перемещаем слово
-                    removeWordFromGrid(firstWord);
-                    addWordToGrid(
-                        {word: firstWord.word, definition: firstWord.definition},
-                        {x: newX, y: newY},
-                        firstWord.direction,
-                        1
-                    );
-                }
-            }
-        }
-        
-        // ... остальная логика генерации ...
+    if (!placeFirstWord(firstWord)) {
+        console.error("Не удалось разместить первое слово");
+        return false;
     }
+
+    // Затем пытаемся разместить остальные слова
+    let remainingAttempts = 500;
+    let wordsToPlace = levelConfig.total - 1;
+    let currentType = WORD_TYPES.EASY;
+
+    while (wordsToPlace > 0 && remainingAttempts > 0) {
+        remainingAttempts--;
+        
+        // Чередуем типы слов
+        currentType = currentType === WORD_TYPES.EASY ? WORD_TYPES.HARD : WORD_TYPES.EASY;
+        if ((currentType === WORD_TYPES.EASY && levelConfig.easy <= 0) || 
+            (currentType === WORD_TYPES.HARD && levelConfig.hard <= 0)) {
+            continue;
+        }
+
+        const wordObj = getRandomWord(currentType, levelConfig.minLength, levelConfig.maxLength);
+        
+        if (tryAddConnectedWord(wordObj)) {
+            wordsToPlace--;
+            if (currentType === WORD_TYPES.EASY) levelConfig.easy--;
+            if (currentType === WORD_TYPES.HARD) levelConfig.hard--;
+        }
+    }
+
+    if (wordsToPlace > 0) {
+        console.error(`Не удалось разместить все слова. Осталось: ${wordsToPlace}`);
+        return false;
+    }
+
+    renderCrossword();
+    return true;
 }
 
 function removeWordFromGrid(wordInfo) {
@@ -445,74 +477,55 @@ function getRandomWord(type, minLength, maxLength) {
 }
 
 function tryAddConnectedWord(wordObj) {
-    // 1. Собираем все возможные точки соединения
-    const connectionPoints = [];
-    for (const baseWord of crossword.words) {
+    const word = wordObj.word;
+    const shuffledWords = [...crossword.words].sort(() => Math.random() - 0.5);
+
+    for (const baseWord of shuffledWords) {
         for (let i = 0; i < baseWord.word.length; i++) {
             const baseLetter = baseWord.word[i];
-            const letterIndices = getAllIndices(wordObj.word, baseLetter);
             
-            for (const j of letterIndices) {
-                connectionPoints.push({
-                    baseWord,
-                    baseLetterIndex: i,
-                    newLetterIndex: j
-                });
+            if (word.includes(baseLetter)) {
+                const letterIndices = getAllIndices(word, baseLetter);
+                const direction = baseWord.direction === 'horizontal' ? 'vertical' : 'horizontal';
+                
+                for (const j of letterIndices) {
+                    const x = direction === 'horizontal' 
+                        ? baseWord.x + i - j 
+                        : baseWord.x + i;
+                        
+                    const y = direction === 'horizontal' 
+                        ? baseWord.y 
+                        : baseWord.y + i - j;
+                    
+                    if (canPlaceWord(word, {x, y}, direction)) {
+                        addWordToGrid(wordObj, {x, y}, direction, crossword.words.length + 1);
+                        return true;
+                    }
+                }
             }
         }
     }
-    
-    // 2. Сортируем точки соединения по "качеству"
-    connectionPoints.sort((a, b) => {
-        // Предпочитаем соединения ближе к центру слова
-        const aDistToCenter = Math.abs(a.baseLetterIndex - a.baseWord.word.length/2);
-        const bDistToCenter = Math.abs(b.baseLetterIndex - b.baseWord.word.length/2);
-        return aDistToCenter - bDistToCenter;
-    });
-    
-    // 3. Пробуем разместить слово в каждой точке
-    for (const {baseWord, baseLetterIndex, newLetterIndex} of connectionPoints) {
-        const direction = baseWord.direction === 'horizontal' ? 'vertical' : 'horizontal';
-        
-        const x = direction === 'horizontal' 
-            ? baseWord.x + baseLetterIndex - newLetterIndex
-            : baseWord.x + baseLetterIndex;
-            
-        const y = direction === 'horizontal' 
-            ? baseWord.y
-            : baseWord.y + baseLetterIndex - newLetterIndex;
-        
-        if (canPlaceWord(wordObj.word, {x, y}, direction)) {
-            addWordToGrid(wordObj, {x, y}, direction, crossword.words.length + 1);
-            return true;
-        }
-    }
-    
     return false;
 }
 
-// Вспомогательная функция для поиска всех вхождений буквы
+function placeFirstWord(wordObj) {
+    const word = wordObj.word;
+    const center = Math.floor(crossword.size / 2) - Math.floor(word.length / 2);
+    const pos = { x: center, y: center };
+    
+    if (canPlaceWord(word, pos, 'horizontal')) {
+        addWordToGrid(wordObj, pos, 'horizontal', 1);
+        return true;
+    }
+    return false;
+}
+
 function getAllIndices(word, letter) {
     const indices = [];
     for (let i = 0; i < word.length; i++) {
         if (word[i] === letter) indices.push(i);
     }
     return indices;
-}
-
-function placeFirstWord(wordObj) {
-    // Размещаем первое слово ближе к центру
-    const center = Math.floor(crossword.size / 2) - Math.floor(wordObj.word.length / 2);
-    const startPos = { 
-        x: Math.max(1, center), // Отступаем от края
-        y: Math.max(1, center)  // Отступаем от края
-    };
-    
-    if (canPlaceWord(wordObj.word, startPos, 'horizontal')) {
-        addWordToGrid(wordObj, startPos, 'horizontal', 1);
-        return true;
-    }
-    return false;
 }
 
 function addWordToGrid(wordObj, position, direction, wordNumber) {
@@ -562,64 +575,46 @@ function addWordToGrid(wordObj, position, direction, wordNumber) {
 function canPlaceWord(word, position, direction) {
     const { x, y } = position;
     const length = word.length;
-    
-    // 1. Проверка выхода за границы сетки
+
+    // Проверка границ
     if (x < 0 || y < 0) return false;
     if (direction === 'horizontal' && x + length > crossword.size) return false;
     if (direction === 'vertical' && y + length > crossword.size) return false;
-    
-    // 2. Проверка всех клеток, которые займет слово
+
+    let hasConnection = false;
+
     for (let i = 0; i < length; i++) {
         const cellX = direction === 'horizontal' ? x + i : x;
         const cellY = direction === 'horizontal' ? y : y + i;
-        
-        // Проверка самой клетки
-        const cell = crossword.grid[cellY]?.[cellX];
+
+        const cell = crossword.grid[cellY][cellX];
+
+        // Если клетка уже занята
         if (cell) {
-            // Если клетка уже занята, буквы должны совпадать
-            if (cell.correctLetter !== word[i]) {
-                return false;
-            }
-            
-            // Для уже занятых клеток пропускаем проверку соседей
+            // Буквы должны совпадать
+            if (cell.correctLetter !== word[i]) return false;
+            hasConnection = true;
             continue;
         }
-        
-        // 3. Проверка соседних клеток только для пустых клеток
-        for (let dy = -1; dy <= 1; dy++) {
-            for (let dx = -1; dx <= 1; dx++) {
-                if (dx === 0 && dy === 0) continue; // Пропускаем текущую клетку
-                
-                const nx = cellX + dx;
-                const ny = cellY + dy;
-                
-                // Проверяем только существующие соседние клетки
-                if (nx >= 0 && ny >= 0 && nx < crossword.size && ny < crossword.size) {
-                    const neighborCell = crossword.grid[ny][nx];
-                    if (neighborCell) {
-                        // Получаем все слова в соседней клетке
-                        const neighborWords = neighborCell.wordIndices.map(idx => crossword.words[idx]);
-                        
-                        for (const neighborWord of neighborWords) {
-                            // Если ориентация совпадает - запрещаем размещение
-                            if (neighborWord.direction === direction) {
-                                return false;
-                            }
-                            
-                            // Для слов без общих букв проверяем минимальное расстояние
-                            if (!wordsShareLetters(word, neighborWord.word)) {
-                                // Запрещаем непосредственных соседей (по горизонтали/вертикали)
-                                if (Math.abs(dx) + Math.abs(dy) === 1) {
-                                    return false;
-                                }
-                            }
-                        }
-                    }
+
+        // Проверка соседей (только горизонтальных/вертикальных)
+        const directions = [[0, 1], [1, 0], [0, -1], [-1, 0]];
+        for (const [dx, dy] of directions) {
+            const nx = cellX + dx;
+            const ny = cellY + dy;
+
+            if (nx >= 0 && ny >= 0 && nx < crossword.size && ny < crossword.size) {
+                const neighbor = crossword.grid[ny][nx];
+                if (neighbor && neighbor.correctLetter !== word[i]) {
+                    return false;
                 }
             }
         }
     }
-    
+
+    // Для новых слов должно быть хотя бы одно пересечение
+    if (crossword.words.length > 0 && !hasConnection) return false;
+
     return true;
 }
 
