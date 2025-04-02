@@ -10,34 +10,18 @@
 <body>
 
     <audio id="background-music" autoplay loop>
-        <source src="../assets/music.mp3" type="audio/mpeg">
+        <source src="../assets/music (1).mp3" type="audio/mpeg">
         Ваш браузер не поддерживает аудио.
     </audio>
     <script>
-        let sett = JSON.parse(localStorage.crosswordSettings).Settings;
-        document.getElementById("background-music").volume = sett.volume / 100;
-        const size = sett.fontSize;
-        if (size === 'small') {
-            document.body.style.fontSize = '16px';
-        } else if (size === 'medium') {
-            document.body.style.fontSize = '18px';
-        } else if (size === 'large') {
-            document.body.style.fontSize = '20px';
-        }
-
-        if (sett.theme == 'dark') {
-            document.body.classList.add('dark-theme');
-        } else {
-            document.body.classList.remove('dark-theme');
-        }
+        document.getElementById("background-music").volume = JSON.parse(localStorage.crosswordSettings).Settings.volume / 100;
     </script>
 
 
     <div class="header-container">
         <a href="../MAIN/index.html" id="back-button">Назад</a>
-        <h1>Генератор кроссвордов</h1>
+        <h1>Кроссвордъ</h1>
         <button id="shop-button">
-            <!-- style="position: absolute; top: 75px; left: 0px;" -->
             Магазин (<span id="coins-display">0</span> монет)
         </button>
     </div>
@@ -78,7 +62,7 @@
 
     <div class="controls">
         <button id="generate-btn">Сгенерировать кроссворд</button>
-        <button id="check-btn">Проверить ответы</button>
+        <button id="toggle-direction-btn">↻</button>
     </div>
 
     <div id="crossword-container">
@@ -128,10 +112,7 @@
                 <button class="keyboard-key" data-key="Ю">Ю</button>
                 <button class="keyboard-key wide" data-key="ENTER">Enter</button>
             </div>
-            <div class="keyboard-controls">
-                <div id="direction-display">Направление: Не выбрано</div>
-                <button id="toggle-direction-btn">Сменить направление</button>
-            </div>
+
         </div>
     </div>
 
@@ -222,7 +203,6 @@
             loadGameData();
 
             document.getElementById('generate-btn').addEventListener('click', generateCrossword);
-            document.getElementById('check-btn').addEventListener('click', checkAnswers);
             document.getElementById('prev-level').addEventListener('click', prevLevel);
             document.getElementById('next-level').addEventListener('click', nextLevel);
             document.getElementById('toggle-direction-btn').addEventListener('click', toggleInputDirection);
