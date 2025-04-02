@@ -115,19 +115,6 @@ let crossword = {
 
 const usedLettersCache = {};
 
-async function initGame() {
-    try {
-        await loadWords();
-        initEventListeners();
-        startGame();
-    } catch (error) {
-        console.error('Ошибка инициализации:', error);
-        loadBackupWords();
-        initEventListeners();
-        startGame();
-    }
-}
-
 async function loadWords() {
     try {
         const [easyResponse, hardResponse] = await Promise.all([
@@ -255,12 +242,12 @@ async function startGame() {
         return;
     }
     
-    // Загружаем сохранённый уровень
+    // Загружаем сохранённый уровень и устанавливаем currentLevel
     const savedLevel = await loadSavedLevel();
+    currentLevel = savedLevel;
     loadLevel();
 }
 
-// Обновите функцию showLevelCompleteDialog
 function showLevelCompleteDialog() {
     const dialog = document.createElement('div');
     dialog.className = 'level-complete-dialog';
@@ -289,17 +276,14 @@ function showLevelCompleteDialog() {
     });
 }
 
-
-// Модифицируйте функцию completeLevel
 async function completeLevel() {
-        currentLevel++;
+    currentLevel++;
     // Сохраняем новый уровень
     await saveCurrentLevel(currentLevel);
     saveUserRecord(currentLevel); // Сохраняем рекорд
     loadLevel();
 }
 
-// Обновите функцию initGame
 async function initGame() {
     try {
         await loadWords();
