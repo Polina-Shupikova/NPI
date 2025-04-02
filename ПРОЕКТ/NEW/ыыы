@@ -1,0 +1,96 @@
+function isTelegramWebApp() {
+    return window.Telegram && Telegram.WebApp && Telegram.WebApp.initDataUnsafe;
+}
+
+function getLevelConfig(level) {
+    if (level <= 26) {
+        return LEVEL_WORDS[level];
+    } else {
+        return LEVEL_WORDS[26]; // Для уровней выше 26 используем параметры 26 уровня
+    }
+}
+
+async function saveCurrentLevel(level) {
+    const levelStr = String(level);
+    console.log("Попытка сохранения уровня:", levelStr);
+    
+    if (isTelegramWebApp()) {
+        try {
+            const saved = await new Promise(resolve => {
+                Telegram.WebApp.CloudStorage.setItem('user_level', levelStr, error => {
+                    if (error) {
+                        console.error("Ошибка CloudStorage:", error);
+                        resolve(false);
+                    } else {
+                        console.log("Уровень сохранён в CloudStorage");
+                        resolve(true);
+                    }
+                });
+            });
+            
+            if (saved) return true;
+        } catch (e) {
+            console.error("Ошибка CloudStorage:", e);
+        }
+    }
+    
+    localStorage.setItem('crossword_user_level', levelStr);
+    console.log("Уровень сохранён в localStorage");
+    return true;
+}
+
+async function loadSavedLevel() {
+    if (isTelegramWebApp()) {
+        try {
+            const value = await new Promise(resolve => {
+                Telegram.WebApp.CloudStorage.getItem('user_level', (error, value) => {
+                    if (error) {
+                        console.error("Ошибка загрузки из CloudStorage:", error);
+                        resolve(null);
+                    } else {
+                        resolve(value);
+                    }
+                });
+            });
+            
+            if (value) {
+                const level = parseInt(value) || 1;
+                console.log("Уровень загружен из CloudStorage:", level);
+                return level;
+            }
+        } catch (e) {
+            console.error("Ошибка CloudStorage:", e);
+        }
+    }
+    
+    const localValue = localStorage.getItem('crossword_user_level');
+    const level = localValue ? parseInt(localValue) : 1;
+    console.log("Уровень загружен из localStorage:", level);
+    return level;
+}
+
+async function saveUserRecord(level) {
+    if (!isTelegramWebApp()) return;
+    
+    const userId = Telegram.WebApp.initDataUnsafe.user?.id;
+    if (!userId) return;
+    
+    try {
+        await new Promise(resolve => {
+            Telegram.WebApp.CloudStorage.setItem(
+                `user_${userId}_record`,
+                String(level),
+                (error) => {
+                    if (error) {
+                        console.error("Ошибка сохранения рекорда:", error);
+                    } else {
+                        console.log("Рекорд сохранён:", level);
+                    }
+                    resolve();
+                }
+            );
+        });
+    } catch (e) {
+        console.error("Ошибка сохранения рекорда:", e);
+    }
+}
