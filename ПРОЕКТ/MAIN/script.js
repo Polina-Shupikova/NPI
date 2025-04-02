@@ -12,6 +12,9 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('volume-slider').addEventListener('input', function() {
     document.getElementById('volume-label').textContent = this.value + '%';
   });
+
+
+  document.getElementById("background-music").volume = document.getElementById("volume-slider").value / 100;
 });
 // async function loadSettings() {
 //   try {
