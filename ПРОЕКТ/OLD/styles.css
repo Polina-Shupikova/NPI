@@ -458,6 +458,9 @@ button:hover::before {
     }
 
     .cell input {
+        width: 25px;
+        height: 25px;
+        line-height: 25px;
         font-size: 16px;
     }
 
@@ -619,13 +622,13 @@ body {
     .page-header {
         padding: 10px 0;
     }
-    
+
     .page-header h1 {
         font-size: 1.2rem;
         padding: 0 40px; /* Оставляем место для кнопки */
         text-align: center;
     }
-    
+
     #back-button {
         left: 10px;
         padding: 6px 12px;
@@ -638,7 +641,7 @@ body {
         font-size: 1rem;
         padding: 0 35px;
     }
-    
+
     #back-button {
         font-size: 12px;
         padding: 5px 10px;
@@ -732,7 +735,7 @@ body {
         columns: 1;
         padding: 15px;
     }
-    
+
     .word-item {
         padding: 10px 12px;
     }
