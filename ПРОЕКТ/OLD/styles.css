@@ -648,43 +648,34 @@ body {
     }
 }
 
-
-/* Основные стили для контейнера списка */
 .word-list {
-    margin: 25px auto;
+    background-color: white;
+    border: 2px solid #ddd;
+    border-radius: 10px;
+    padding: 20px;
+    margin: 20px auto;
+    max-width: 800px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     columns: 2;
     column-gap: 30px;
-    background: rgba(255, 255, 255, 0.85);
-    padding: 25px;
-    border-radius: 12px;
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-    backdrop-filter: blur(8px);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    max-width: 800px;
-    break-inside: avoid;
 }
 
-/* Стили для каждого элемента списка */
 .word-item {
     margin-bottom: 15px;
     break-inside: avoid;
-    background: white;
-    padding: 12px 15px;
-    border-radius: 8px;
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+    padding: 10px;
+    background-color: #f9f9f9;
+    border-radius: 5px;
+    border-left: 4px solid #dc143c;
     transition: all 0.3s ease;
-    position: relative;
-    overflow: hidden;
-    animation: fadeIn 0.4s ease forwards;
-    opacity: 0;
 }
 
-/* Эффекты при наведении */
 .word-item:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-    background: #f9f9f9;
+    background-color: #f0f0f0;
+    transform: translateY(-2px);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
+
 
 /* Акцентная полоса слева */
 .word-item::before {
@@ -712,32 +703,23 @@ body {
     font-weight: bold !important;
 }
 
-/* Стили для текста подсказки */
 .hint {
     font-size: 14px;
-    color: #444;
-    line-height: 1.5;
+    color: #333;
     display: inline;
-    position: relative;
-    padding-left: 5px;
-    word-break: break-word;
+    margin-left: 5px;
 }
-
 /* Анимация появления */
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* Адаптация для разных устройств */
+/* Адаптация для мобильных устройств */
 @media (max-width: 768px) {
     .word-list {
         columns: 1;
         padding: 15px;
-    }
-
-    .word-item {
-        padding: 10px 12px;
     }
 }
 
@@ -794,10 +776,15 @@ body {
     transition: all 0.3s;
     margin: 0;
 }
+@media (max-width: 480px) {
+    .word-list {
+        padding: 10px;
+    }
 
-/* #shop-button:hover {
-    background-color: rgba(33, 150, 243, 0.9);
-} */
+    .word-item {
+        padding: 8px;
+    }
+}
 
 /* Медиа-запросы для мобильных */
 @media (max-width: 768px) {

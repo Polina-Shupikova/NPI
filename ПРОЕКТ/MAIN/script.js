@@ -10,7 +10,7 @@ function include() {
 // Инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', () => {
   // Загружаем настройки
-  include()
+  // include()  
   loadSettings();
   
   // Навешиваем обработчики изменений
