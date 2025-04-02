@@ -334,7 +334,7 @@ function getWordCountForLevel(level) {
     return LEVEL_WORDS[level]?.total || LEVEL_WORDS[26].total;
 }
 
-function loadLevel() {
+async function loadLevel() {
     const wordCount = getWordCountForLevel(currentLevel);
     document.getElementById('level-number').textContent = currentLevel;
     document.getElementById('crossword-grid').innerHTML = `<div class="loading">Генерация уровня ${currentLevel}...</div>`;
@@ -343,23 +343,51 @@ function loadLevel() {
     document.getElementById('solved-definitions-list').innerHTML = '';
     document.getElementById('solved-definitions').classList.add('collapsed');
 
-    setTimeout(() => {
-        try {
-            if (generateCrossword()) {
-                generateKeyboard();
-                showDefinitions();
-            } else {
-                showError('Не удалось сгенерировать кроссворд');
+    // Добавляем задержку для отображения сообщения
+    await new Promise(resolve => setTimeout(resolve, 50));
+
+    try {
+        let success = false;
+        let attempts = 0;
+        const maxAttempts = 5;
+
+        // Пробуем сгенерировать кроссворд несколько раз
+        while (!success && attempts < maxAttempts) {
+            attempts++;
+            success = await generateCrosswordWithTimeout(3000); // Таймаут 3 секунды
+            if (!success) {
+                console.log(`Попытка ${attempts} не удалась, пробуем снова...`);
+                crossword.usedWords.clear(); // Очищаем использованные слова
             }
-        } catch (error) {
-            console.error('Ошибка генерации:', error);
-            showError('Ошибка при создании кроссворда');
         }
-    }, 50);
+
+        if (success) {
+            generateKeyboard();
+            showDefinitions();
+        } else {
+            showError('Не удалось сгенерировать кроссворд. Попробуйте ещё раз.');
+            // Возвращаемся на предыдущий уровень
+            currentLevel = Math.max(1, currentLevel - 1);
+            await saveCurrentLevel(currentLevel);
+            loadLevel();
+        }
+    } catch (error) {
+        console.error('Ошибка генерации:', error);
+        showError('Ошибка при создании кроссворда');
+    }
 }
 
-function showError(message) {
-    alert(message);
+function generateCrosswordWithTimeout(timeout) {
+    return new Promise((resolve) => {
+        const timer = setTimeout(() => {
+            console.log('Таймаут генерации кроссворда');
+            resolve(false);
+        }, timeout);
+
+        const success = generateCrossword();
+        clearTimeout(timer);
+        resolve(success);
+    });
 }
 
 function generateCrossword() {
@@ -407,14 +435,17 @@ function generateCrossword() {
         attempts++;
     }
 
-    // Если не удалось добавить все слова, очищаем и пробуем снова
     if (wordsAdded < requiredWords) {
-        console.log(`Не удалось добавить все слова (добавлено ${wordsAdded} из ${requiredWords}), пробуем снова`);
-        return generateCrossword();
+        console.log(`Добавлено только ${wordsAdded} из ${requiredWords} слов`);
+        return false;
     }
 
     renderCrossword();
     return true;
+}
+
+function showError(message) {
+    alert(message);
 }
 
 function tryAddConnectedWord(wordObj) {
