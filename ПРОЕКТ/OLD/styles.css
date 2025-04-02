@@ -458,10 +458,10 @@ button:hover::before {
     }
 
     .cell input {
-        width: 25px;
-        height: 25px;
-        line-height: 25px;
-        font-size: 16px;
+        width: 10px;
+        height: 10px;
+        line-height: 10px;
+        font-size: 10px;
     }
 
     .number {
