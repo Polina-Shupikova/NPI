@@ -489,7 +489,7 @@ button:hover::before {
     }
 
     .level-controls, .keyboard-controls {
-        flex-direction: column;
+        /* flex-direction: column; */
         gap: 10px;
     }
 
