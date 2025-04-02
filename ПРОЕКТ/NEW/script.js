@@ -130,25 +130,32 @@ async function initGame() {
 
 async function loadWords() {
     try {
-        const easyResponse = await fetch('easy_words.json');
-        if (!easyResponse.ok) throw new Error(`Ошибка HTTP при загрузке easy_words.json! Статус: ${easyResponse.status}`);
+        const [easyResponse, hardResponse] = await Promise.all([
+            fetch('easy_words.json'),
+            fetch('hard_words.json')
+        ]);
         
-        const easyData = await easyResponse.json();
-        if (!Array.isArray(easyData)) throw new Error("easy_words.json не содержит массив слов");
+        if (!easyResponse.ok || !hardResponse.ok) {
+            throw new Error(`Ошибка загрузки файлов: ${easyResponse.status}, ${hardResponse.status}`);
+        }
         
-        const hardResponse = await fetch('hard_words.json');
-        if (!hardResponse.ok) throw new Error(`Ошибка HTTP при загрузке hard_words.json! Статус: ${hardResponse.status}`);
+        const [easyData, hardData] = await Promise.all([
+            easyResponse.json(),
+            hardResponse.json()
+        ]);
         
-        const hardData = await hardResponse.json();
-        if (!Array.isArray(hardData)) throw new Error("hard_words.json не содержит массив слов");
+        if (!Array.isArray(easyData) || !Array.isArray(hardData)) {
+            throw new Error("Файлы должны содержать массивы слов");
+        }
         
         wordDatabase.easy = easyData;
         wordDatabase.hard = hardData;
         
-        console.log(`Успешно загружено: ${wordDatabase.easy.length} простых и ${wordDatabase.hard.length} сложных слов`);
+        console.log(`Успешно загружено: ${easyData.length} простых и ${hardData.length} сложных слов`);
     } catch (error) {
-        console.error("Ошибка загрузки слов:", error.message);
-        throw error;
+        console.error("Ошибка загрузки слов:", error);
+        loadBackupWords();
+        throw error; // Пробрасываем ошибку дальше для обработки в initGame
     }
 }
 
@@ -247,7 +254,6 @@ async function startGame() {
     
     // Загружаем сохранённый уровень
     const savedLevel = await loadSavedLevel();
-    currentLevel = Math.min(savedLevel, MAX_LEVEL); // Не даём превысить максимальный уровень
     loadLevel();
 }
 
