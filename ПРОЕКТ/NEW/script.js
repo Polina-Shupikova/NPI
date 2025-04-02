@@ -184,24 +184,20 @@ async function initGame() {
 async function loadWords() {
     try {
         const easyResponse = await fetch('easy_words.json');
-        if (!easyResponse.ok) throw new Error(`Ошибка HTTP при загрузке easy_words.json! Статус: ${easyResponse.status}`);
-        
+        if (!easyResponse.ok) throw new Error(`Ошибка HTTP: ${easyResponse.status}`);
         const easyData = await easyResponse.json();
-        if (!Array.isArray(easyData)) throw new Error("easy_words.json не содержит массив слов");
-        
+        console.log('Загружено простых слов:', easyData.length); // Логирование
+
         const hardResponse = await fetch('hard_words.json');
-        if (!hardResponse.ok) throw new Error(`Ошибка HTTP при загрузке hard_words.json! Статус: ${hardResponse.status}`);
-        
+        if (!hardResponse.ok) throw new Error(`Ошибка HTTP: ${hardResponse.status}`);
         const hardData = await hardResponse.json();
-        if (!Array.isArray(hardData)) throw new Error("hard_words.json не содержит массив слов");
-        
+        console.log('Загружено сложных слов:', hardData.length); // Логирование
+
         wordDatabase.easy = easyData;
         wordDatabase.hard = hardData;
-        
-        console.log(`Успешно загружено: ${wordDatabase.easy.length} простых и ${wordDatabase.hard.length} сложных слов`);
     } catch (error) {
-        console.error("Ошибка загрузки слов:", error.message);
-        throw error;
+        console.error('Ошибка загрузки слов:', error);
+        loadBackupWords(); // Используем резервные слова
     }
 }
 
@@ -339,32 +335,24 @@ async function completeLevel() {
 
 function loadLevel() {
     const levelConfig = getLevelConfig(currentLevel);
-    document.getElementById('level-number').textContent = currentLevel;
-    document.getElementById('crossword-grid').innerHTML = `<div class="loading">Генерация уровня ${currentLevel}...</div>`;
-    document.getElementById('keyboard').innerHTML = '';
-    document.getElementById('definitions-list').innerHTML = '';
-    document.getElementById('solved-definitions-list').innerHTML = '';
-    document.getElementById('solved-definitions').classList.add('collapsed');
+    let attempts = 0;
+    const maxAttempts = 10;
 
-    // Удален вывод сообщения об ошибке и добавлен автоматический рестарт
     const tryGenerate = () => {
-        try {
-            if (generateCrossword(levelConfig)) {
-                generateKeyboard();
-                showDefinitions();
-            } else {
-                // Если не получилось - пробуем снова через 50мс
-                setTimeout(tryGenerate, 50);
-            }
-        } catch (error) {
-            console.error('Ошибка генерации:', error);
-            // При ошибке тоже пробуем снова
+        attempts++;
+        if (attempts > maxAttempts) {
+            console.error('Достигнуто максимальное количество попыток генерации');
+            alert('Не удалось создать кроссворд. Пожалуйста, попробуйте ещё раз.');
+            return;
+        }
+        if (generateCrossword(levelConfig)) {
+            generateKeyboard();
+            showDefinitions();
+        } else {
             setTimeout(tryGenerate, 50);
         }
     };
-
-    // Первая попытка генерации
-    setTimeout(tryGenerate, 50);
+    tryGenerate();
 }
 
 function showError(message) {
@@ -372,49 +360,29 @@ function showError(message) {
 }
 
 function generateCrossword(levelConfig) {
-    crossword = {
-        words: [],
-        grid: Array.from({ length: 15 }, () => Array(15).fill(null)),
-        size: 15,
-        selectedCell: null,
-        definitions: [],
-        hints: 3,
-        usedWords: new Set(),
-        wordsToFind: levelConfig.total,
-        wordsFound: 0,
-        activeWordIndex: null
-    };
+    console.log('Начало генерации кроссворда...');
+    crossword = { ... }; // Сброс кроссворда
 
-    // Сначала размещаем первое слово по центру
+    // Размещение первого слова
     const firstWordType = levelConfig.easy > 0 ? WORD_TYPES.EASY : WORD_TYPES.HARD;
     const firstWord = getRandomWord(firstWordType, levelConfig.minLength, levelConfig.maxLength);
-    
+    console.log('Попытка разместить первое слово:', firstWord.word);
+
     if (!placeFirstWord(firstWord)) {
-        console.error("Не удалось разместить первое слово");
+        console.error('Не удалось разместить первое слово');
         return false;
     }
+    console.log('Первое слово размещено:', crossword.words[0].word);
 
-    // Затем пытаемся разместить остальные слова
-    let remainingAttempts = 500;
+    // Размещение остальных слов
     let wordsToPlace = levelConfig.total - 1;
-    let currentType = WORD_TYPES.EASY;
-
+    let remainingAttempts = 500;
     while (wordsToPlace > 0 && remainingAttempts > 0) {
         remainingAttempts--;
-        
-        // Чередуем типы слов
-        currentType = currentType === WORD_TYPES.EASY ? WORD_TYPES.HARD : WORD_TYPES.EASY;
-        if ((currentType === WORD_TYPES.EASY && levelConfig.easy <= 0) || 
-            (currentType === WORD_TYPES.HARD && levelConfig.hard <= 0)) {
-            continue;
-        }
-
-        const wordObj = getRandomWord(currentType, levelConfig.minLength, levelConfig.maxLength);
-        
+        const wordObj = getRandomWord(/* ... */);
         if (tryAddConnectedWord(wordObj)) {
             wordsToPlace--;
-            if (currentType === WORD_TYPES.EASY) levelConfig.easy--;
-            if (currentType === WORD_TYPES.HARD) levelConfig.hard--;
+            console.log('Слово добавлено:', wordObj.word);
         }
     }
 
@@ -423,6 +391,7 @@ function generateCrossword(levelConfig) {
         return false;
     }
 
+    console.log('Кроссворд сгенерирован успешно!');
     renderCrossword();
     return true;
 }
@@ -632,6 +601,14 @@ function wordsShareLetters(word1, word2) {
 }
 
 function renderCrossword(force = false) {
+    function renderCrossword() {
+        const grid = document.getElementById('crossword-grid');
+        if (!grid) {
+            console.error('Элемент crossword-grid не найден');
+            return;
+        }
+        grid.innerHTML = '';
+        console.log('Рендеринг кроссворда:', crossword.grid); // Логирование
     if (!force && !document.getElementById('crossword-grid').children.length) {
         return;
     }
