@@ -38,7 +38,8 @@ const LEVEL_WORDS = {
     23: { total: 14, easy: 9, hard: 5, minLength: 10, maxLength: 11 },
     24: { total: 14, easy: 9, hard: 5, minLength: 10, maxLength: 11 },
     25: { total: 15, easy: 10, hard: 5, minLength: 10, maxLength: 11 },
-    26: { total: 15, easy: 10, hard: 5, minLength: 12, maxLength: 15 }
+    26: { total: 15, easy: 10, hard: 5, minLength: 21, maxLength: 15 },
+    27: { total: 15, easy: 0, hard: 15, minLength: 15, maxLength: 15 }
 };
 
 let currentLevel = 1;
@@ -67,10 +68,10 @@ function isTelegramWebApp() {
 }
 
 function getLevelConfig(level) {
-    if (level <= 26) {
+    if (level <= 27) {
         return LEVEL_WORDS[level];
     } else {
-        return LEVEL_WORDS[26]; // Для уровней выше 26 используем параметры 26 уровня
+        return LEVEL_WORDS[27]; // Для уровней выше 27 используем параметры 27 уровня
     }
 }
 
@@ -329,19 +330,25 @@ function loadLevel() {
     document.getElementById('solved-definitions-list').innerHTML = '';
     document.getElementById('solved-definitions').classList.add('collapsed');
 
-    setTimeout(() => {
+    // Удален вывод сообщения об ошибке и добавлен автоматический рестарт
+    const tryGenerate = () => {
         try {
             if (generateCrossword(levelConfig)) {
                 generateKeyboard();
                 showDefinitions();
             } else {
-                showError('Не удалось сгенерировать кроссворд');
+                // Если не получилось - пробуем снова через 50мс
+                setTimeout(tryGenerate, 50);
             }
         } catch (error) {
             console.error('Ошибка генерации:', error);
-            showError('Ошибка при создании кроссворда');
+            // При ошибке тоже пробуем снова
+            setTimeout(tryGenerate, 50);
         }
-    }, 50);
+    };
+
+    // Первая попытка генерации
+    setTimeout(tryGenerate, 50);
 }
 
 function showError(message) {
@@ -360,7 +367,8 @@ function generateCrossword(levelConfig) {
     crossword.activeWordIndex = null;
     document.getElementById('hint-count').textContent = crossword.hints;
 
-    for (let attempt = 0; attempt < 10; attempt++) {
+    // Бесконечные попытки генерации
+    while (true) {
         try {
             let easyWordsAdded = 0;
             let hardWordsAdded = 0;
@@ -409,13 +417,12 @@ function generateCrossword(levelConfig) {
             console.error('Попытка генерации не удалась:', e);
         }
         
+        // Сбрасываем данные для новой попытки
         crossword.words = [];
         crossword.grid = Array(crossword.size).fill().map(() => Array(crossword.size).fill(null));
         crossword.definitions = [];
         crossword.usedWords.clear();
     }
-    
-    return false;
 }
 
 function getRandomWord(type, minLength, maxLength) {
