@@ -389,13 +389,25 @@ function generateCrossword(levelConfig) {
     // Размещение остальных слов
     let wordsToPlace = levelConfig.total - 1;
     let remainingAttempts = 500;
+    let lastSuccessfulAttempt = 0;
+
     while (wordsToPlace > 0 && remainingAttempts > 0) {
         remainingAttempts--;
-        const wordType = wordsToPlace <= levelConfig.hard ? WORD_TYPES.HARD : WORD_TYPES.EASY;
+        
+        // Чередуем типы слов, чтобы равномерно распределить сложные
+        const wordType = 
+            wordsToPlace <= levelConfig.hard && lastSuccessfulAttempt > 2 
+            ? WORD_TYPES.HARD 
+            : WORD_TYPES.EASY;
+
         const wordObj = getRandomWord(wordType, levelConfig.minLength, levelConfig.maxLength);
+        
         if (tryAddConnectedWord(wordObj)) {
             wordsToPlace--;
+            lastSuccessfulAttempt = 0;
             console.log('Слово добавлено:', wordObj.word);
+        } else {
+            lastSuccessfulAttempt++;
         }
     }
 
@@ -405,6 +417,7 @@ function generateCrossword(levelConfig) {
     }
 
     console.log('Кроссворд сгенерирован успешно!');
+    trimGrid(); // Обрезаем пустые края сетки
     renderCrossword();
     return true;
 }
@@ -460,9 +473,10 @@ function getRandomWord(type, minLength, maxLength) {
 
 function tryAddConnectedWord(wordObj) {
     const word = wordObj.word;
-    const shuffledWords = [...crossword.words].sort(() => Math.random() - 0.5);
+    if (crossword.usedWords.has(word)) return false;
 
-    for (const baseWord of shuffledWords) {
+    // Проверяем все возможные пересечения с существующими словами
+    for (const baseWord of crossword.words) {
         for (let i = 0; i < baseWord.word.length; i++) {
             const baseLetter = baseWord.word[i];
             
@@ -598,6 +612,51 @@ function canPlaceWord(word, position, direction) {
     if (crossword.words.length > 0 && !hasConnection) return false;
 
     return true;
+}
+
+function trimGrid() {
+    let minX = crossword.size, maxX = 0, minY = crossword.size, maxY = 0;
+    
+    // Находим границы занятых клеток
+    for (let y = 0; y < crossword.size; y++) {
+        for (let x = 0; x < crossword.size; x++) {
+            if (crossword.grid[y][x]) {
+                minX = Math.min(minX, x);
+                maxX = Math.max(maxX, x);
+                minY = Math.min(minY, y);
+                maxY = Math.max(maxY, y);
+            }
+        }
+    }
+    
+    // Добавляем небольшие отступы
+    minX = Math.max(0, minX - 1);
+    maxX = Math.min(crossword.size - 1, maxX + 1);
+    minY = Math.max(0, minY - 1);
+    maxY = Math.min(crossword.size - 1, maxY + 1);
+    
+    // Обновляем координаты слов
+    for (const word of crossword.words) {
+        word.x -= minX;
+        word.y -= minY;
+        for (let i = 0; i < word.letters.length; i++) {
+            word.letters[i].x -= minX;
+            word.letters[i].y -= minY;
+        }
+    }
+    
+    // Создаем новую обрезанную сетку
+    const newGrid = [];
+    for (let y = minY; y <= maxY; y++) {
+        const row = [];
+        for (let x = minX; x <= maxX; x++) {
+            row.push(crossword.grid[y][x]);
+        }
+        newGrid.push(row);
+    }
+    
+    crossword.grid = newGrid;
+    crossword.size = newGrid.length;
 }
 
 // Вспомогательная функция для проверки общих букв
