@@ -1028,7 +1028,7 @@ body {
     justify-content: space-between;
     align-items: center;
     padding: 15px;
-    background-color: rgba(255, 245, 230, 0.95);
+    background-color: rgb(255 245 230 / 17%);
     border-radius: 10px;
     border-bottom: 3px solid var(--primary-color);
 }
@@ -1396,6 +1396,179 @@ body {
     }
 }
 
+@media (max-width: 600px) {
+    .crossword-cell {
+        width: 26px;
+        height: 26px;
+        font-size: 14px;
+    }
+    .keyboard-key {
+        width: 28px;
+        height: 28px;
+        font-size: 12px;
+    }
+}
+
+/* Основные переменные для светлой темы */
+:root {
+    /* Цвета фона */
+    --bg-color: #fff5e6;
+    --container-bg: rgba(255, 245, 230, 0.9);
+    --header-bg: rgba(255, 245, 230, 0.95);
+    --cell-bg: rgba(255, 255, 255, 0.9);
+    
+    /* Цвета текста */
+    --text-color: #2e2e2e;
+    --primary-text: #d32f2f;
+    
+    /* Акцентные цвета */
+    --primary-color: #d32f2f;
+    --secondary-color: #f9e0b7;
+    --correct-color: #ffd700;
+    --incorrect-color: #ff8a65;
+    
+    /* Границы */
+    --border-color: rgba(211, 47, 47, 0.5);
+    --container-border: 2px solid var(--primary-color);
+}
+
+/* Темная тема */
+.dark-theme {
+    /* Цвета фона */
+    --bg-color: #2e2e2e;
+    --container-bg: rgba(46, 46, 46, 0.9);
+    --header-bg: rgba(46, 46, 46, 0.95);
+    --cell-bg: rgba(74, 74, 74, 0.9);
+    
+    /* Цвета текста */
+    --text-color: #f9e0b7;
+    --primary-text: #e53935;
+    
+    /* Акцентные цвета */
+    --primary-color: #e53935;
+    --secondary-color: #4a4a4a;
+    --correct-color: #ffb300;
+    --incorrect-color: #d81b60;
+    
+    /* Границы */
+    --border-color: rgba(229, 57, 53, 0.5);
+}
+
+/* Общие стили для обеих тем */
+body {
+    font-family: 'Arial', sans-serif;
+    background-image: url('https://cdnn1.img.sputnik-abkhazia.info/img/102991/75/1029917516_47:130:1134:813_1400x0_80_0_0_22e4fc6166bb61d929eceaee2a1e624e.jpg');
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center;
+    margin: 0;
+    padding: 0;
+    color: var(--text-color);
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 20px auto;
+    padding: 25px;
+    background-color: var(--container-bg);
+    border-radius: 15px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+    border: var(--container-border);
+}
+
+/* Стили для кроссворда */
+.crossword-grid {
+    background-color: var(--container-bg);
+    border-radius: 10px;
+    padding: 15px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--secondary-color);
+}
+
+.crossword-cell {
+    width: 30px;
+    height: 30px;
+    border: 1px solid var(--border-color);
+    background-color: var(--cell-bg);
+    color: var(--text-color);
+    font-size: 16px;
+    font-weight: bold;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-radius: 4px;
+}
+
+/* Стили для клавиатуры */
+.keyboard {
+    background-color: var(--container-bg);
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    margin-top: 20px;
+    border: 1px solid var(--primary-color);
+}
+
+.keyboard-key {
+    width: 32px;
+    height: 32px;
+    background-color: var(--secondary-color);
+    color: var(--text-color);
+    border: 1px solid var(--primary-color);
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: bold;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+/* Стили для кнопок */
+.back-button, .hint-button {
+    background-color: var(--primary-color);
+    color: #fff;
+    border: 2px solid var(--correct-color);
+    transition: all 0.3s ease;
+}
+
+.back-button:hover, .hint-button:hover {
+    background-color: var(--button-hover);
+}
+
+/* Состояния ячеек */
+.crossword-cell.correct-letter {
+    background-color: var(--correct-color);
+    color: #2e2e2e;
+}
+
+.crossword-cell.incorrect-letter {
+    background-color: var(--incorrect-color);
+    color: #fff;
+}
+
+.crossword-cell.completed-word {
+    background-color: #388e3c;
+    color: #fff;
+    border-color: var(--correct-color);
+}
+
+/* Подсказки и определения */
+.definitions-box, .solved-definitions {
+    background-color: var(--container-bg);
+    border: 3px solid var(--primary-color);
+}
+
+.definition-item, .solved-definition-item {
+    background-color: var(--secondary-color);
+    border-left: 4px solid var(--primary-color);
+}
+
+/* Медиа-запросы */
 @media (max-width: 600px) {
     .crossword-cell {
         width: 26px;
