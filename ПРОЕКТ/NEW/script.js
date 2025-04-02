@@ -2,31 +2,33 @@ const isTelegramWebApp = () => {
     return window.Telegram && Telegram.WebApp && Telegram.WebApp.initDataUnsafe;
 };
 
-// Функция для сохранения текущего уровня
+console.log(Telegram.WebApp.CloudStorage); // Должен вернуть объект
+console.log("User ID:", Telegram.WebApp.initDataUnsafe.user?.id);
+
 async function saveCurrentLevel(level) {
     if (!isTelegramWebApp()) {
         console.log("Not in Telegram WebApp, skipping save");
-        return;
+        return false;
     }
 
     try {
-        await Telegram.WebApp.CloudStorage.setItem(
-            'user_level', 
-            String(level),
-            (error) => {
+        return await new Promise((resolve) => {
+            Telegram.WebApp.CloudStorage.setItem('user_level', String(level), (error) => {
                 if (error) {
-                    console.error("Ошибка сохранения уровня:", error);
+                    console.error("Ошибка сохранения:", error);
+                    resolve(false);
                 } else {
                     console.log("Уровень сохранён:", level);
+                    resolve(true);
                 }
             }
-        );
+        });
     } catch (error) {
         console.error("Ошибка при сохранении:", error);
+        return false;
     }
 }
 
-// Функция для загрузки сохранённого уровня
 async function loadSavedLevel() {
     if (!isTelegramWebApp()) {
         console.log("Not in Telegram WebApp, starting from level 1");
@@ -37,16 +39,17 @@ async function loadSavedLevel() {
         const result = await new Promise((resolve) => {
             Telegram.WebApp.CloudStorage.getItem('user_level', (error, value) => {
                 if (error) {
-                    console.error("Ошибка загрузки уровня:", error);
+                    console.error("Ошибка загрузки:", error);
                     resolve(1);
                 } else {
                     resolve(value ? parseInt(value) : 1);
                 }
             });
         });
+        console.log("Загружен уровень:", result); // Добавьте эту строку
         return result;
     } catch (error) {
-        console.error("Ошибка при загрузке:", error);
+        console.error("Ошибка загрузки:", error);
         return 1;
     }
 }
@@ -285,6 +288,7 @@ async function completeLevel() {
 }
 
 async function initGame() {
+    console.log(isTelegramWebApp())
     try {
         await loadWords();
         initEventListeners();
