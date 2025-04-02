@@ -2,37 +2,31 @@ const isTelegramWebApp = () => {
     return window.Telegram && Telegram.WebApp && Telegram.WebApp.initDataUnsafe;
 };
 
-console.log(Telegram.WebApp.CloudStorage); // Должен вернуть объект
-console.log("User ID:", Telegram.WebApp.initDataUnsafe.user?.id);
-
+// Функция для сохранения текущего уровня
 async function saveCurrentLevel(level) {
     if (!isTelegramWebApp()) {
         console.log("Not in Telegram WebApp, skipping save");
-        return false;
+        return;
     }
 
     try {
-        return await new Promise((resolve) => {
-            Telegram.WebApp.CloudStorage.setItem(
-                'user_level', 
-                String(level), 
-                (error) => {
-                    if (error) {
-                        console.error("Ошибка сохранения:", error);
-                        resolve(false);
-                    } else {
-                        console.log("Уровень сохранён:", level);
-                        resolve(true);
-                    }
+        await Telegram.WebApp.CloudStorage.setItem(
+            'user_level', 
+            String(level),
+            (error) => {
+                if (error) {
+                    console.error("Ошибка сохранения уровня:", error);
+                } else {
+                    console.log("Уровень сохранён:", level);
                 }
-            );
-        });
+            }
+        );
     } catch (error) {
         console.error("Ошибка при сохранении:", error);
-        return false;
     }
-}  // <-- This closing brace was missing
+}
 
+// Функция для загрузки сохранённого уровня
 async function loadSavedLevel() {
     if (!isTelegramWebApp()) {
         console.log("Not in Telegram WebApp, starting from level 1");
@@ -43,17 +37,16 @@ async function loadSavedLevel() {
         const result = await new Promise((resolve) => {
             Telegram.WebApp.CloudStorage.getItem('user_level', (error, value) => {
                 if (error) {
-                    console.error("Ошибка загрузки:", error);
+                    console.error("Ошибка загрузки уровня:", error);
                     resolve(1);
                 } else {
                     resolve(value ? parseInt(value) : 1);
                 }
             });
         });
-        console.log("Загружен уровень:", result); // Добавьте эту строку
         return result;
     } catch (error) {
-        console.error("Ошибка загрузки:", error);
+        console.error("Ошибка при загрузке:", error);
         return 1;
     }
 }
@@ -121,6 +114,19 @@ let crossword = {
 };
 
 const usedLettersCache = {};
+
+async function initGame() {
+    try {
+        await loadWords();
+        initEventListeners();
+        startGame();
+    } catch (error) {
+        console.error('Ошибка инициализации:', error);
+        loadBackupWords();
+        initEventListeners();
+        startGame();
+    }
+}
 
 async function loadWords() {
     try {
@@ -244,12 +250,17 @@ function handlePhysicalKeyPress(e) {
 }
 
 async function startGame() {
-    const savedLevel = await loadSavedLevel(); // Убедитесь, что есть await
-    currentLevel = savedLevel;
-    console.log('Начальный уровень:', currentLevel); // Проверьте значение
-    loadLevel(); // Должен вызываться после установки currentLevel
-  }
+    if (wordDatabase.easy.length + wordDatabase.hard.length < 3) {
+        alert('Недостаточно слов для начала игры. Минимум 3 слова.');
+        return;
+    }
+    
+    // Загружаем сохранённый уровень
+    const savedLevel = await loadSavedLevel();
+    loadLevel();
+}
 
+// Обновите функцию showLevelCompleteDialog
 function showLevelCompleteDialog() {
     const dialog = document.createElement('div');
     dialog.className = 'level-complete-dialog';
@@ -278,41 +289,57 @@ function showLevelCompleteDialog() {
     });
 }
 
+
+// Модифицируйте функцию completeLevel
 async function completeLevel() {
-    currentLevel++;
+        currentLevel++;
     // Сохраняем новый уровень
     await saveCurrentLevel(currentLevel);
     saveUserRecord(currentLevel); // Сохраняем рекорд
     loadLevel();
 }
 
+// Обновите функцию initGame
 async function initGame() {
     try {
-      await loadWords();       // 1. Загрузка слов
-      initEventListeners();   // 2. Инициализация кнопок
-      await startGame();      // 3. Запуск игры
+        await loadWords();
+        initEventListeners();
+        await startGame(); // Добавьте await
     } catch (error) {
-      console.error('Ошибка:', error);
-      loadBackupWords();      // Fallback-слова
-      initEventListeners();
-      await startGame();
+        console.error('Ошибка инициализации:', error);
+        loadBackupWords();
+        initEventListeners();
+        await startGame(); // Добавьте await
     }
-  }
+}
 
 function getWordCountForLevel(level) {
     return LEVEL_WORDS[level]?.total || LEVEL_WORDS[26].total;
 }
 
 function loadLevel() {
-    console.log('Загрузка уровня...'); // Проверьте, что это сообщение появляется
+    const wordCount = getWordCountForLevel(currentLevel);
+    document.getElementById('level-number').textContent = currentLevel;
+    document.getElementById('crossword-grid').innerHTML = `<div class="loading">Генерация уровня ${currentLevel}...</div>`;
+    document.getElementById('keyboard').innerHTML = '';
+    document.getElementById('definitions-list').innerHTML = '';
+    document.getElementById('solved-definitions-list').innerHTML = '';
+    document.getElementById('solved-definitions').classList.add('collapsed');
+
     setTimeout(() => {
-      if (generateCrossword()) {
-        console.log('Кроссворд сгенерирован'); // Должно появиться
-        generateKeyboard();
-        showDefinitions();
-      }
+        try {
+            if (generateCrossword()) {
+                generateKeyboard();
+                showDefinitions();
+            } else {
+                showError('Не удалось сгенерировать кроссворд');
+            }
+        } catch (error) {
+            console.error('Ошибка генерации:', error);
+            showError('Ошибка при создании кроссворда');
+        }
     }, 50);
-  }
+}
 
 function showError(message) {
     alert(message);
