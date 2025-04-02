@@ -266,9 +266,3 @@ document.getElementById('daily-quote').textContent = quotes[Math.floor(Math.rand
 // function to_old(){
 //     document.location.href = 'pages/NEW/index.html';
 // }
-
-
-
-
-// 63 - save
-// 90 - load
