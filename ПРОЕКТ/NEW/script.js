@@ -147,29 +147,29 @@ async function initGame() {
 async function loadWords() {
     try {
         const [easyResponse, hardResponse] = await Promise.all([
-            fetch('https://gist.githubusercontent.com/Ukinnne/7374dccab584f7903680e5a5bacb56a5/raw/easy_words.json'),
-            fetch('https://gist.githubusercontent.com/Ukinnne/d8b156ad91831540f90236961c5095c9/raw/hard_words.json')
+            fetch('easy_words.json'),
+            fetch('hard_words.json')
         ]);
 
-        if (!easyResponse.ok || !hardResponse.ok) {
-            throw new Error(`Ошибка загрузки: ${easyResponse.status}, ${hardResponse.status}`);
-        }
+        if (!easyResponse.ok) throw new Error(`Ошибка загрузки easy_words: ${easyResponse.status}`);
+        if (!hardResponse.ok) throw new Error(`Ошибка загрузки hard_words: ${hardResponse.status}`);
 
         const [easyData, hardData] = await Promise.all([
             easyResponse.json(),
             hardResponse.json()
         ]);
 
-        if (!Array.isArray(easyData) || !Array.isArray(hardData)) {
-            throw new Error("Данные должны быть массивом слов");
-        }
-
         wordDatabase.easy = easyData;
         wordDatabase.hard = hardData;
-        console.log(`Загружено: ${easyData.length} лёгких и ${hardData.length} сложных слов`);
+        
+        // Проверяем минимальное количество слов
+        if (wordDatabase.easy.length < 10 || wordDatabase.hard.length < 5) {
+            throw new Error("Недостаточно слов в базе");
+        }
     } catch (error) {
         console.error("Ошибка загрузки слов:", error);
-        loadBackupWords(); // Используем резервные слова
+        loadBackupWords();
+        throw error; // Пробрасываем ошибку дальше
     }
 }
 
@@ -335,6 +335,19 @@ function getWordCountForLevel(level) {
 }
 
 async function loadLevel() {
+    const loadingElement = document.getElementById('crossword-grid');
+    loadingElement.innerHTML = `<div class="loading">Генерация уровня ${currentLevel}...</div>`;
+    
+    // Обновляем сообщение о прогрессе
+    const updateStatus = (message) => {
+        loadingElement.innerHTML = `<div class="loading">${message}</div>`;
+    };
+
+    updateStatus("Загрузка слов...");
+    await loadWords().catch(() => {});
+
+    updateStatus("Генерация сетки...");
+    
     const wordCount = getWordCountForLevel(currentLevel);
     document.getElementById('level-number').textContent = currentLevel;
     document.getElementById('crossword-grid').innerHTML = `<div class="loading">Генерация уровня ${currentLevel}...</div>`;
@@ -388,6 +401,15 @@ function generateCrosswordWithTimeout(timeout) {
         clearTimeout(timer);
         resolve(success);
     });
+}
+
+function getRandomWord(type, minLength, maxLength) {
+    // Если нет слов в базе, используем резервные
+    if (wordDatabase[type].length === 0) {
+        loadBackupWords();
+        if (wordDatabase[type].length === 0) return null;
+    }
+    // ... остальной код функции
 }
 
 function generateCrossword() {
