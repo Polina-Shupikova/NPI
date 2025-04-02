@@ -676,3 +676,152 @@ h1 {
   animation: shake 0.2s infinite;
 }
 */
+
+/* Основные переменные */
+ :root {
+ /* Цвета для светлой темы */
+ --bg-color: #ffffff;
+ --text-color: #000000;
+ --primary-color: #4a6fa5;
+ --secondary-color: #f0f0f0;
+ --disabled-color: #cccccc;
+ --button-hover: #3a5a8f;
+ 
+ /* Дополнительные цвета */
+ --quote-box-bg: rgba(162, 0, 0, 0.17);
+ --back-button-bg: linear-gradient(135deg, #740000, #9a3015);
+ --back-button-shadow: 0 4px 15px rgba(172, 0, 0, 0.6);
+ --volume-slider-bg: linear-gradient(to right, #32de6a, #11998e);
+ --glow-effect: 0 0 5px rgba(255, 0, 0, 0.8), 
+               0 0 10px rgba(255, 0, 0, 0.6), 
+               0 0 15px rgba(255, 0, 0, 0.4);
+ 
+ /* Фоновые изображения */
+ --main-bg-image: url('../assets/vertical (3).jpg');
+ --overlay-color: rgba(0, 0, 0, 0.5);
+ }
+ 
+ /* Темная тема */
+ .dark-theme {
+ --bg-color: #1a1a1a;
+ --text-color: #f0f0f0;
+ --primary-color: #5d8acd;
+ --secondary-color: #2a2a2a;
+ --disabled-color: #444444;
+ --button-hover: #4d7abd;
+ 
+ /* Дополнительные цвета для темной темы */
+ --quote-box-bg: rgba(80, 0, 0, 0.3);
+ --back-button-bg: linear-gradient(135deg, #4a0000, #6a1f0f);
+ --back-button-shadow: 0 4px 15px rgba(100, 0, 0, 0.8);
+ --volume-slider-bg: linear-gradient(to right, #1e8a4a, #0d6e5e);
+ --glow-effect: 0 0 5px rgba(255, 80, 80, 0.8), 
+               0 0 10px rgba(255, 80, 80, 0.6), 
+               0 0 15px rgba(255, 80, 80, 0.4);
+ 
+ /* Фоновые настройки для темной темы */
+ --overlay-color: rgba(0, 0, 0, 0.7);
+ }
+ 
+ /* Общие стили для body */
+ body {
+ font-size: 18px;
+ font-family: 'Beton';
+ letter-spacing: 2px;
+ background-color: var(--bg-color);
+ color: var(--text-color);
+ margin: 0;
+ padding: 0;
+ transition: background-color 0.3s, color 0.3s;
+ }
+ 
+ /* Фоновое изображение и оверлей */
+ body, .main-page {
+ background: var(--main-bg-image) no-repeat center center fixed;
+ background-size: cover;
+ }
+ 
+ body::before, .main-page::before {
+ background: var(--overlay-color);
+ }
+ 
+ /* Цитата */
+ .quote-box {
+ background: var(--quote-box-bg);
+ box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+ }
+ 
+ /* Кнопка "Назад" */
+ .back-button {
+ background: var(--back-button-bg);
+ box-shadow: var(--back-button-shadow);
+ }
+ 
+ .back-button:hover {
+ background: linear-gradient(135deg, #ff1100, #ff5500);
+ }
+ 
+ /* Слайдер громкости */
+ #volume-slider {
+ background: var(--volume-slider-bg);
+ }
+ 
+ /* Свечение текста */
+ .glow-text {
+ text-shadow: var(--glow-effect);
+ }
+ 
+ /* Настройки страницы */
+ .settings-page {
+ background: rgba(255, 255, 255, 0.1);
+ }
+ 
+ .dark-theme .settings-page {
+ background: rgba(0, 0, 0, 0.3);
+ }
+ 
+ /* Кнопка Play */
+ .play-button {
+ background: linear-gradient(to right, #8f2727, rgb(81, 18, 18));
+ }
+ 
+ .dark-theme .play-button {
+ background: linear-gradient(to right, #6b1a1a, rgb(54, 10, 10));
+ }
+ 
+ .play-button:hover {
+ background: linear-gradient(to right, #6b0505, rgb(54, 7, 7));
+ }
+ 
+ .dark-theme .play-button:hover {
+ background: linear-gradient(to right, #5a0000, rgb(40, 5, 5));
+ }
+ 
+ /* Кнопка настроек */
+ .settings-button {
+ background-color: rgb(109, 29, 4);
+ }
+ 
+ .dark-theme .settings-button {
+ background-color: rgb(80, 20, 2);
+ }
+ 
+ /* Селектор размера шрифта */
+ .font-size-selector {
+ background: #6f6f6f;
+ color: black;
+ }
+ 
+ .dark-theme .font-size-selector {
+ background: #4a4a4a;
+ color: white;
+ }
+ 
+ /* Анимации при наведении */
+ .quote-box:hover {
+ box-shadow: 0 6px 15px rgba(255, 255, 255, 0.2);
+ }
+ 
+ .dark-theme .quote-box:hover {
+ box-shadow: 0 6px 15px rgba(150, 150, 150, 0.2);
+ }
