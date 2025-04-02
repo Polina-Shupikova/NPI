@@ -361,7 +361,19 @@ function showError(message) {
 
 function generateCrossword(levelConfig) {
     console.log('Начало генерации кроссворда...');
-    crossword = { ... }; // Сброс кроссворда
+    // Сброс кроссворда
+    crossword = {
+        words: [],
+        grid: Array(30).fill().map(() => Array(30).fill(null)),
+        size: 30,
+        selectedCell: null,
+        definitions: [],
+        hints: 3,
+        usedWords: new Set(),
+        wordsToFind: levelConfig.total,
+        wordsFound: 0,
+        activeWordIndex: null
+    };
 
     // Размещение первого слова
     const firstWordType = levelConfig.easy > 0 ? WORD_TYPES.EASY : WORD_TYPES.HARD;
@@ -379,7 +391,8 @@ function generateCrossword(levelConfig) {
     let remainingAttempts = 500;
     while (wordsToPlace > 0 && remainingAttempts > 0) {
         remainingAttempts--;
-        const wordObj = getRandomWord(/* ... */);
+        const wordType = wordsToPlace <= levelConfig.hard ? WORD_TYPES.HARD : WORD_TYPES.EASY;
+        const wordObj = getRandomWord(wordType, levelConfig.minLength, levelConfig.maxLength);
         if (tryAddConnectedWord(wordObj)) {
             wordsToPlace--;
             console.log('Слово добавлено:', wordObj.word);
@@ -601,20 +614,18 @@ function wordsShareLetters(word1, word2) {
 }
 
 function renderCrossword(force = false) {
-    function renderCrossword() {
-        const grid = document.getElementById('crossword-grid');
-        if (!grid) {
-            console.error('Элемент crossword-grid не найден');
-            return;
-        }
-        grid.innerHTML = '';
-        console.log('Рендеринг кроссворда:', crossword.grid); // Логирование
-    if (!force && !document.getElementById('crossword-grid').children.length) {
+    const grid = document.getElementById('crossword-grid');
+    if (!grid) {
+        console.error('Элемент crossword-grid не найден');
+        return;
+    }
+    
+    if (!force && grid.children.length > 0) {
         return;
     }
 
-    const grid = document.getElementById('crossword-grid');
     grid.innerHTML = '';
+    console.log('Рендеринг кроссворда:', crossword.grid);
 
     // Находим границы кроссворда с запасом
     let minX = crossword.size, maxX = 0, minY = crossword.size, maxY = 0;
