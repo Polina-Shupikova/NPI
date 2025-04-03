@@ -38,15 +38,37 @@ function getUserId() {
     }
 
     const webApp = Telegram.WebApp;
-    console.log("Полный Telegram.WebApp:", JSON.stringify(webApp, null, 2));
-    console.log("initDataUnsafe:", JSON.stringify(webApp.initDataUnsafe, null, 2));
+    
+    // Ждём готовности Telegram Web App
+    if (!webApp.initDataUnsafe) {
+        console.log("initDataUnsafe ещё не готов, ждём...");
+        return new Promise((resolve) => {
+            webApp.ready();
+            setTimeout(() => {
+                if (webApp.initDataUnsafe?.user?.id) {
+                    console.log("User ID найден:", webApp.initDataUnsafe.user.id);
+                    resolve(webApp.initDataUnsafe.user.id);
+                } else {
+                    console.error("User ID не найден после ready()");
+                    resolve(null);
+                }
+            }, 100); // Небольшая задержка для готовности
+        });
+    }
 
     if (webApp.initDataUnsafe?.user?.id) {
         console.log("User ID найден:", webApp.initDataUnsafe.user.id);
         return webApp.initDataUnsafe.user.id;
     }
 
-    console.error("User ID не найден в initDataUnsafe");
+    // Ручной разбор initData как запасной вариант
+    const parsedData = parseInitData();
+    if (parsedData?.id) {
+        console.log("User ID найден через parseInitData:", parsedData.id);
+        return parsedData.id;
+    }
+
+    console.error("User ID не найден ни в initDataUnsafe, ни в parseInitData");
     return null;
 }
 
