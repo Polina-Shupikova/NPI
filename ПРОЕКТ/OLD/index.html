@@ -251,7 +251,6 @@
                         } else {
                             currentActiveCell.value = keyValue;
                             currentActiveCell.dispatchEvent(new Event('input'));
-                            moveToNextCell();
                         }
                     }
                 });
@@ -358,7 +357,7 @@
             determineCrosswordSize();
             renderCrossword();
             renderWordList();
-
+            highlightKeyboardKeys();
             if (placedWords.length >= targetWordCount * 0.8 && !unlockedLevels.includes(currentLevel + 1) && currentLevel < levels.length - 1) {
                 unlockedLevels.push(currentLevel + 1);
                 updateLevelDisplay();
@@ -677,17 +676,35 @@
             saveGameData();
         }
 
-        function highlightKeyboardKeys() {
-            document.querySelectorAll('.keyboard-key').forEach(key => {
-                key.classList.remove('active');
-                if (currentActiveCell && currentActiveCell.value) {
-                    const keyValue = key.getAttribute('data-key');
-                    if (keyValue === currentActiveCell.value.toUpperCase()) {
-                        key.classList.add('active');
-                    }
-                }
-            });
+function highlightKeyboardKeys() {
+    // Собираем все буквы из текущего кроссворда
+    const crosswordLetters = new Set();
+    placedWords.forEach(word => {
+        word.word.split('').forEach(letter => {
+            crosswordLetters.add(letter.toUpperCase());
+        });
+    });
+
+    // Подсвечиваем клавиши
+    document.querySelectorAll('.keyboard-key').forEach(key => {
+        const keyValue = key.getAttribute('data-key');
+
+        // Убираем старые классы подсветки
+        key.classList.remove('active', 'highlight');
+
+        // Подсвечиваем буквы, участвующие в кроссворде
+        if (crosswordLetters.has(keyValue)) {
+            key.classList.add('highlight');
         }
+
+        // Подсвечиваем текущую активную букву (если есть)
+        if (currentActiveCell && currentActiveCell.value) {
+            if (keyValue === currentActiveCell.value.toUpperCase()) {
+                key.classList.add('active');
+            }
+        }
+    });
+}
 
         function moveToNextCell() {
             if (!currentActiveCell || !currentInputDirection) return;
