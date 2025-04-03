@@ -1,6 +1,10 @@
 function isTelegramWebApp() {
-    const isTelegram = !!(window.Telegram && Telegram.WebApp && Telegram.WebApp.initDataUnsafe);
-    console.log("Is Telegram WebApp?", isTelegram);
+    const isTelegram = !!(window.Telegram && Telegram.WebApp);
+    console.log("Telegram WebApp detected:", isTelegram);
+    if (isTelegram) {
+        console.log("initDataUnsafe:", Telegram.WebApp.initDataUnsafe);
+        console.log("User data:", Telegram.WebApp.initDataUnsafe?.user);
+    }
     return isTelegram;
 }
 
@@ -12,24 +16,43 @@ function getLevelConfig(level) {
     }
 }
 
+function parseInitData() {
+    if (!Telegram.WebApp.initData) return null;
+    
+    const params = new URLSearchParams(Telegram.WebApp.initData);
+    const userStr = params.get('user');
+    if (!userStr) return null;
+    
+    try {
+        return JSON.parse(decodeURIComponent(userStr));
+    } catch (e) {
+        console.error("Error parsing user data:", e);
+        return null;
+    }
+}
+
 async function loadSavedLevel() {
     if (isTelegramWebApp()) {
-        console.log("initDataUnsafe:", Telegram.WebApp.initDataUnsafe); // Отладка
-        const userId = Telegram.WebApp.initDataUnsafe.user?.id;
+        console.log("Full initData:", Telegram.WebApp.initData); // Добавьте эту строку
+        console.log("initDataUnsafe:", Telegram.WebApp.initDataUnsafe);
+        
+        // Попробуйте получить ID из разных источников
+        const userId = Telegram.WebApp.initDataUnsafe?.user?.id || 
+                       Telegram.WebApp.initDataUnsafe?.query_id;
+        
         if (!userId) {
-            console.error("Не удалось получить ID пользователя. Проверяйте Telegram Web App инициализацию.");
+            console.error("User ID not found. initDataUnsafe:", Telegram.WebApp.initDataUnsafe);
             const localValue = localStorage.getItem('crossword_user_level');
             return localValue ? parseInt(localValue) || 1 : 1;
         }
+        
         const key = `user_level_${userId}`;
         const value = await new Promise((resolve) => {
             Telegram.WebApp.CloudStorage.getItem(key, (error, value) => {
                 if (error) {
-                    console.error(`Ошибка загрузки уровня для user_${userId}:`, error);
-                } else {
-                    console.log(`Уровень загружен для user_${userId}:`, value);
+                    console.error(`Error loading level for user_${userId}:`, error);
                 }
-                resolve(value);
+                resolve(value || null);
             });
         });
         return value ? parseInt(value) || 1 : 1;
@@ -1095,10 +1118,8 @@ initGame().then(() => debugCloudStorage());
 
 document.addEventListener('DOMContentLoaded', () => {
     if (isTelegramWebApp()) {
-        Telegram.WebApp.ready(); // Указывает Telegram, что приложение готово
+        Telegram.WebApp.ready();
+        Telegram.WebApp.expand(); // Рекомендуется для лучшего UX
     }
-    initGame().catch(error => {
-        console.error("Ошибка инициализации игры:", error);
-        alert("Произошла ошибка при запуске игры. Пожалуйста, перезагрузите страницу.");
-    });
+    initGame().catch(console.error);
 });
