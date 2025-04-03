@@ -1,5 +1,7 @@
 function isTelegramWebApp() {
-    return window.Telegram && Telegram.WebApp && Telegram.WebApp.initDataUnsafe;
+    const isTelegram = !!(window.Telegram && Telegram.WebApp && Telegram.WebApp.initDataUnsafe);
+    console.log("Is Telegram WebApp?", isTelegram);
+    return isTelegram;
 }
 
 function getLevelConfig(level) {
@@ -14,8 +16,12 @@ async function saveCurrentLevel(level) {
     const levelStr = String(level);
     console.log("Попытка сохранения уровня:", levelStr);
     
+    // Сохраняем в localStorage в любом случае
+    localStorage.setItem('crossword_user_level', levelStr);
+    
     if (isTelegramWebApp()) {
         try {
+            // Сохраняем в CloudStorage
             const saved = await new Promise(resolve => {
                 Telegram.WebApp.CloudStorage.setItem('user_level', levelStr, error => {
                     if (error) {
@@ -28,18 +34,22 @@ async function saveCurrentLevel(level) {
                 });
             });
             
-            if (saved) return true;
+            // Если не удалось сохранить в CloudStorage, сохраняем только в localStorage
+            if (!saved) {
+                console.log("Не удалось сохранить в CloudStorage, используется localStorage");
+            }
         } catch (e) {
             console.error("Ошибка CloudStorage:", e);
         }
     }
     
-    localStorage.setItem('crossword_user_level', levelStr);
-    console.log("Уровень сохранён в localStorage");
     return true;
 }
 
 async function loadSavedLevel() {
+    let level = 1;
+    
+    // Сначала пробуем загрузить из CloudStorage
     if (isTelegramWebApp()) {
         try {
             const value = await new Promise(resolve => {
@@ -54,7 +64,7 @@ async function loadSavedLevel() {
             });
             
             if (value) {
-                const level = parseInt(value) || 1;
+                level = parseInt(value) || 1;
                 console.log("Уровень загружен из CloudStorage:", level);
                 return level;
             }
@@ -63,9 +73,13 @@ async function loadSavedLevel() {
         }
     }
     
+    // Если не получилось из CloudStorage, пробуем из localStorage
     const localValue = localStorage.getItem('crossword_user_level');
-    const level = localValue ? parseInt(localValue) : 1;
-    console.log("Уровень загружен из localStorage:", level);
+    if (localValue) {
+        level = parseInt(localValue) || 1;
+        console.log("Уровень загружен из localStorage:", level);
+    }
+    
     return level;
 }
 
@@ -133,25 +147,16 @@ let crossword = {
 
 const usedLettersCache = {};
 
-async function initGame() {
-    try {
-        await loadWords();
-        initEventListeners();
-        startGame();
-    } catch (error) {
-        console.error('Ошибка инициализации:', error);
-        loadBackupWords();
-        initEventListeners();
-        startGame();
-    }
-}
-
 async function loadWords() {
     try {
         const [easyResponse, hardResponse] = await Promise.all([
             fetch('https://gist.githubusercontent.com/Ukinnne/7374dccab584f7903680e5a5bacb56a5/raw/easy_words.json'),
             fetch('https://gist.githubusercontent.com/Ukinnne/d8b156ad91831540f90236961c5095c9/raw/hard_words.json')
         ]);
+
+        // Добавьте эти строки для проверки:
+        console.log('Статус easyResponse:', easyResponse.status);
+        console.log('Статус hardResponse:', hardResponse.status);
 
         if (!easyResponse.ok || !hardResponse.ok) {
             throw new Error(`Ошибка загрузки: ${easyResponse.status}, ${hardResponse.status}`);
@@ -191,10 +196,28 @@ function loadBackupWords() {
 }
 
 function initEventListeners() {
-    document.getElementById('hint-button').addEventListener('click', giveHint);
-    document.querySelector('.solved-definitions-toggle').addEventListener('click', toggleSolvedDefinitions);
-    document.addEventListener('keydown', handlePhysicalKeyPress);
+    const hintButton = document.getElementById('hint-button');
+    if (!hintButton) {
+        console.error('Элемент #hint-button не найден!');
+        return;
+    }
+    hintButton.addEventListener('click', giveHint);
+
+    const toggleButton = document.querySelector('.solved-definitions-toggle');
+    if (!toggleButton) {
+        console.error('Элемент .solved-definitions-toggle не найден!');
+        return;
+    }
+    toggleButton.addEventListener('click', toggleSolvedDefinitions);
 }
+
+// Запускаем после загрузки DOM
+document.addEventListener('DOMContentLoaded', () => {
+    initEventListeners();
+    initGame().catch(error => {
+        console.error("Ошибка инициализации игры:", error);
+    });
+});
 
 function toggleSolvedDefinitions() {
     const panel = document.getElementById('solved-definitions');
@@ -266,16 +289,23 @@ function handlePhysicalKeyPress(e) {
 }
 
 async function startGame() {
-    await loadWords(); // Убедимся, что слова загружены
+    try {
+        await loadWords();
+        
+        if (wordDatabase.easy.length + wordDatabase.hard.length < 3) {
+            alert("Недостаточно слов для игры. Используются резервные слова.");
+            loadBackupWords();
+        }
 
-    if (wordDatabase.easy.length + wordDatabase.hard.length < 3) {
-        alert("Недостаточно слов для игры. Используются резервные слова.");
+        const savedLevel = await loadSavedLevel();
+        currentLevel = savedLevel;
+        
+        loadLevel();
+    } catch (error) {
+        console.error("Ошибка при запуске игры:", error);
         loadBackupWords();
+        loadLevel();
     }
-
-    const savedLevel = await loadSavedLevel();
-    currentLevel = savedLevel;
-    loadLevel();
 }
 
 // Обновите функцию showLevelCompleteDialog
@@ -310,25 +340,31 @@ function showLevelCompleteDialog() {
 
 async function completeLevel() {
     currentLevel++;
-    const saved = await saveCurrentLevel(currentLevel);
-    if (!saved) {
-        alert("Не удалось сохранить прогресс. Попробуйте снова.");
+    try {
+        const saved = await saveCurrentLevel(currentLevel);
+        if (!saved) {
+            alert("Не удалось сохранить прогресс. Попробуйте снова.");
+            currentLevel--; // Откатываем уровень, если не удалось сохранить
+            return;
+        }
+        saveUserRecord(currentLevel);
+        loadLevel();
+    } catch (error) {
+        console.error("Ошибка при завершении уровня:", error);
+        alert("Произошла ошибка при сохранении прогресса.");
     }
-    saveUserRecord(currentLevel);
-    loadLevel();
 }
 
-// Обновите функцию initGame
 async function initGame() {
     try {
         await loadWords();
         initEventListeners();
-        await startGame(); // Добавьте await
+        await startGame();
     } catch (error) {
         console.error('Ошибка инициализации:', error);
         loadBackupWords();
         initEventListeners();
-        await startGame(); // Добавьте await
+        await startGame();
     }
 }
 
