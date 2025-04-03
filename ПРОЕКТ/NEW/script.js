@@ -31,37 +31,23 @@ function parseInitData() {
     }
 }
 
-function getUserId() {
+async function getUserId() {
     if (!window.Telegram?.WebApp) {
         console.log("Не в Telegram Web App");
         return null;
     }
 
     const webApp = Telegram.WebApp;
-    
-    // Ждём готовности Telegram Web App
-    if (!webApp.initDataUnsafe) {
-        console.log("initDataUnsafe ещё не готов, ждём...");
-        return new Promise((resolve) => {
-            webApp.ready();
-            setTimeout(() => {
-                if (webApp.initDataUnsafe?.user?.id) {
-                    console.log("User ID найден:", webApp.initDataUnsafe.user.id);
-                    resolve(webApp.initDataUnsafe.user.id);
-                } else {
-                    console.error("User ID не найден после ready()");
-                    resolve(null);
-                }
-            }, 100); // Небольшая задержка для готовности
-        });
-    }
+    await new Promise(resolve => {
+        webApp.ready();
+        setTimeout(resolve, 50);
+    });
 
     if (webApp.initDataUnsafe?.user?.id) {
         console.log("User ID найден:", webApp.initDataUnsafe.user.id);
         return webApp.initDataUnsafe.user.id;
     }
 
-    // Ручной разбор initData как запасной вариант
     const parsedData = parseInitData();
     if (parsedData?.id) {
         console.log("User ID найден через parseInitData:", parsedData.id);
@@ -73,7 +59,7 @@ function getUserId() {
 }
 
 async function loadSavedLevel() {
-    const userId = getUserId();
+    const userId = await getUserId();
 
     if (!userId) {
         console.warn("User ID не найден, используется localStorage");
@@ -129,83 +115,39 @@ async function initGame() {
 
 async function saveCurrentLevel(level) {
     const levelStr = String(level);
-    const userId = getUserId();
-
-    if (!isTelegramWebApp() || !userId) {
-        console.warn("Не в Telegram Web App или User ID не найден, сохранение в localStorage");
+    
+    if (!isTelegramWebApp()) {
+        console.warn("Не в Telegram Web App, сохранение в localStorage");
         localStorage.setItem('crossword_user_level', levelStr);
         return true;
     }
 
+    const userId = await getUserId(); // Ждем разрешения Promise
+    if (!userId) {
+        console.error("Не удалось получить userId, сохранение в localStorage");
+        localStorage.setItem('crossword_user_level', levelStr);
+        return false;
+    }
+
     const key = `user_level_${userId}`;
     try {
-        const success = await new Promise((resolve, reject) => {
-            Telegram.WebApp.CloudStorage.setItem(key, levelStr, (err) => {
-                if (err) {
-                    console.error(`Ошибка CloudStorage.setItem для ${key}:`, err);
-                    reject(err);
+        const success = await new Promise((resolve) => {
+            Telegram.WebApp.CloudStorage.setItem(key, levelStr, (error) => {
+                if (error) {
+                    console.error(`Ошибка сохранения в CloudStorage для ${key}:`, error);
+                    localStorage.setItem('crossword_user_level', levelStr); // Fallback
+                    resolve(false);
                 } else {
-                    console.log(`Уровень ${level} сохранён в CloudStorage для ${key}`);
+                    console.log(`Уровень ${level} сохранен в CloudStorage для ${key}`);
                     resolve(true);
                 }
             });
         });
         return success;
     } catch (e) {
-        console.error("Ошибка сохранения в CloudStorage:", e);
+        console.error("Исключение при сохранении в CloudStorage:", e);
         localStorage.setItem('crossword_user_level', levelStr);
         return false;
-    }
-}
-
-async function saveCurrentLevel(level) {
-    const levelStr = String(level);
-    const userId = getUserId();
-    
-    if (isTelegramWebApp() && userId) {
-        const key = `user_level_${userId}`;
-        return await new Promise((resolve) => {
-            Telegram.WebApp.CloudStorage.setItem(key, levelStr, (error) => {
-                if (error) {
-                    console.error(`Ошибка сохранения уровня для user_${userId}:`, error);
-                    localStorage.setItem('crossword_user_level', levelStr); // Fallback
-                } else {
-                    console.log(`Уровень ${level} сохранён для user_${userId}`);
-                }
-                resolve(!error);
-            });
-        });
-    } else {
-        console.warn("Сохранение в CloudStorage невозможно, используется localStorage");
-        localStorage.setItem('crossword_user_level', levelStr);
-        return true;
-    }
-}
-
-async function saveCurrentLevel(level) {
-    const levelStr = String(level);
-    if (isTelegramWebApp()) {
-        console.log("initDataUnsafe:", Telegram.WebApp.initDataUnsafe); // Отладка
-        const userId = Telegram.WebApp.initDataUnsafe.user?.id;
-        if (!userId) {
-            console.error("Не удалось получить ID пользователя для сохранения уровня");
-            localStorage.setItem('crossword_user_level', levelStr);
-            return false;
-        }
-        const key = `user_level_${userId}`;
-        return await new Promise((resolve) => {
-            Telegram.WebApp.CloudStorage.setItem(key, levelStr, (error) => {
-                if (error) {
-                    console.error(`Ошибка сохранения уровня для user_${userId}:`, error);
-                } else {
-                    console.log(`Уровень ${level} сохранён для user_${userId}`);
-                }
-                resolve(!error);
-            });
-        });
-    } else {
-        localStorage.setItem('crossword_user_level', levelStr);
-        return true;
     }
 }
 
@@ -280,10 +222,6 @@ async function loadWords() {
             fetch('https://gist.githubusercontent.com/Ukinnne/d8b156ad91831540f90236961c5095c9/raw/hard_words.json')
         ]);
 
-        // Добавьте эти строки для проверки:
-        console.log('Статус easyResponse:', easyResponse.status);
-        console.log('Статус hardResponse:', hardResponse.status);
-
         if (!easyResponse.ok || !hardResponse.ok) {
             throw new Error(`Ошибка загрузки: ${easyResponse.status}, ${hardResponse.status}`);
         }
@@ -293,17 +231,72 @@ async function loadWords() {
             hardResponse.json()
         ]);
 
-        if (!Array.isArray(easyData) || !Array.isArray(hardData)) {
-            throw new Error("Данные должны быть массивом слов");
-        }
-
         wordDatabase.easy = easyData;
         wordDatabase.hard = hardData;
         console.log(`Загружено: ${easyData.length} лёгких и ${hardData.length} сложных слов`);
+
+        // Проверка минимального количества слов
+        if (wordDatabase.easy.length < 3 || wordDatabase.hard.length < 2) {
+            console.warn("Недостаточно слов, загружаем резервные");
+            loadBackupWords();
+        }
     } catch (error) {
         console.error("Ошибка загрузки слов:", error);
-        loadBackupWords(); // Используем резервные слова
+        loadBackupWords();
     }
+}
+
+function generateCrossword() {
+    const levelConfig = getLevelConfig(currentLevel);
+    crossword.size = Math.max(18, levelConfig.maxLength + 5);
+    crossword.hints = levelConfig.total;
+    crossword.wordsToFind = levelConfig.total;
+    crossword.wordsFound = 0;
+    crossword.words = [];
+    crossword.grid = Array(crossword.size).fill().map(() => Array(crossword.size).fill(null));
+    crossword.definitions = [];
+    crossword.usedWords.clear();
+
+    // Проверка доступности слов
+    if (wordDatabase.easy.length + wordDatabase.hard.length < levelConfig.total) {
+        console.error("Недостаточно слов в базе!");
+        loadBackupWords();
+    }
+
+    // Первое слово
+    const firstWord = getRandomWord(WORD_TYPES.EASY, levelConfig.minLength, levelConfig.maxLength);
+    if (!firstWord) {
+        console.error("Не удалось выбрать первое слово");
+        return false;
+    }
+
+    const centerY = Math.floor(crossword.size / 2);
+    const centerX = Math.floor((crossword.size - firstWord.word.length) / 2);
+    addWordToGrid(firstWord, { x: centerX, y: centerY }, 'horizontal', 1);
+
+    // Добавление остальных слов
+    let wordsAdded = 1;
+    let attempts = 0;
+    const maxAttempts = 500; // Уменьшаем для скорости отладки
+
+    while (wordsAdded < levelConfig.total && attempts < maxAttempts) {
+        const needEasy = wordsAdded < levelConfig.easy;
+        const type = needEasy ? WORD_TYPES.EASY : WORD_TYPES.HARD;
+        const wordObj = getRandomWord(type, levelConfig.minLength, levelConfig.maxLength);
+        
+        if (wordObj && tryAddConnectedWord(wordObj)) {
+            wordsAdded++;
+            console.log(`Добавлено слово ${wordObj.word}, всего: ${wordsAdded}`);
+        }
+        attempts++;
+    }
+
+    if (wordsAdded < levelConfig.total) {
+        console.warn(`Добавлено только ${wordsAdded} из ${levelConfig.total} слов`);
+    }
+
+    crossword.wordsToFind = wordsAdded;
+    return wordsAdded >= Math.max(3, levelConfig.total * 0.7);
 }
 
 function loadBackupWords() {
