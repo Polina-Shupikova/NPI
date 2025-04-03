@@ -21,9 +21,8 @@ async function saveCurrentLevel(level) {
     
     if (isTelegramWebApp()) {
         try {
-            // Сохраняем в CloudStorage
-            const saved = await new Promise(resolve => {
-                Telegram.WebApp.CloudStorage.setItem('user_level', levelStr, error => {
+            const saved = await new Promise((resolve) => {
+                Telegram.WebApp.CloudStorage.setItem('user_level', levelStr, (error) => {
                     if (error) {
                         console.error("Ошибка CloudStorage:", error);
                         resolve(false);
@@ -33,26 +32,21 @@ async function saveCurrentLevel(level) {
                     }
                 });
             });
-            
-            // Если не удалось сохранить в CloudStorage, сохраняем только в localStorage
-            if (!saved) {
-                console.log("Не удалось сохранить в CloudStorage, используется localStorage");
-            }
+            return saved;
         } catch (e) {
             console.error("Ошибка CloudStorage:", e);
+            return false;
         }
     }
-    
-    return true;
+    return true; // Если не Telegram, считаем успешным сохранение в localStorage
 }
 
 async function loadSavedLevel() {
-    let level = 1;
+    let level = 1; // Уровень по умолчанию
     
-    // Сначала пробуем загрузить из CloudStorage
     if (isTelegramWebApp()) {
         try {
-            const value = await new Promise(resolve => {
+            const value = await new Promise((resolve) => {
                 Telegram.WebApp.CloudStorage.getItem('user_level', (error, value) => {
                     if (error) {
                         console.error("Ошибка загрузки из CloudStorage:", error);
@@ -66,7 +60,7 @@ async function loadSavedLevel() {
             if (value) {
                 level = parseInt(value) || 1;
                 console.log("Уровень загружен из CloudStorage:", level);
-                return level;
+                return level + 1; // Начинаем с следующего уровня
             }
         } catch (e) {
             console.error("Ошибка CloudStorage:", e);
@@ -78,9 +72,10 @@ async function loadSavedLevel() {
     if (localValue) {
         level = parseInt(localValue) || 1;
         console.log("Уровень загружен из localStorage:", level);
+        return level + 1; // Начинаем с следующего уровня
     }
     
-    return level;
+    return level; // Если ничего не найдено, возвращаем 1
 }
 
 const RUSSIAN_LAYOUT = {
@@ -298,7 +293,8 @@ async function startGame() {
         }
 
         const savedLevel = await loadSavedLevel();
-        currentLevel = savedLevel;
+        currentLevel = savedLevel; // Устанавливаем уровень n + 1
+        console.log("Игра начинается с уровня:", currentLevel);
         
         loadLevel();
     } catch (error) {
@@ -339,16 +335,16 @@ function showLevelCompleteDialog() {
 
 
 async function completeLevel() {
-    currentLevel++;
     try {
         const saved = await saveCurrentLevel(currentLevel);
         if (!saved) {
-            alert("Не удалось сохранить прогресс. Попробуйте снова.");
-            currentLevel--; // Откатываем уровень, если не удалось сохранить
+            console.error("Не удалось сохранить уровень в CloudStorage");
+            alert("Не удалось сохранить прогресс. Проверьте подключение.");
             return;
         }
-        saveUserRecord(currentLevel);
-        loadLevel();
+        currentLevel++; // Переходим к следующему уровню
+        await saveUserRecord(currentLevel); // Сохраняем рекорд, если нужно
+        loadLevel(); // Загружаем новый уровень
     } catch (error) {
         console.error("Ошибка при завершении уровня:", error);
         alert("Произошла ошибка при сохранении прогресса.");
