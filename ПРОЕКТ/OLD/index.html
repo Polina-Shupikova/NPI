@@ -355,32 +355,74 @@
             return false;
         }
 
-        function canPlaceWord(word, row, col, horizontal) {
-            const currentLevelSettings = levels[currentLevel];
-            for (let i = 0; i < word.word.length; i++) {
-                const cellRow = horizontal ? row : row + i;
-                const cellCol = horizontal ? col + i : col;
-                if (cellRow < 0 || cellCol < 0 || cellRow >= currentLevelSettings.gridSize || cellCol >= currentLevelSettings.gridSize) {
-                    return false;
-                }
-                if (crossword[cellRow] && crossword[cellRow][cellCol]) {
-                    if (crossword[cellRow][cellCol].letter !== word.word[i]) {
+function canPlaceWord(word, row, col, horizontal) {
+    const currentLevelSettings = levels[currentLevel];
+
+    // Проверка выхода за границы сетки
+    for (let i = 0; i < word.word.length; i++) {
+        const cellRow = horizontal ? row : row + i;
+        const cellCol = horizontal ? col + i : col;
+        if (cellRow < 0 || cellCol < 0 || cellRow >= currentLevelSettings.gridSize || cellCol >= currentLevelSettings.gridSize) {
+            return false;
+        }
+        if (crossword[cellRow] && crossword[cellRow][cellCol]) {
+            if (crossword[cellRow][cellCol].letter !== word.word[i]) {
+                return false;
+            }
+        }
+    }
+
+    // Проверка пересечения с другими словами (минимум одна общая буква)
+    let hasIntersection = false;
+    for (let i = 0; i < word.word.length; i++) {
+        const cellRow = horizontal ? row : row + i;
+        const cellCol = horizontal ? col + i : col;
+        if (crossword[cellRow] && crossword[cellRow][cellCol]) {
+            hasIntersection = true;
+            break;
+        }
+    }
+    if (!hasIntersection && placedWords.length > 0) return false;
+
+    // Проверка, что новое слово не находится на одной линии с другими словами
+    for (const placedWord of placedWords) {
+        if (placedWord.horizontal === horizontal) {
+            // Если оба слова горизонтальные
+            if (horizontal) {
+                // Проверяем, что новое слово не на той же строке
+                if (row === placedWord.row) {
+                    // Проверяем, что слова не перекрываются и не слишком близко
+                    const newWordStart = col;
+                    const newWordEnd = col + word.word.length - 1;
+                    const placedWordStart = placedWord.col;
+                    const placedWordEnd = placedWord.col + placedWord.word.length - 1;
+
+                    // Если новое слово находится слишком близко к существующему (например, расстояние < 1 клетки)
+                    if (!(newWordEnd < placedWordStart - 1 || newWordStart > placedWordEnd + 1)) {
                         return false;
                     }
                 }
             }
+            // Если оба слова вертикальные
+            else {
+                // Проверяем, что новое слово не на том же столбце
+                if (col === placedWord.col) {
+                    const newWordStart = row;
+                    const newWordEnd = row + word.word.length - 1;
+                    const placedWordStart = placedWord.row;
+                    const placedWordEnd = placedWord.row + placedWord.word.length - 1;
 
-            let hasIntersection = false;
-            for (let i = 0; i < word.word.length; i++) {
-                const cellRow = horizontal ? row : row + i;
-                const cellCol = horizontal ? col + i : col;
-                if (crossword[cellRow] && crossword[cellRow][cellCol]) {
-                    hasIntersection = true;
-                    break;
+                    // Если новое слово слишком близко к существующему
+                    if (!(newWordEnd < placedWordStart - 1 || newWordStart > placedWordEnd + 1)) {
+                        return false;
+                    }
                 }
             }
-            return hasIntersection || placedWords.length === 0;
         }
+    }
+
+    return true;
+}
 
         function placeWord(word, row, col, horizontal) {
             const placedWord = {
@@ -442,15 +484,16 @@
 
                     if (crossword[actualRow] && crossword[actualRow][actualCol]) {
                         const cellData = crossword[actualRow][actualCol];
-                        placedWords.forEach(placedWord => {
-                            if ((placedWord.horizontal && placedWord.row === actualRow && placedWord.col === actualCol) ||
-                                (!placedWord.horizontal && placedWord.row === actualRow && placedWord.col === actualCol)) {
-                                const number = document.createElement('div');
-                                number.className = 'number';
-                                number.textContent = placedWord.number;
-                                cell.appendChild(number);
-                            }
-                        });
+                       placedWords.forEach(placedWord => {
+        if ((placedWord.horizontal && placedWord.row === actualRow && placedWord.col === actualCol) ||
+            (!placedWord.horizontal && placedWord.row === actualRow && placedWord.col === actualCol)) {
+            const number = document.createElement('div');
+            number.className = `number ${placedWord.horizontal ? 'horizontal' : 'vertical'}`;
+            number.textContent = placedWord.number;
+            cell.appendChild(number);
+        }
+    });
+
 
                         const input = document.createElement('input');
                         input.type = 'text';
@@ -500,7 +543,14 @@
                 wordHint.textContent = word.hint;
                 wordHint.className = 'hint';
 
+                const directionIndicator = document.createElement('span');
+                directionIndicator.textContent = word.horizontal ? ' →' : ' ↓';
+                directionIndicator.style.marginLeft = '5px';
+                directionIndicator.style.color = word.horizontal ? '#4CAF50' : '#2196F3';
+                directionIndicator.style.fontWeight = 'bold';
+
                 wordItem.appendChild(wordNumber);
+                wordItem.appendChild(directionIndicator);
                 wordItem.appendChild(wordHint);
 
                 if (purchasedHints.letter > 0) {

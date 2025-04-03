@@ -150,6 +150,20 @@ button:hover::before {
     left: 2px;
     font-size: 10px;
     color: #333;
+    pointer-events: none;
+}
+
+.cell .number.horizontal {
+    bottom: 1px;
+    left: 2px;
+    top: 9px;
+}
+
+/* Для вертикальных слов - левый верхний угол */
+.cell .number.vertical {
+    top: -6px;
+    left: 2px;
+    bottom: auto;
 }
 
 .keyboard {
@@ -992,3 +1006,15 @@ body.dark-theme .keyboard-key.highlight {
         -webkit-user-select: none;
         user-select: none;
     }
+    .word-direction {
+    margin-left: 5px;
+    font-weight: bold;
+}
+
+.word-direction.horizontal {
+    color: #4CAF50; /* Зеленый для горизонтальных слов */
+}
+
+.word-direction.vertical {
+    color: #2196F3; /* Синий для вертикальных слов */
+}
