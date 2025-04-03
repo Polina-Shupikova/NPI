@@ -156,7 +156,7 @@ button:hover::before {
 .cell .number.horizontal {
     bottom: 1px;
     left: 2px;
-    top: 9px;
+    top: 6px;
 }
 
 /* Для вертикальных слов - левый верхний угол */

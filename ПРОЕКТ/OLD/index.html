@@ -384,39 +384,26 @@ function canPlaceWord(word, row, col, horizontal) {
     }
     if (!hasIntersection && placedWords.length > 0) return false;
 
-    // Проверка, что новое слово не находится на одной линии с другими словами
+    // Проверка, что новое слово не пересекает первые/последние буквы других слов
     for (const placedWord of placedWords) {
-        if (placedWord.horizontal === horizontal) {
-            // Если оба слова горизонтальные
-            if (horizontal) {
-                // Проверяем, что новое слово не на той же строке
-                if (row === placedWord.row) {
-                    // Проверяем, что слова не перекрываются и не слишком близко
-                    const newWordStart = col;
-                    const newWordEnd = col + word.word.length - 1;
-                    const placedWordStart = placedWord.col;
-                    const placedWordEnd = placedWord.col + placedWord.word.length - 1;
+        // Если текущее слово горизонтальное, а размещенное - вертикальное
+        if (horizontal && !placedWord.horizontal) {
+            // Проверяем, не пересекается ли начало/конец текущего слова с размещенным
+            const isFirstLetterIntersecting = (col === placedWord.col && row >= placedWord.row && row <= placedWord.row + placedWord.word.length - 1);
+            const isLastLetterIntersecting = (col + word.word.length - 1 === placedWord.col && row >= placedWord.row && row <= placedWord.row + placedWord.word.length - 1);
 
-                    // Если новое слово находится слишком близко к существующему (например, расстояние < 1 клетки)
-                    if (!(newWordEnd < placedWordStart - 1 || newWordStart > placedWordEnd + 1)) {
-                        return false;
-                    }
-                }
+            if (isFirstLetterIntersecting || isLastLetterIntersecting) {
+                return false;
             }
-            // Если оба слова вертикальные
-            else {
-                // Проверяем, что новое слово не на том же столбце
-                if (col === placedWord.col) {
-                    const newWordStart = row;
-                    const newWordEnd = row + word.word.length - 1;
-                    const placedWordStart = placedWord.row;
-                    const placedWordEnd = placedWord.row + placedWord.word.length - 1;
+        }
+        // Если текущее слово вертикальное, а размещенное - горизонтальное
+        else if (!horizontal && placedWord.horizontal) {
+            // Проверяем, не пересекается ли начало/конец текущего слова с размещенным
+            const isFirstLetterIntersecting = (row === placedWord.row && col >= placedWord.col && col <= placedWord.col + placedWord.word.length - 1);
+            const isLastLetterIntersecting = (row + word.word.length - 1 === placedWord.row && col >= placedWord.col && col <= placedWord.col + placedWord.word.length - 1);
 
-                    // Если новое слово слишком близко к существующему
-                    if (!(newWordEnd < placedWordStart - 1 || newWordStart > placedWordEnd + 1)) {
-                        return false;
-                    }
-                }
+            if (isFirstLetterIntersecting || isLastLetterIntersecting) {
+                return false;
             }
         }
     }
