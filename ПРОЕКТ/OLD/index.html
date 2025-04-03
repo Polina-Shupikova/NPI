@@ -79,16 +79,12 @@
 
     <div class="controls">
         <button id="generate-btn">Сгенерировать кроссворд</button>
-        <button id="toggle-direction-btn">↻</button>
         <button id="direction-display">Не выбрано</button>
     </div>
 
+
     <div id="crossword-container">
         <div id="crossword"></div>
-    </div>
-
-    <div class="keyboard">
-        <button id="toggle-keyboard-btn">Показать/Скрыть клавиатуру</button>
     </div>
 
     <div id="word-list" class="word-list"></div>
@@ -134,6 +130,8 @@
         let coins = 0;
         let purchasedHints = { letter: 0, word: 0 };
 
+
+
         function toggleInputDirection() {
             if (!currentActiveCell) return;
             currentInputDirection = currentInputDirection === 'horizontal' ? 'vertical' : 'horizontal';
@@ -156,35 +154,45 @@
             }
         }
 
-        function detectInputDirection(row, col) {
-            const leftFilled = crossword[row]?.[col - 1];
-            const rightFilled = crossword[row]?.[col + 1];
-            const topFilled = crossword[row - 1]?.[col];
-            const bottomFilled = crossword[row + 1]?.[col];
+function detectInputDirection(row, col) {
+    // Проверяем, является ли клетка началом какого-либо слова
+    const startingWord = placedWords.find(w =>
+        (w.horizontal && w.row === row && w.col === col) ||
+        (!w.horizontal && w.row === row && w.col === col)
+    );
 
-            if ((leftFilled || rightFilled) && !(topFilled || bottomFilled)) {
-                return 'horizontal';
-            }
-            if ((topFilled || bottomFilled) && !(leftFilled || rightFilled)) {
-                return 'vertical';
-            }
+    // Если это начало слова - возвращаем его направление
+    if (startingWord) {
+        return startingWord.horizontal ? 'horizontal' : 'vertical';
+    }
 
-            const horizontalScore = (leftFilled ? 1 : 0) + (rightFilled ? 1 : 0);
-            const verticalScore = (topFilled ? 1 : 0) + (bottomFilled ? 1 : 0);
-            return horizontalScore >= verticalScore ? 'horizontal' : 'vertical';
-        }
+    // Если это не начало слова - возвращаем текущее направление (если есть)
+    if (currentInputDirection) {
+        return currentInputDirection;
+    }
 
+    // Если текущего направления нет - определяем по соседним клеткам
+    const leftFilled = crossword[row]?.[col - 1];
+    const rightFilled = crossword[row]?.[col + 1];
+    const topFilled = crossword[row - 1]?.[col];
+    const bottomFilled = crossword[row + 1]?.[col];
+
+    if ((leftFilled || rightFilled) && !(topFilled || bottomFilled)) {
+        return 'horizontal';
+    }
+    if ((topFilled || bottomFilled) && !(leftFilled || rightFilled)) {
+        return 'vertical';
+    }
+
+    return 'horizontal'; // По умолчанию
+}
         loadDatabase().then(() => {
             loadGameData();
 
             document.getElementById('generate-btn').addEventListener('click', generateCrossword);
             document.getElementById('prev-level').addEventListener('click', prevLevel);
             document.getElementById('next-level').addEventListener('click', nextLevel);
-            document.getElementById('toggle-direction-btn').addEventListener('click', toggleInputDirection);
-            document.getElementById('toggle-keyboard-btn').addEventListener('click', function() {
-                const keyboardContent = document.getElementById('keyboard-content');
-                keyboardContent.style.display = keyboardContent.style.display === 'none' ? 'block' : 'none';
-            });
+
 
             document.getElementById('shop-button').addEventListener('click', openShop);
             document.getElementById('close-shop').addEventListener('click', closeShop);
@@ -365,14 +373,34 @@ function canPlaceWord(word, row, col, horizontal) {
         if (cellRow < 0 || cellCol < 0 || cellRow >= currentLevelSettings.gridSize || cellCol >= currentLevelSettings.gridSize) {
             return false;
         }
+    }
+
+    // Проверка пересечений и запрет пересечения первых/последних клеток
+    for (let i = 0; i < word.word.length; i++) {
+        const cellRow = horizontal ? row : row + i;
+        const cellCol = horizontal ? col + i : col;
+
+        // Если клетка уже занята
         if (crossword[cellRow] && crossword[cellRow][cellCol]) {
-            if (crossword[cellRow][cellCol].letter !== word.word[i]) {
-                return false;
+            const existingCell = crossword[cellRow][cellCol];
+
+            // Проверяем, является ли текущая позиция первой или последней буквой нового слова
+            const isFirstLetter = i === 0;
+            const isLastLetter = i === word.word.length - 1;
+
+            // Если это первая или последняя буква нового слова, запрещаем любое пересечение
+            if (isFirstLetter || isLastLetter) {
+                return false; // Пересечение первой или последней буквы недопустимо
+            }
+
+            // Для остальных букв проверяем совпадение
+            if (existingCell.letter !== word.word[i]) {
+                return false; // Несовпадение букв в пересечении
             }
         }
     }
 
-    // Проверка пересечения с другими словами (минимум одна общая буква)
+    // Проверка пересечения с другими словами (минимум одна общая буква для слов после первого)
     let hasIntersection = false;
     for (let i = 0; i < word.word.length; i++) {
         const cellRow = horizontal ? row : row + i;
@@ -384,26 +412,21 @@ function canPlaceWord(word, row, col, horizontal) {
     }
     if (!hasIntersection && placedWords.length > 0) return false;
 
-    // Проверка, что новое слово не пересекает первые/последние буквы других слов
+    // Дополнительная проверка: убедимся, что уже размещенные слова не пересекают первую/последнюю букву нового слова
     for (const placedWord of placedWords) {
-        // Если текущее слово горизонтальное, а размещенное - вертикальное
-        if (horizontal && !placedWord.horizontal) {
-            // Проверяем, не пересекается ли начало/конец текущего слова с размещенным
-            const isFirstLetterIntersecting = (col === placedWord.col && row >= placedWord.row && row <= placedWord.row + placedWord.word.length - 1);
-            const isLastLetterIntersecting = (col + word.word.length - 1 === placedWord.col && row >= placedWord.row && row <= placedWord.row + placedWord.word.length - 1);
+        const placedFirstRow = placedWord.row;
+        const placedFirstCol = placedWord.col;
+        const placedLastRow = placedWord.horizontal ? placedWord.row : placedWord.row + placedWord.word.length - 1;
+        const placedLastCol = placedWord.horizontal ? placedWord.col + placedWord.word.length - 1 : placedWord.col;
 
-            if (isFirstLetterIntersecting || isLastLetterIntersecting) {
-                return false;
-            }
-        }
-        // Если текущее слово вертикальное, а размещенное - горизонтальное
-        else if (!horizontal && placedWord.horizontal) {
-            // Проверяем, не пересекается ли начало/конец текущего слова с размещенным
-            const isFirstLetterIntersecting = (row === placedWord.row && col >= placedWord.col && col <= placedWord.col + placedWord.word.length - 1);
-            const isLastLetterIntersecting = (row + word.word.length - 1 === placedWord.row && col >= placedWord.col && col <= placedWord.col + placedWord.word.length - 1);
+        for (let i = 0; i < word.word.length; i++) {
+            const cellRow = horizontal ? row : row + i;
+            const cellCol = horizontal ? col + i : col;
 
-            if (isFirstLetterIntersecting || isLastLetterIntersecting) {
-                return false;
+            // Проверяем, пересекается ли текущая клетка с первой или последней клеткой уже размещенного слова
+            if ((cellRow === placedFirstRow && cellCol === placedFirstCol) ||
+                (cellRow === placedLastRow && cellCol === placedLastCol)) {
+                return false; // Пересечение с первой или последней буквой существующего слова
             }
         }
     }
@@ -489,20 +512,26 @@ function canPlaceWord(word, row, col, horizontal) {
                         input.dataset.col = actualCol;
 
                         input.addEventListener('focus', function() {
-                            currentActiveCell = this;
-                            if (!currentInputDirection) {
-                                currentInputDirection = detectInputDirection(actualRow, actualCol);
-                            }
-                            updateDirectionDisplay();
-                            highlightKeyboardKeys();
-                        });
+    currentActiveCell = this;
+    const row = parseInt(this.dataset.row);
+    const col = parseInt(this.dataset.col);
+    currentInputDirection = detectInputDirection(row, col);
+    updateDirectionDisplay();
+    highlightKeyboardKeys();
+});
 
                 input.addEventListener('input', function() {
-                    this.value = this.value.toUpperCase();
-                    if (this.value) { // Переход только если введена буква
-                        moveToNextCell();
-                    }
-                });
+    this.value = this.value.toUpperCase();
+    // Удаляем задержку перед переходом к следующей ячейке
+    moveToNextCell();
+});
+
+input.addEventListener('keydown', function(e) {
+    if (e.key === 'Backspace' && this.value === '') {
+        e.preventDefault();
+        moveToPrevCell();
+    }
+});
 
                         cell.appendChild(input);
                     } else {
@@ -711,6 +740,7 @@ function highlightKeyboardKeys() {
 
             const row = parseInt(currentActiveCell.dataset.row);
             const col = parseInt(currentActiveCell.dataset.col);
+            currentInputDirection = detectInputDirection(row, col);
 
             const currentWord = placedWords.find(word => {
                 const isHorizontal = word.horizontal;
@@ -755,7 +785,57 @@ function highlightKeyboardKeys() {
             }
             const maxAttempts = currentWord.word.length;
 
+
         }
+        function moveToPrevCell() {
+    if (!currentActiveCell || !currentInputDirection) return;
+
+    const row = parseInt(currentActiveCell.dataset.row);
+    const col = parseInt(currentActiveCell.dataset.col);
+
+    // Находим текущее слово
+    const currentWord = placedWords.find(word => {
+        if (word.horizontal && currentInputDirection === 'horizontal') {
+            return word.row === row && col >= word.col && col < word.col + word.word.length;
+        } else if (!word.horizontal && currentInputDirection === 'vertical') {
+            return word.col === col && row >= word.row && row < word.row + word.word.length;
+        }
+        return false;
+    });
+
+    if (!currentWord) return;
+
+    let prevRow, prevCol;
+    if (currentWord.horizontal) {
+        prevCol = col - 1;
+        prevRow = row;
+        // Если достигли начала слова, переходим к концу
+        if (prevCol < currentWord.col) {
+            prevCol = currentWord.col + currentWord.word.length - 1;
+        }
+    } else {
+        prevRow = row - 1;
+        prevCol = col;
+        // Если достигли начала слова, переходим к концу
+        if (prevRow < currentWord.row) {
+            prevRow = currentWord.row + currentWord.word.length - 1;
+        }
+    }
+
+    // Находим предыдущую ячейку
+    const prevInput = document.querySelector(`input[data-row="${prevRow}"][data-col="${prevCol}"]`);
+
+    // Если предыдущая ячейка существует и не заблокирована (readonly)
+    if (prevInput && !prevInput.readOnly) {
+        prevInput.focus();
+        // Для мобильных устройств - прокручиваем к ячейке
+        if (/Mobi|Android/i.test(navigator.userAgent)) {
+            prevInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        // Очищаем предыдущую ячейку
+        prevInput.value = '';
+    }
+}
         function checkIfWordComplete(word) {
         for (let i = 0; i < word.word.length; i++) {
             const row = word.horizontal ? word.row : word.row + i;
@@ -899,6 +979,7 @@ function highlightKeyboardKeys() {
                 ];
             }
         }
+
     </script>
 </body>
 </html>

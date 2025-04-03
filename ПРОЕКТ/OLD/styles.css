@@ -442,9 +442,7 @@ button:hover::before {
     transform: translateY(1px);
 }
 
-#toggle-keyboard-btn {
-    display: none;
-}
+
 
 /* Медиа-запросы для мобильных устройств */
 @media (max-width: 768px) {
@@ -523,20 +521,8 @@ button:hover::before {
         padding: 15px;
     }
 
-    .keyboard-content {
-        display: none;
-    }
 
-    #toggle-keyboard-btn {
-        display: block;
-        margin: 10px auto;
-        padding: 8px 15px;
-        background-color: rgba(220, 20, 60, 0.7);
-        color: white;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-    }
+
 }
 
 @media (max-width: 480px) {
@@ -1018,3 +1004,4 @@ body.dark-theme .keyboard-key.highlight {
 .word-direction.vertical {
     color: #2196F3; /* Синий для вертикальных слов */
 }
+
