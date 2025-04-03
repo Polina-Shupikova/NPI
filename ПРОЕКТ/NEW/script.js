@@ -9,26 +9,44 @@ function isTelegramWebApp() {
 }
 
 function getUserId() {
-    if (!isTelegramWebApp()) return null;
+    if (!isTelegramWebApp()) {
+        console.log("Не в Telegram Web App");
+        return null;
+    }
     
-    // 1. Пробуем из initDataUnsafe
-    const userId = Telegram.WebApp.initDataUnsafe?.user?.id;
-    if (userId) return userId;
+    if (!Telegram.WebApp.initData) {
+        console.error("initData отсутствует");
+        return null;
+    }
     
-    // 2. Парсим вручную из initData (если user скрыт)
+    const initDataUnsafe = Telegram.WebApp.initDataUnsafe;
+    if (initDataUnsafe?.user?.id) {
+        console.log("User ID из initDataUnsafe:", initDataUnsafe.user.id);
+        return initDataUnsafe.user.id;
+    }
+    
     try {
         const params = new URLSearchParams(Telegram.WebApp.initData);
         const userData = params.get('user');
         if (userData) {
             const user = JSON.parse(decodeURIComponent(userData));
-            return user?.id || null;
+            if (user?.id) {
+                console.log("User ID из initData:", user.id);
+                return user.id;
+            }
         }
     } catch (e) {
-        console.error("Error parsing user data:", e);
+        console.error("Ошибка парсинга initData:", e);
     }
     
-    // 3. Пробуем query_id как временный идентификатор
-    return Telegram.WebApp.initDataUnsafe?.query_id || null;
+    const queryId = initDataUnsafe?.query_id;
+    if (queryId) {
+        console.warn("Используется query_id:", queryId);
+        return queryId;
+    }
+    
+    console.error("Не удалось определить userId");
+    return null;
 }
 
 function getLevelConfig(level) {
@@ -61,7 +79,10 @@ async function loadSavedLevel() {
         userId = getUserId();
         console.log("Detected User ID:", userId);
         
-        if (userId) {
+        if (!userId) {
+            console.warn("User ID не найден, сохранение в CloudStorage невозможно");
+            Telegram.WebApp.showAlert("Не удалось определить ваш ID. Прогресс будет сохранён локально.");
+        } else if (userId) {
             const key = `user_level_${userId}`;
             try {
                 const value = await new Promise(resolve => {
