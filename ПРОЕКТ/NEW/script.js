@@ -92,26 +92,68 @@ async function loadSavedLevel() {
 
 async function initGame() {
     console.log("Запуск initGame...");
-    try {
-        if (window.Telegram?.WebApp) {
-            console.log("Обнаружен Telegram WebApp, ждём готовности...");
-            Telegram.WebApp.ready();
+
+    // Проверка Telegram Web App
+    if (window.Telegram?.WebApp) {
+        try {
+            console.log("Обнаружен Telegram WebApp, ждем готовности...");
+            Telegram.WebApp.ready(); // Это синхронный вызов, но можем добавить таймаут
+            await new Promise(resolve => setTimeout(resolve, 100)); // Даем время на инициализацию
             Telegram.WebApp.expand();
             console.log("Telegram WebApp готов");
-        } else {
-            console.warn("Telegram WebApp не обнаружен");
+        } catch (error) {
+            console.warn("Ошибка инициализации Telegram WebApp:", error);
         }
+    } else {
+        console.warn("Telegram WebApp не обнаружен, работаем в обычном режиме");
+    }
 
+    // Загрузка слов
+    try {
         await loadWords();
-        initEventListeners();
-        await startGame();
+        if (wordDatabase.easy.length === 0 || wordDatabase.hard.length === 0) {
+            throw new Error("База слов пуста после загрузки");
+        }
+        console.log("Слова успешно загружены");
     } catch (error) {
-        console.error("Ошибка в initGame:", error);
+        console.error("Ошибка загрузки слов:", error);
+        console.log("Переключаемся на резервные слова...");
         loadBackupWords();
+        if (wordDatabase.easy.length === 0 || wordDatabase.hard.length === 0) {
+            console.error("Даже резервные слова не загрузились!");
+            throw new Error("Не удалось загрузить слова для игры");
+        }
+    }
+
+    // Инициализация слушателей событий
+    try {
         initEventListeners();
+        console.log("Слушатели событий инициализированы");
+    } catch (error) {
+        console.error("Ошибка в initEventListeners:", error);
+        throw error; // Критично, если слушатели не работают
+    }
+
+    // Запуск игры
+    try {
         await startGame();
+        console.log("Игра успешно запущена");
+    } catch (error) {
+        console.error("Ошибка в startGame:", error);
+        throw error; // Прерываем, чтобы не продолжать с ошибкой
     }
 }
+
+// Запуск с обработкой ошибок верхнего уровня
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        await initGame();
+        await debugCloudStorage(); // Для отладки сохранения
+    } catch (error) {
+        console.error("Фатальная ошибка при запуске игры:", error);
+        alert("Не удалось запустить игру. Проверьте подключение и попробуйте снова.");
+    }
+});
 
 async function saveCurrentLevel(level) {
     const levelStr = String(level);
