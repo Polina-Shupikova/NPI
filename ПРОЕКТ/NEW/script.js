@@ -437,7 +437,7 @@ function generateCrossword() {
     // 2. Пытаемся добавить остальные слова
     let wordsAdded = 1;
     let attempts = 0;
-    const maxAttempts = 500; // Увеличили количество попыток
+    const maxAttempts = 1000; // Увеличили количество попыток
 
     while (wordsAdded < levelConfig.total && attempts < maxAttempts) {
         const needEasy = wordsAdded < levelConfig.easy;
@@ -576,37 +576,68 @@ function canPlaceWord(word, position, direction) {
     const { x, y } = position;
     const length = word.length;
     
+    // Проверка выхода за границы сетки
     if (x < 0 || y < 0) return false;
     if (direction === 'horizontal' && x + length > crossword.size) return false;
     if (direction === 'vertical' && y + length > crossword.size) return false;
     
+    // Проверка каждой клетки слова
+    for (let i = 0; i < length; i++) {
+        const cellX = direction === 'horizontal' ? x + i : x;
+        const cellY = direction === 'horizontal' ? y : y + i;
+        const cell = crossword.grid[cellY]?.[cellX];
+        
+        // Если клетка занята и буква не совпадает, размещение невозможно
+        if (cell && cell.correctLetter !== word[i]) return false;
+    }
+    
+    // Проверка расстояния до других слов (нужен зазор в 1 клетку для непересекающихся слов)
     for (let i = 0; i < length; i++) {
         const cellX = direction === 'horizontal' ? x + i : x;
         const cellY = direction === 'horizontal' ? y : y + i;
         
-        const cell = crossword.grid[cellY]?.[cellX];
-        if (cell && cell.correctLetter !== word[i]) return false;
-        
+        // Определяем соседние клетки (включая диагонали)
         const neighbors = [
-            { dx: 0, dy: 1 }, { dx: 0, dy: -1 },
-            { dx: 1, dy: 0 }, { dx: -1, dy: 0 },
-            { dx: 1, dy: 1 }, { dx: -1, dy: -1 },
-            { dx: 1, dy: -1 }, { dx: -1, dy: 1 }
+            { dx: 0, dy: 1 },  // вниз
+            { dx: 0, dy: -1 }, // вверх
+            { dx: 1, dy: 0 },  // вправо
+            { dx: -1, dy: 0 }, // влево
+            { dx: 1, dy: 1 },  // вниз-вправо
+            { dx: -1, dy: -1 }, // вверх-влево
+            { dx: 1, dy: -1 }, // вверх-вправо
+            { dx: -1, dy: 1 }  // вниз-влево
         ];
         
         for (const { dx, dy } of neighbors) {
-            const nx = cellX + dx, ny = cellY + dy;
+            const nx = cellX + dx;
+            const ny = cellY + dy;
+            
+            // Проверяем, что соседняя клетка в пределах сетки
             if (nx >= 0 && ny >= 0 && nx < crossword.size && ny < crossword.size) {
                 const neighborCell = crossword.grid[ny][nx];
+                
+                // Если соседняя клетка занята
                 if (neighborCell) {
-                    const neighborWord = crossword.words[neighborCell.wordIndices[0]];
-                    if (neighborWord.direction === direction) {
+                    // Проверяем, пересекается ли текущее слово с существующим
+                    let intersects = false;
+                    for (let j = 0; j < length; j++) {
+                        const checkX = direction === 'horizontal' ? x + j : x;
+                        const checkY = direction === 'horizontal' ? y : y + j;
+                        if (crossword.grid[checkY][checkX]?.wordIndices?.length > 0) {
+                            intersects = true;
+                            break;
+                        }
+                    }
+                    
+                    // Если нет пересечения и соседняя клетка занята, возвращаем false
+                    if (!intersects) {
                         return false;
                     }
                 }
             }
         }
     }
+    
     return true;
 }
 
