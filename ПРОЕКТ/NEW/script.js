@@ -282,16 +282,14 @@ function showLevelCompleteDialog() {
     
     document.getElementById('next-level-btn').addEventListener('click', async () => {
         dialog.remove();
-        await completeLevel();
+        await saveCurrentLevel(currentLevel + 1); // Явно сохраняем следующий уровень
+        completeLevel();
     });
     
     document.getElementById('menu-btn').addEventListener('click', async () => {
-        // Сохраняем прогресс перед выходом в меню
-        await saveCurrentLevel(currentLevel);
-        saveUserRecord(currentLevel);
-        location.href='../MAIN/index.html';
+        await saveCurrentLevel(currentLevel); // Сохраняем текущий прогресс
+        location.href = '../MAIN/index.html';
     });
-}
 
 
 async function completeLevel() {
