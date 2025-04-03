@@ -133,6 +133,19 @@ let crossword = {
 
 const usedLettersCache = {};
 
+async function initGame() {
+    try {
+        await loadWords();
+        initEventListeners();
+        startGame();
+    } catch (error) {
+        console.error('Ошибка инициализации:', error);
+        loadBackupWords();
+        initEventListeners();
+        startGame();
+    }
+}
+
 async function loadWords() {
     try {
         const [easyResponse, hardResponse] = await Promise.all([
@@ -265,6 +278,7 @@ async function startGame() {
     loadLevel();
 }
 
+// Обновите функцию showLevelCompleteDialog
 function showLevelCompleteDialog() {
     const dialog = document.createElement('div');
     dialog.className = 'level-complete-dialog';
@@ -282,14 +296,16 @@ function showLevelCompleteDialog() {
     
     document.getElementById('next-level-btn').addEventListener('click', async () => {
         dialog.remove();
-        await saveCurrentLevel(currentLevel + 1); // Явно сохраняем следующий уровень
-        completeLevel();
+        await completeLevel();
     });
     
     document.getElementById('menu-btn').addEventListener('click', async () => {
-        await saveCurrentLevel(currentLevel); // Сохраняем текущий прогресс
-        location.href = '../MAIN/index.html';
+        // Сохраняем прогресс перед выходом в меню
+        await saveCurrentLevel(currentLevel);
+        saveUserRecord(currentLevel);
+        location.href='../MAIN/index.html';
     });
+}
 
 
 async function completeLevel() {
@@ -302,6 +318,7 @@ async function completeLevel() {
     loadLevel();
 }
 
+// Обновите функцию initGame
 async function initGame() {
     try {
         await loadWords();
@@ -855,6 +872,31 @@ function checkAllWordsCompletion() {
     }
 }
 
+function showLevelCompleteDialog() {
+    const dialog = document.createElement('div');
+    dialog.className = 'level-complete-dialog';
+    dialog.innerHTML = `
+        <div class="dialog-content">
+            <h3>Уровень ${currentLevel} пройден!</h3>
+            <div class="dialog-buttons">
+                <button id="next-level-btn">Следующий уровень</button>
+                <button id="menu-btn" onclick="location.href='../MAIN/index.html'">В меню</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(dialog);
+    
+    document.getElementById('next-level-btn').addEventListener('click', () => {
+        dialog.remove();
+        completeLevel();
+    });
+    
+    document.getElementById('menu-btn').addEventListener('click', () => {
+        dialog.remove();
+    });
+}
+
 function checkSingleWordCompletion(wordIndex) {
     const wordInfo = crossword.words[wordIndex];
     let allLettersFilled = true;
@@ -1011,4 +1053,3 @@ document.addEventListener('DOMContentLoaded', () => {
         alert("Произошла ошибка при запуске игры. Пожалуйста, перезагрузите страницу.");
     });
 });
-}
