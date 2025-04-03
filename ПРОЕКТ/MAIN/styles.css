@@ -238,6 +238,7 @@ top: 0.5em;
 left: 0.5em;
 width: 1.5em;
 height: 1.5em;
+font-size: 24px;
 }
 
 .theme__icon-part {
@@ -315,6 +316,7 @@ appearance: none;
 transition: background-color var(--transDur) ease-in-out,
       box-shadow 0.15s ease-in-out,
       transform var(--transDur) ease-in-out;
+font-size: 18px;
 }
 
 .theme__toggle:before {
