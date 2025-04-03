@@ -9,34 +9,50 @@ function isTelegramWebApp() {
 }
 
 function getUserId() {
-    if (!isTelegramWebApp()) {
-        console.log("Не в Telegram Web App");
+    // Проверяем, что мы в Telegram WebApp
+    if (!window.Telegram?.WebApp) {
+        console.log("Не в Telegram Web App, Telegram.WebApp отсутствует");
         return null;
     }
+
+    const webApp = Telegram.WebApp;
+    console.log("Telegram.WebApp объект:", webApp); // Отладка полного объекта
 
     // Ждём готовности Telegram WebApp
-    if (!Telegram.WebApp.isVersionAtLeast('6.0')) {
-        console.error("Версия Telegram Web App слишком старая для Cloud Storage");
+    if (!webApp.isReady) {
+        console.log("Telegram WebApp ещё не готов, ждём инициализации...");
+        webApp.ready(); // Убеждаемся, что WebApp инициализирован
+    }
+
+    // Проверяем версию Telegram WebApp
+    if (!webApp.isVersionAtLeast('6.0')) {
+        console.error("Версия Telegram WebApp слишком старая для Cloud Storage");
         return null;
     }
 
-    const initDataUnsafe = Telegram.WebApp.initDataUnsafe;
+    // Проверяем initDataUnsafe
+    const initDataUnsafe = webApp.initDataUnsafe;
     console.log("initDataUnsafe:", initDataUnsafe); // Отладка
 
     if (initDataUnsafe?.user?.id) {
-        console.log("User ID из initDataUnsafe:", initDataUnsafe.user.id);
+        console.log("User ID успешно получен из initDataUnsafe:", initDataUnsafe.user.id);
         return initDataUnsafe.user.id;
     }
 
-    // Пробуем распарсить initData вручную
-    if (Telegram.WebApp.initData) {
+    // Проверяем initData
+    if (webApp.initData) {
+        console.log("initData:", webApp.initData); // Отладка raw данных
         try {
-            const params = new URLSearchParams(Telegram.WebApp.initData);
+            const params = new URLSearchParams(webApp.initData);
             const userData = params.get('user');
+            console.log("userData из initData:", userData); // Отладка
+
             if (userData) {
                 const user = JSON.parse(decodeURIComponent(userData));
+                console.log("Распарсенный user объект:", user); // Отладка
+
                 if (user?.id) {
-                    console.log("User ID из initData:", user.id);
+                    console.log("User ID успешно получен из initData:", user.id);
                     return user.id;
                 }
             }
@@ -45,7 +61,7 @@ function getUserId() {
         }
     }
 
-    console.error("Не удалось определить userId");
+    console.error("Не удалось определить userId: initData или initDataUnsafe пусты или некорректны");
     return null;
 }
 
@@ -73,17 +89,10 @@ function parseInitData() {
 }
 
 async function loadSavedLevel() {
-    if (!isTelegramWebApp()) {
-        console.warn("Не в Telegram Web App, используется localStorage");
-        const localValue = localStorage.getItem('crossword_user_level');
-        return localValue ? parseInt(localValue) || 1 : 1;
-    }
-
     const userId = getUserId();
-    console.log("Detected User ID:", userId);
 
-    if (!userId) {
-        console.warn("User ID не найден, используется localStorage");
+    if (!isTelegramWebApp() || !userId) {
+        console.warn("Не в Telegram Web App или User ID не найден, используется localStorage");
         const localValue = localStorage.getItem('crossword_user_level');
         return localValue ? parseInt(localValue) || 1 : 1;
     }
@@ -93,10 +102,10 @@ async function loadSavedLevel() {
         const value = await new Promise((resolve, reject) => {
             Telegram.WebApp.CloudStorage.getItem(key, (err, val) => {
                 if (err) {
-                    console.error("CloudStorage getItem error:", err);
+                    console.error("Ошибка CloudStorage.getItem:", err);
                     reject(err);
                 } else {
-                    console.log(`Уровень из CloudStorage для ${key}:`, val);
+                    console.log(`Загружен уровень из CloudStorage для ${key}:`, val);
                     resolve(val);
                 }
             });
@@ -111,18 +120,12 @@ async function loadSavedLevel() {
 
 async function saveCurrentLevel(level) {
     const levelStr = String(level);
+    const userId = getUserId();
 
-    if (!isTelegramWebApp()) {
-        console.warn("Не в Telegram Web App, сохранение в localStorage");
+    if (!isTelegramWebApp() || !userId) {
+        console.warn("Не в Telegram Web App или User ID не найден, сохранение в localStorage");
         localStorage.setItem('crossword_user_level', levelStr);
         return true;
-    }
-
-    const userId = getUserId();
-    if (!userId) {
-        console.error("User ID не найден, сохранение в localStorage");
-        localStorage.setItem('crossword_user_level', levelStr);
-        return false;
     }
 
     const key = `user_level_${userId}`;
@@ -130,7 +133,7 @@ async function saveCurrentLevel(level) {
         const success = await new Promise((resolve, reject) => {
             Telegram.WebApp.CloudStorage.setItem(key, levelStr, (err) => {
                 if (err) {
-                    console.error(`Ошибка сохранения в CloudStorage для ${key}:`, err);
+                    console.error(`Ошибка CloudStorage.setItem для ${key}:`, err);
                     reject(err);
                 } else {
                     console.log(`Уровень ${level} сохранён в CloudStorage для ${key}`);
@@ -141,7 +144,7 @@ async function saveCurrentLevel(level) {
         return success;
     } catch (e) {
         console.error("Ошибка сохранения в CloudStorage:", e);
-        localStorage.setItem('crossword_user_level', levelStr); // Fallback
+        localStorage.setItem('crossword_user_level', levelStr);
         return false;
     }
 }
@@ -467,12 +470,17 @@ async function completeLevel() {
 async function initGame() {
     try {
         if (isTelegramWebApp()) {
+            console.log("Ожидание готовности Telegram WebApp...");
             await new Promise((resolve) => {
                 Telegram.WebApp.ready();
-                Telegram.WebApp.onEvent('ready', resolve);
+                Telegram.WebApp.onEvent('ready', () => {
+                    console.log("Telegram WebApp готов!");
+                    resolve();
+                });
             });
-            Telegram.WebApp.expand(); // Расширяем WebApp для удобства
-            console.log("Telegram WebApp готов");
+            Telegram.WebApp.expand(); // Расширяем для удобства
+        } else {
+            console.warn("Запуск вне Telegram WebApp");
         }
 
         await loadWords();
@@ -485,35 +493,6 @@ async function initGame() {
         initEventListeners();
         await startGame();
     }
-}
-
-function getWordCountForLevel(level) {
-    return LEVEL_WORDS[level]?.total || LEVEL_WORDS[26].total;
-}
-
-function loadLevel() {
-    const wordCount = getWordCountForLevel(currentLevel);
-    document.getElementById('level-number').textContent = currentLevel;
-    document.getElementById('crossword-grid').innerHTML = `<div class="loading">Генерация уровня ${currentLevel}...</div>`;
-    document.getElementById('keyboard').innerHTML = '';
-    document.getElementById('definitions-list').innerHTML = '';
-    document.getElementById('solved-definitions-list').innerHTML = '';
-    document.getElementById('solved-definitions').classList.add('collapsed');
-
-    setTimeout(() => {
-        try {
-            if (generateCrossword()) {
-                renderCrossword(true); // Добавлен принудительный рендеринг
-                generateKeyboard();
-                showDefinitions();
-            } else {
-                showError('Не удалось сгенерировать кроссворд');
-            }
-        } catch (error) {
-            console.error('Ошибка генерации:', error);
-            showError('Ошибка при создании кроссворда');
-        }
-    }, 50);
 }
 
 function showError(message) {
