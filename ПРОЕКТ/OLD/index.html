@@ -36,9 +36,9 @@
 
     <div class="header-container">
         <a href="../MAIN/index.html" id="back-button">Назад</a>
-        <h1>Кроссвордъ</h1>
+        <h1>Кроссворд</h1>
         <button id="shop-button">
-            Магазин (<span id="coins-display">0</span> монет)
+            Магазин
         </button>
     </div>
 
@@ -76,9 +76,11 @@
         <button id="next-level">►</button>
     </div>
 
+
     <div class="controls">
         <button id="generate-btn">Сгенерировать кроссворд</button>
         <button id="toggle-direction-btn">↻</button>
+        <button id="direction-display">Не выбрано</button>
     </div>
 
     <div id="crossword-container">
@@ -87,6 +89,7 @@
 
     <div class="keyboard">
         <button id="toggle-keyboard-btn">Показать/Скрыть клавиатуру</button>
+
         <div id="keyboard-content" class="keyboard-content">
             <div class="keyboard-row">
                 <button class="keyboard-key" data-key="Й">Й</button>
@@ -184,15 +187,15 @@
         function updateDirectionDisplay() {
             const directionDisplay = document.getElementById('direction-display');
             if (currentInputDirection === 'horizontal') {
-                directionDisplay.textContent = 'Направление: Горизонтально →';
+                directionDisplay.textContent = '→';
                 directionDisplay.classList.remove('vertical');
                 directionDisplay.classList.add('horizontal');
             } else if (currentInputDirection === 'vertical') {
-                directionDisplay.textContent = 'Направление: Вертикально ↓';
+                directionDisplay.textContent = '↓';
                 directionDisplay.classList.remove('horizontal');
                 directionDisplay.classList.add('vertical');
             } else {
-                directionDisplay.textContent = 'Направление: Не выбрано';
+                directionDisplay.textContent = 'Не выбрано';
                 directionDisplay.classList.remove('horizontal', 'vertical');
             }
         }
@@ -273,7 +276,6 @@
 
         function updateShopUI() {
             document.getElementById('coins-count').textContent = coins;
-            document.getElementById('coins-display').textContent = coins;
             document.getElementById('letter-hints').textContent = purchasedHints.letter;
             document.getElementById('word-hints').textContent = purchasedHints.word;
 
