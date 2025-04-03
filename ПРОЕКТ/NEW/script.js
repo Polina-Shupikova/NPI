@@ -366,7 +366,11 @@ function showError(message) {
 
 function generateCrossword() {
     const levelConfig = getLevelConfig(currentLevel);
-    crossword.size = Math.max(15, levelConfig.maxLength + 3);
+    
+    // Увеличиваем размер сетки для более сложных уровней
+    crossword.size = Math.max(18, levelConfig.maxLength + 5); // Минимум 18x18, +5 буфер
+    
+    // Инициализация
     crossword.hints = levelConfig.total;
     crossword.wordsToFind = levelConfig.total;
     crossword.wordsFound = 0;
@@ -376,14 +380,52 @@ function generateCrossword() {
     crossword.usedWords.clear();
     crossword.activeWordIndex = null;
 
-    // Проверяем, есть ли слова для генерации
+    // Проверка доступности слов
     if (wordDatabase.easy.length + wordDatabase.hard.length < levelConfig.total) {
-        console.error("Недостаточно слов для генерации кроссворда");
+        console.error("Недостаточно слов для генерации");
+        loadBackupWords();
         return false;
     }
 
-    // Генерация кроссворда (остальной код без изменений)
-    // ...
+    // 1. Размещаем первое слово (горизонтально в центре)
+    const firstWordType = levelConfig.easy > 0 ? WORD_TYPES.EASY : WORD_TYPES.HARD;
+    const firstWord = getRandomWord(firstWordType, levelConfig.minLength, levelConfig.maxLength);
+    
+    const centerY = Math.floor(crossword.size / 2);
+    const centerX = Math.floor((crossword.size - firstWord.word.length) / 2);
+    
+    if (!canPlaceWord(firstWord.word, {x: centerX, y: centerY}, 'horizontal')) {
+        console.error("Не удалось разместить первое слово");
+        return false;
+    }
+    
+    addWordToGrid(firstWord, {x: centerX, y: centerY}, 'horizontal', 1);
+
+    // 2. Пытаемся добавить остальные слова
+    let wordsAdded = 1;
+    let attempts = 0;
+    const maxAttempts = 500; // Увеличили количество попыток
+
+    while (wordsAdded < levelConfig.total && attempts < maxAttempts) {
+        const needEasy = wordsAdded < levelConfig.easy;
+        const type = needEasy ? WORD_TYPES.EASY : WORD_TYPES.HARD;
+        const wordObj = getRandomWord(type, levelConfig.minLength, levelConfig.maxLength);
+        
+        if (wordObj && tryAddConnectedWord(wordObj)) {
+            wordsAdded++;
+        }
+        attempts++;
+    }
+
+    console.log(`Добавлено слов: ${wordsAdded}/${levelConfig.total}, попыток: ${attempts}`);
+    
+    if (wordsAdded < Math.max(3, levelConfig.total * 0.7)) { // Минимум 3 слова или 70%
+        console.error("Не удалось разместить достаточное количество слов");
+        return false;
+    }
+
+    // Обновляем количество слов для поиска (на случай если добавили не все)
+    crossword.wordsToFind = wordsAdded;
     return true;
 }
 
