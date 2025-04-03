@@ -8,63 +8,6 @@ function isTelegramWebApp() {
     return true;
 }
 
-function getUserId() {
-    // Проверяем, что мы в Telegram WebApp
-    if (!window.Telegram?.WebApp) {
-        console.log("Не в Telegram Web App, Telegram.WebApp отсутствует");
-        return null;
-    }
-
-    const webApp = Telegram.WebApp;
-    console.log("Telegram.WebApp объект:", webApp); // Отладка полного объекта
-
-    // Ждём готовности Telegram WebApp
-    if (!webApp.isReady) {
-        console.log("Telegram WebApp ещё не готов, ждём инициализации...");
-        webApp.ready(); // Убеждаемся, что WebApp инициализирован
-    }
-
-    // Проверяем версию Telegram WebApp
-    if (!webApp.isVersionAtLeast('6.0')) {
-        console.error("Версия Telegram WebApp слишком старая для Cloud Storage");
-        return null;
-    }
-
-    // Проверяем initDataUnsafe
-    const initDataUnsafe = webApp.initDataUnsafe;
-    console.log("initDataUnsafe:", initDataUnsafe); // Отладка
-
-    if (initDataUnsafe?.user?.id) {
-        console.log("User ID успешно получен из initDataUnsafe:", initDataUnsafe.user.id);
-        return initDataUnsafe.user.id;
-    }
-
-    // Проверяем initData
-    if (webApp.initData) {
-        console.log("initData:", webApp.initData); // Отладка raw данных
-        try {
-            const params = new URLSearchParams(webApp.initData);
-            const userData = params.get('user');
-            console.log("userData из initData:", userData); // Отладка
-
-            if (userData) {
-                const user = JSON.parse(decodeURIComponent(userData));
-                console.log("Распарсенный user объект:", user); // Отладка
-
-                if (user?.id) {
-                    console.log("User ID успешно получен из initData:", user.id);
-                    return user.id;
-                }
-            }
-        } catch (e) {
-            console.error("Ошибка парсинга initData:", e);
-        }
-    }
-
-    console.error("Не удалось определить userId: initData или initDataUnsafe пусты или некорректны");
-    return null;
-}
-
 function getLevelConfig(level) {
     if (level <= 26) {
         return LEVEL_WORDS[level];
@@ -88,33 +31,77 @@ function parseInitData() {
     }
 }
 
+function getUserId() {
+    if (!window.Telegram?.WebApp) {
+        console.log("Не в Telegram Web App");
+        return null;
+    }
+
+    const webApp = Telegram.WebApp;
+    console.log("Полный Telegram.WebApp:", JSON.stringify(webApp, null, 2));
+    console.log("initDataUnsafe:", JSON.stringify(webApp.initDataUnsafe, null, 2));
+
+    if (webApp.initDataUnsafe?.user?.id) {
+        console.log("User ID найден:", webApp.initDataUnsafe.user.id);
+        return webApp.initDataUnsafe.user.id;
+    }
+
+    console.error("User ID не найден в initDataUnsafe");
+    return null;
+}
+
 async function loadSavedLevel() {
     const userId = getUserId();
 
-    if (!isTelegramWebApp() || !userId) {
-        console.warn("Не в Telegram Web App или User ID не найден, используется localStorage");
+    if (!userId) {
+        console.warn("User ID не найден, используется localStorage");
         const localValue = localStorage.getItem('crossword_user_level');
         return localValue ? parseInt(localValue) || 1 : 1;
     }
 
     const key = `user_level_${userId}`;
+    console.log("Попытка загрузки из CloudStorage с ключом:", key);
+
     try {
-        const value = await new Promise((resolve, reject) => {
+        const value = await new Promise((resolve) => {
             Telegram.WebApp.CloudStorage.getItem(key, (err, val) => {
                 if (err) {
-                    console.error("Ошибка CloudStorage.getItem:", err);
-                    reject(err);
+                    console.error("Ошибка CloudStorage:", err);
+                    resolve(null);
                 } else {
-                    console.log(`Загружен уровень из CloudStorage для ${key}:`, val);
+                    console.log("Значение из CloudStorage:", val);
                     resolve(val);
                 }
             });
         });
         return value ? parseInt(value) || 1 : 1;
     } catch (e) {
-        console.error("Ошибка загрузки из CloudStorage:", e);
+        console.error("Исключение при загрузке из CloudStorage:", e);
         const localValue = localStorage.getItem('crossword_user_level');
         return localValue ? parseInt(localValue) || 1 : 1;
+    }
+}
+
+async function initGame() {
+    console.log("Запуск initGame...");
+    try {
+        if (window.Telegram?.WebApp) {
+            console.log("Обнаружен Telegram WebApp, ждём готовности...");
+            Telegram.WebApp.ready();
+            Telegram.WebApp.expand();
+            console.log("Telegram WebApp готов");
+        } else {
+            console.warn("Telegram WebApp не обнаружен");
+        }
+
+        await loadWords();
+        initEventListeners();
+        await startGame();
+    } catch (error) {
+        console.error("Ошибка в initGame:", error);
+        loadBackupWords();
+        initEventListeners();
+        await startGame();
     }
 }
 
@@ -464,34 +451,6 @@ async function completeLevel() {
     } catch (error) {
         console.error("Ошибка при завершении уровня:", error);
         alert("Произошла ошибка при сохранении прогресса.");
-    }
-}
-
-async function initGame() {
-    try {
-        if (isTelegramWebApp()) {
-            console.log("Ожидание готовности Telegram WebApp...");
-            await new Promise((resolve) => {
-                Telegram.WebApp.ready();
-                Telegram.WebApp.onEvent('ready', () => {
-                    console.log("Telegram WebApp готов!");
-                    resolve();
-                });
-            });
-            Telegram.WebApp.expand(); // Расширяем для удобства
-        } else {
-            console.warn("Запуск вне Telegram WebApp");
-        }
-
-        await loadWords();
-        initEventListeners();
-        await startGame();
-        debugCloudStorage(); // Отладка после инициализации
-    } catch (error) {
-        console.error('Ошибка инициализации:', error);
-        loadBackupWords();
-        initEventListeners();
-        await startGame();
     }
 }
 
