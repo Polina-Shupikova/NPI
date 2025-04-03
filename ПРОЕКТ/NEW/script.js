@@ -359,11 +359,8 @@ function showError(message) {
 
 function generateCrossword() {
     const levelConfig = getLevelConfig(currentLevel);
+    crossword.size = Math.max(18, levelConfig.maxLength + 5);
     
-    // Увеличиваем размер сетки для более сложных уровней
-    crossword.size = Math.max(18, levelConfig.maxLength + 5); // Минимум 18x18, +5 буфер
-    
-    // Инициализация
     crossword.hints = levelConfig.total;
     crossword.wordsToFind = levelConfig.total;
     crossword.wordsFound = 0;
@@ -373,16 +370,18 @@ function generateCrossword() {
     crossword.usedWords.clear();
     crossword.activeWordIndex = null;
 
-    // Проверка доступности слов
     if (wordDatabase.easy.length + wordDatabase.hard.length < levelConfig.total) {
         console.error("Недостаточно слов для генерации");
         loadBackupWords();
-        return false;
     }
 
-    // 1. Размещаем первое слово (горизонтально в центре)
+    // Первое слово
     const firstWordType = levelConfig.easy > 0 ? WORD_TYPES.EASY : WORD_TYPES.HARD;
     const firstWord = getRandomWord(firstWordType, levelConfig.minLength, levelConfig.maxLength);
+    if (!firstWord) {
+        console.error("Не удалось получить первое слово");
+        return false;
+    }
     
     const centerY = Math.floor(crossword.size / 2);
     const centerX = Math.floor((crossword.size - firstWord.word.length) / 2);
@@ -394,17 +393,22 @@ function generateCrossword() {
     
     addWordToGrid(firstWord, {x: centerX, y: centerY}, 'horizontal', 1);
 
-    // 2. Пытаемся добавить остальные слова
+    // Остальные слова
     let wordsAdded = 1;
     let attempts = 0;
-    const maxAttempts = 1000; // Увеличили количество попыток
+    const maxAttempts = 1000;
 
     while (wordsAdded < levelConfig.total && attempts < maxAttempts) {
         const needEasy = wordsAdded < levelConfig.easy;
         const type = needEasy ? WORD_TYPES.EASY : WORD_TYPES.HARD;
         const wordObj = getRandomWord(type, levelConfig.minLength, levelConfig.maxLength);
         
-        if (wordObj && tryAddConnectedWord(wordObj)) {
+        if (!wordObj) {
+            console.error("Не удалось получить слово для уровня");
+            break;
+        }
+        
+        if (tryAddConnectedWord(wordObj)) {
             wordsAdded++;
         }
         attempts++;
@@ -412,50 +416,68 @@ function generateCrossword() {
 
     console.log(`Добавлено слов: ${wordsAdded}/${levelConfig.total}, попыток: ${attempts}`);
     
-    if (wordsAdded < Math.max(3, levelConfig.total * 0.7)) { // Минимум 3 слова или 70%
+    if (wordsAdded < Math.max(3, levelConfig.total * 0.7)) {
         console.error("Не удалось разместить достаточное количество слов");
         return false;
     }
 
-    // Обновляем количество слов для поиска (на случай если добавили не все)
     crossword.wordsToFind = wordsAdded;
     return true;
 }
 
-function getRandomWord(type, minLength, maxLength) {
+function getRandomWord(type, minLength, maxLength, recursionCount = 0) {
+    const MAX_RECURSION = 1; // Ограничиваем количество рекурсий
+    
     const availableWords = wordDatabase[type].filter(w => 
         !crossword.usedWords.has(w.word) && 
         w.word.length >= minLength && 
         w.word.length <= maxLength
     );
     
-    if (availableWords.length === 0) {
-        const fallbackType = type === WORD_TYPES.EASY ? WORD_TYPES.HARD : WORD_TYPES.EASY;
-        const fallbackWords = wordDatabase[fallbackType].filter(w => 
-            !crossword.usedWords.has(w.word) && 
-            w.word.length >= minLength && 
-            w.word.length <= maxLength
-        );
-        
-        if (fallbackWords.length === 0) {
-            const extendedMin = Math.max(3, minLength - 1);
-            const extendedMax = maxLength + 1;
-            const extendedWords = wordDatabase[type].filter(w => 
-                !crossword.usedWords.has(w.word) && 
-                w.word.length >= extendedMin && 
-                w.word.length <= extendedMax
-            );
-            
-            if (extendedWords.length === 0) {
-                crossword.usedWords.clear();
-                return getRandomWord(type, minLength, maxLength);
-            }
-            return extendedWords[Math.floor(Math.random() * extendedWords.length)];
-        }
+    if (availableWords.length > 0) {
+        return availableWords[Math.floor(Math.random() * availableWords.length)];
+    }
+
+    // Пробуем другой тип слов
+    const fallbackType = type === WORD_TYPES.EASY ? WORD_TYPES.HARD : WORD_TYPES.EASY;
+    const fallbackWords = wordDatabase[fallbackType].filter(w => 
+        !crossword.usedWords.has(w.word) && 
+        w.word.length >= minLength && 
+        w.word.length <= maxLength
+    );
+    
+    if (fallbackWords.length > 0) {
         return fallbackWords[Math.floor(Math.random() * fallbackWords.length)];
     }
+
+    // Расширяем диапазон длин слов
+    const extendedMin = Math.max(3, minLength - 1);
+    const extendedMax = maxLength + 1;
+    const extendedWords = wordDatabase[type].filter(w => 
+        !crossword.usedWords.has(w.word) && 
+        w.word.length >= extendedMin && 
+        w.word.length <= extendedMax
+    );
     
-    return availableWords[Math.floor(Math.random() * availableWords.length)];
+    if (extendedWords.length > 0) {
+        return extendedWords[Math.floor(Math.random() * extendedWords.length)];
+    }
+
+    // Если слов нет, очищаем usedWords и пробуем ещё раз, но с ограничением рекурсии
+    if (recursionCount < MAX_RECURSION) {
+        if (wordDatabase[type].length === 0 && wordDatabase[fallbackType].length === 0) {
+            console.error("База слов пуста!");
+            loadBackupWords();
+            return getRandomWord(type, minLength, maxLength, recursionCount + 1);
+        }
+        crossword.usedWords.clear();
+        console.warn("Очищены использованные слова, повторная попытка...");
+        return getRandomWord(type, minLength, maxLength, recursionCount + 1);
+    }
+
+    // Если ничего не помогло, возвращаем null и обрабатываем это в вызывающей функции
+    console.error("Не удалось найти подходящее слово!");
+    return null;
 }
 
 function tryAddConnectedWord(wordObj) {
