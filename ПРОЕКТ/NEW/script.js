@@ -133,19 +133,6 @@ let crossword = {
 
 const usedLettersCache = {};
 
-async function initGame() {
-    try {
-        await loadWords();
-        initEventListeners();
-        startGame();
-    } catch (error) {
-        console.error('Ошибка инициализации:', error);
-        loadBackupWords();
-        initEventListeners();
-        startGame();
-    }
-}
-
 async function loadWords() {
     try {
         const [easyResponse, hardResponse] = await Promise.all([
@@ -278,7 +265,6 @@ async function startGame() {
     loadLevel();
 }
 
-// Обновите функцию showLevelCompleteDialog
 function showLevelCompleteDialog() {
     const dialog = document.createElement('div');
     dialog.className = 'level-complete-dialog';
@@ -318,7 +304,6 @@ async function completeLevel() {
     loadLevel();
 }
 
-// Обновите функцию initGame
 async function initGame() {
     try {
         await loadWords();
@@ -870,31 +855,6 @@ function checkAllWordsCompletion() {
             setTimeout(() => showLevelCompleteDialog(), 500 + (newlyCompletedWords.length * 300));
         }
     }
-}
-
-function showLevelCompleteDialog() {
-    const dialog = document.createElement('div');
-    dialog.className = 'level-complete-dialog';
-    dialog.innerHTML = `
-        <div class="dialog-content">
-            <h3>Уровень ${currentLevel} пройден!</h3>
-            <div class="dialog-buttons">
-                <button id="next-level-btn">Следующий уровень</button>
-                <button id="menu-btn" onclick="location.href='../MAIN/index.html'">В меню</button>
-            </div>
-        </div>
-    `;
-    
-    document.body.appendChild(dialog);
-    
-    document.getElementById('next-level-btn').addEventListener('click', () => {
-        dialog.remove();
-        completeLevel();
-    });
-    
-    document.getElementById('menu-btn').addEventListener('click', () => {
-        dialog.remove();
-    });
 }
 
 function checkSingleWordCompletion(wordIndex) {
