@@ -15,8 +15,20 @@ function getLevelConfig(level) {
 async function saveCurrentLevel(level) {
     const levelStr = String(level);
     if (isTelegramWebApp()) {
+        const userId = Telegram.WebApp.initDataUnsafe.user?.id;
+        if (!userId) {
+            console.error("Не удалось получить ID пользователя для сохранения уровня");
+            localStorage.setItem('crossword_user_level', levelStr); // Локальное сохранение как запасной вариант
+            return false;
+        }
+        const key = `user_level_${userId}`;
         return await new Promise((resolve) => {
-            Telegram.WebApp.CloudStorage.setItem('user_level', levelStr, (error) => {
+            Telegram.WebApp.CloudStorage.setItem(key, levelStr, (error) => {
+                if (error) {
+                    console.error(`Ошибка сохранения уровня для user_${userId}:`, error);
+                } else {
+                    console.log(`Уровень ${level} сохранён для user_${userId}`);
+                }
                 resolve(!error);
             });
         });
@@ -28,8 +40,18 @@ async function saveCurrentLevel(level) {
 
 async function loadSavedLevel() {
     if (isTelegramWebApp()) {
+        const userId = Telegram.WebApp.initDataUnsafe.user?.id;
+        if (!userId) {
+            console.error("Не удалось получить ID пользователя для загрузки уровня");
+            const localValue = localStorage.getItem('crossword_user_level');
+            return localValue ? parseInt(localValue) || 1 : 1;
+        }
+        const key = `user_level_${userId}`;
         const value = await new Promise((resolve) => {
-            Telegram.WebApp.CloudStorage.getItem('user_level', (error, value) => {
+            Telegram.WebApp.CloudStorage.getItem(key, (error, value) => {
+                if (error) {
+                    console.error(`Ошибка загрузки уровня для user_${userId}:`, error);
+                }
                 resolve(value);
             });
         });
@@ -303,7 +325,6 @@ async function completeLevel() {
             alert("Не удалось сохранить прогресс. Проверьте подключение.");
             return;
         }
-        await saveUserRecord(currentLevel); // Сохраняем рекорд, если нужно
         loadLevel(); // Загружаем новый уровень
     } catch (error) {
         console.error("Ошибка при завершении уровня:", error);
@@ -1040,30 +1061,20 @@ function giveHint() {
     selectCell(x, y);
     checkAllWordsCompletion();
 }
-
-async function saveUserRecord(level) {
-    if (!isTelegramWebApp()) return;
-    
-    const userId = Telegram.WebApp.initDataUnsafe.user?.id;
-    if (!userId) return;
-    
+async function completeLevel() {
     try {
-        await new Promise(resolve => {
-            Telegram.WebApp.CloudStorage.setItem(
-                `user_${userId}_record`,
-                String(level),
-                (error) => {
-                    if (error) {
-                        console.error("Ошибка сохранения рекорда:", error);
-                    } else {
-                        console.log("Рекорд сохранён:", level);
-                    }
-                    resolve();
-                }
-            );
-        });
-    } catch (e) {
-        console.error("Ошибка сохранения рекорда:", e);
+        currentLevel++; // Увеличиваем уровень только после завершения
+        const saved = await saveCurrentLevel(currentLevel);
+        if (!saved) {
+            console.error("Не удалось сохранить уровень в CloudStorage");
+            alert("Не удалось сохранить прогресс. Проверьте подключение.");
+            return;
+        }
+        await saveUserRecord(currentLevel); // Сохраняем рекорд, если он выше предыдущего
+        loadLevel(); // Загружаем новый уровень
+    } catch (error) {
+        console.error("Ошибка при завершении уровня:", error);
+        alert("Произошла ошибка при сохранении прогресса.");
     }
 }
 
