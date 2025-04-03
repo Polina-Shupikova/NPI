@@ -348,6 +348,7 @@ function loadLevel() {
     setTimeout(() => {
         try {
             if (generateCrossword()) {
+                renderCrossword(true); // Добавлен принудительный рендеринг
                 generateKeyboard();
                 showDefinitions();
             } else {
