@@ -1,11 +1,34 @@
 function isTelegramWebApp() {
-    const isTelegram = !!(window.Telegram && Telegram.WebApp);
-    console.log("Telegram WebApp detected:", isTelegram);
-    if (isTelegram) {
-        console.log("initDataUnsafe:", Telegram.WebApp.initDataUnsafe);
-        console.log("User data:", Telegram.WebApp.initDataUnsafe?.user);
+    if (!window.Telegram?.WebApp) return false;
+    
+    console.log("Telegram.WebApp:", Telegram.WebApp);
+    console.log("initData:", Telegram.WebApp.initData); // Raw данные
+    console.log("initDataUnsafe:", Telegram.WebApp.initDataUnsafe);
+    
+    return true;
+}
+
+function getUserId() {
+    if (!isTelegramWebApp()) return null;
+    
+    // 1. Пробуем из initDataUnsafe
+    const userId = Telegram.WebApp.initDataUnsafe?.user?.id;
+    if (userId) return userId;
+    
+    // 2. Парсим вручную из initData (если user скрыт)
+    try {
+        const params = new URLSearchParams(Telegram.WebApp.initData);
+        const userData = params.get('user');
+        if (userData) {
+            const user = JSON.parse(decodeURIComponent(userData));
+            return user?.id || null;
+        }
+    } catch (e) {
+        console.error("Error parsing user data:", e);
     }
-    return isTelegram;
+    
+    // 3. Пробуем query_id как временный идентификатор
+    return Telegram.WebApp.initDataUnsafe?.query_id || null;
 }
 
 function getLevelConfig(level) {
@@ -32,34 +55,31 @@ function parseInitData() {
 }
 
 async function loadSavedLevel() {
+    let userId = null;
+    
     if (isTelegramWebApp()) {
-        console.log("Full initData:", Telegram.WebApp.initData); // Добавьте эту строку
-        console.log("initDataUnsafe:", Telegram.WebApp.initDataUnsafe);
+        userId = getUserId();
+        console.log("Detected User ID:", userId);
         
-        // Попробуйте получить ID из разных источников
-        const userId = Telegram.WebApp.initDataUnsafe?.user?.id || 
-                       Telegram.WebApp.initDataUnsafe?.query_id;
-        
-        if (!userId) {
-            console.error("User ID not found. initDataUnsafe:", Telegram.WebApp.initDataUnsafe);
-            const localValue = localStorage.getItem('crossword_user_level');
-            return localValue ? parseInt(localValue) || 1 : 1;
+        if (userId) {
+            const key = `user_level_${userId}`;
+            try {
+                const value = await new Promise(resolve => {
+                    Telegram.WebApp.CloudStorage.getItem(key, (err, val) => {
+                        if (err) console.error("CloudStorage error:", err);
+                        resolve(val);
+                    });
+                });
+                if (value) return parseInt(value) || 1;
+            } catch (e) {
+                console.error("CloudStorage failed:", e);
+            }
         }
-        
-        const key = `user_level_${userId}`;
-        const value = await new Promise((resolve) => {
-            Telegram.WebApp.CloudStorage.getItem(key, (error, value) => {
-                if (error) {
-                    console.error(`Error loading level for user_${userId}:`, error);
-                }
-                resolve(value || null);
-            });
-        });
-        return value ? parseInt(value) || 1 : 1;
-    } else {
-        const localValue = localStorage.getItem('crossword_user_level');
-        return localValue ? parseInt(localValue) || 1 : 1;
     }
+    
+    // Fallback на localStorage
+    const localValue = localStorage.getItem('crossword_user_level');
+    return localValue ? parseInt(localValue) || 1 : 1;
 }
 
 async function saveCurrentLevel(level) {
