@@ -153,6 +153,10 @@ async function loadWords() {
             fetch('https://gist.githubusercontent.com/Ukinnne/d8b156ad91831540f90236961c5095c9/raw/hard_words.json')
         ]);
 
+        // Добавьте эти строки для проверки:
+        console.log('Статус easyResponse:', easyResponse.status);
+        console.log('Статус hardResponse:', hardResponse.status);
+
         if (!easyResponse.ok || !hardResponse.ok) {
             throw new Error(`Ошибка загрузки: ${easyResponse.status}, ${hardResponse.status}`);
         }
