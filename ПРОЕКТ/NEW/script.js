@@ -196,10 +196,30 @@ function loadBackupWords() {
 }
 
 function initEventListeners() {
-    document.getElementById('hint-button').addEventListener('click', giveHint);
-    document.querySelector('.solved-definitions-toggle').addEventListener('click', toggleSolvedDefinitions);
-    document.addEventListener('keydown', handlePhysicalKeyPress);
+    // Проверяем существование элементов
+    const hintButton = document.getElementById('hint-button');
+    const toggleButton = document.querySelector('.solved-definitions-toggle');
+
+    if (hintButton) {
+        hintButton.addEventListener('click', giveHint);
+    } else {
+        console.error('Кнопка "hint-button" не найдена!');
+    }
+
+    if (toggleButton) {
+        toggleButton.addEventListener('click', toggleSolvedDefinitions);
+    } else {
+        console.error('Элемент "solved-definitions-toggle" не найден!');
+    }
 }
+
+// Запускаем после загрузки DOM
+document.addEventListener('DOMContentLoaded', () => {
+    initEventListeners();
+    initGame().catch(error => {
+        console.error("Ошибка инициализации игры:", error);
+    });
+});
 
 function toggleSolvedDefinitions() {
     const panel = document.getElementById('solved-definitions');
