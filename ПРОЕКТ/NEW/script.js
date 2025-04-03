@@ -73,34 +73,53 @@ function parseInitData() {
 }
 
 async function loadSavedLevel() {
-    let userId = null;
+    let userId = getUserId();
+    console.log("Detected User ID:", userId);
     
-    if (isTelegramWebApp()) {
-        userId = getUserId();
-        console.log("Detected User ID:", userId);
-        
-        if (!userId) {
-            console.warn("User ID не найден, сохранение в CloudStorage невозможно");
-            Telegram.WebApp.showAlert("Не удалось определить ваш ID. Прогресс будет сохранён локально.");
-        } else if (userId) {
-            const key = `user_level_${userId}`;
-            try {
-                const value = await new Promise(resolve => {
-                    Telegram.WebApp.CloudStorage.getItem(key, (err, val) => {
-                        if (err) console.error("CloudStorage error:", err);
-                        resolve(val);
-                    });
+    if (isTelegramWebApp() && userId) {
+        const key = `user_level_${userId}`;
+        try {
+            const value = await new Promise(resolve => {
+                Telegram.WebApp.CloudStorage.getItem(key, (err, val) => {
+                    if (err) console.error("CloudStorage error:", err);
+                    resolve(val);
                 });
-                if (value) return parseInt(value) || 1;
-            } catch (e) {
-                console.error("CloudStorage failed:", e);
-            }
+            });
+            if (value) return parseInt(value) || 1;
+        } catch (e) {
+            console.error("CloudStorage failed:", e);
         }
+    } else {
+        console.warn("User ID не найден или не в Telegram, используется localStorage");
     }
     
     // Fallback на localStorage
     const localValue = localStorage.getItem('crossword_user_level');
     return localValue ? parseInt(localValue) || 1 : 1;
+}
+
+async function saveCurrentLevel(level) {
+    const levelStr = String(level);
+    const userId = getUserId();
+    
+    if (isTelegramWebApp() && userId) {
+        const key = `user_level_${userId}`;
+        return await new Promise((resolve) => {
+            Telegram.WebApp.CloudStorage.setItem(key, levelStr, (error) => {
+                if (error) {
+                    console.error(`Ошибка сохранения уровня для user_${userId}:`, error);
+                    localStorage.setItem('crossword_user_level', levelStr); // Fallback
+                } else {
+                    console.log(`Уровень ${level} сохранён для user_${userId}`);
+                }
+                resolve(!error);
+            });
+        });
+    } else {
+        console.warn("Сохранение в CloudStorage невозможно, используется localStorage");
+        localStorage.setItem('crossword_user_level', levelStr);
+        return true;
+    }
 }
 
 async function saveCurrentLevel(level) {
