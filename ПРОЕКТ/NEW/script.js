@@ -196,21 +196,19 @@ function loadBackupWords() {
 }
 
 function initEventListeners() {
-    // Проверяем существование элементов
     const hintButton = document.getElementById('hint-button');
+    if (!hintButton) {
+        console.error('Элемент #hint-button не найден!');
+        return;
+    }
+    hintButton.addEventListener('click', giveHint);
+
     const toggleButton = document.querySelector('.solved-definitions-toggle');
-
-    if (hintButton) {
-        hintButton.addEventListener('click', giveHint);
-    } else {
-        console.error('Кнопка "hint-button" не найдена!');
+    if (!toggleButton) {
+        console.error('Элемент .solved-definitions-toggle не найден!');
+        return;
     }
-
-    if (toggleButton) {
-        toggleButton.addEventListener('click', toggleSolvedDefinitions);
-    } else {
-        console.error('Элемент "solved-definitions-toggle" не найден!');
-    }
+    toggleButton.addEventListener('click', toggleSolvedDefinitions);
 }
 
 // Запускаем после загрузки DOM
