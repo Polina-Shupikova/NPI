@@ -14,74 +14,30 @@ function getLevelConfig(level) {
 
 async function saveCurrentLevel(level) {
     const levelStr = String(level);
-    console.log("Попытка сохранения уровня:", levelStr);
-    
-    // Сохраняем в localStorage
-    localStorage.setItem('crossword_user_level', levelStr);
-    
-    // Сохраняем в Telegram CloudStorage, если это Telegram WebApp
     if (isTelegramWebApp()) {
-        try {
-            const saved = await new Promise((resolve) => {
-                Telegram.WebApp.CloudStorage.setItem('user_level', levelStr, (error) => {
-                    if (error) {
-                        console.error("Ошибка CloudStorage:", error);
-                        resolve(false);
-                    } else {
-                        console.log("Уровень сохранён в CloudStorage");
-                        resolve(true);
-                    }
-                });
+        return await new Promise((resolve) => {
+            Telegram.WebApp.CloudStorage.setItem('user_level', levelStr, (error) => {
+                resolve(!error);
             });
-            return saved;
-        } catch (e) {
-            console.error("Ошибка CloudStorage:", e);
-            return false;
-        }
+        });
+    } else {
+        localStorage.setItem('crossword_user_level', levelStr);
+        return true;
     }
-    return true; // Успешно, если Telegram не используется
 }
 
 async function loadSavedLevel() {
-    let level = 1; // Уровень по умолчанию
-
-    // Проверяем Telegram CloudStorage (если это Telegram WebApp)
     if (isTelegramWebApp()) {
-        try {
-            const value = await new Promise((resolve) => {
-                Telegram.WebApp.CloudStorage.getItem('user_level', (error, value) => {
-                    if (error) {
-                        console.error("Ошибка загрузки из CloudStorage:", error);
-                        resolve(null);
-                    } else {
-                        resolve(value);
-                    }
-                });
+        const value = await new Promise((resolve) => {
+            Telegram.WebApp.CloudStorage.getItem('user_level', (error, value) => {
+                resolve(value);
             });
-            
-            if (value) {
-                const cloudLevel = parseInt(value) || 1;
-                level = cloudLevel;
-                console.log("Уровень загружен из CloudStorage:", level);
-            }
-        } catch (e) {
-            console.error("Ошибка CloudStorage:", e);
-        }
+        });
+        return value ? parseInt(value) || 1 : 1;
+    } else {
+        const localValue = localStorage.getItem('crossword_user_level');
+        return localValue ? parseInt(localValue) || 1 : 1;
     }
-
-    // Проверяем localStorage
-    const localValue = localStorage.getItem('crossword_user_level');
-    if (localValue) {
-        const localLevel = parseInt(localValue) || 1;
-        console.log("Уровень загружен из localStorage:", localLevel);
-        // Берем максимальный уровень из CloudStorage и localStorage
-        level = Math.max(level, localLevel);
-    }
-
-    // Сохраняем максимальный уровень в оба хранилища для синхронизации
-    await saveCurrentLevel(level);
-
-    return level; // Возвращаем текущий максимальный уровень
 }
 
 const RUSSIAN_LAYOUT = {
