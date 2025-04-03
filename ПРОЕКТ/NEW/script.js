@@ -16,9 +16,10 @@ async function saveCurrentLevel(level) {
     const levelStr = String(level);
     console.log("Попытка сохранения уровня:", levelStr);
     
-    // Сохраняем в localStorage в любом случае
+    // Сохраняем в localStorage
     localStorage.setItem('crossword_user_level', levelStr);
     
+    // Сохраняем в Telegram CloudStorage, если это Telegram WebApp
     if (isTelegramWebApp()) {
         try {
             const saved = await new Promise((resolve) => {
@@ -38,12 +39,13 @@ async function saveCurrentLevel(level) {
             return false;
         }
     }
-    return true; // Если не Telegram, считаем успешным сохранение в localStorage
+    return true; // Успешно, если Telegram не используется
 }
 
 async function loadSavedLevel() {
     let level = 1; // Уровень по умолчанию
-    
+
+    // Проверяем Telegram CloudStorage (если это Telegram WebApp)
     if (isTelegramWebApp()) {
         try {
             const value = await new Promise((resolve) => {
@@ -58,24 +60,28 @@ async function loadSavedLevel() {
             });
             
             if (value) {
-                level = parseInt(value) || 1;
+                const cloudLevel = parseInt(value) || 1;
+                level = cloudLevel;
                 console.log("Уровень загружен из CloudStorage:", level);
-                return level + 1; // Начинаем с следующего уровня
             }
         } catch (e) {
             console.error("Ошибка CloudStorage:", e);
         }
     }
-    
-    // Если не получилось из CloudStorage, пробуем из localStorage
+
+    // Проверяем localStorage
     const localValue = localStorage.getItem('crossword_user_level');
     if (localValue) {
-        level = parseInt(localValue) || 1;
-        console.log("Уровень загружен из localStorage:", level);
-        return level + 1; // Начинаем с следующего уровня
+        const localLevel = parseInt(localValue) || 1;
+        console.log("Уровень загружен из localStorage:", localLevel);
+        // Берем максимальный уровень из CloudStorage и localStorage
+        level = Math.max(level, localLevel);
     }
-    
-    return level; // Если ничего не найдено, возвращаем 1
+
+    // Сохраняем максимальный уровень в оба хранилища для синхронизации
+    await saveCurrentLevel(level);
+
+    return level; // Возвращаем текущий максимальный уровень
 }
 
 const RUSSIAN_LAYOUT = {
@@ -293,7 +299,7 @@ async function startGame() {
         }
 
         const savedLevel = await loadSavedLevel();
-        currentLevel = savedLevel; // Устанавливаем уровень n + 1
+        currentLevel = savedLevel; // Устанавливаем сохраненный уровень
         console.log("Игра начинается с уровня:", currentLevel);
         
         loadLevel();
@@ -304,7 +310,6 @@ async function startGame() {
     }
 }
 
-// Обновите функцию showLevelCompleteDialog
 function showLevelCompleteDialog() {
     const dialog = document.createElement('div');
     dialog.className = 'level-complete-dialog';
@@ -326,23 +331,22 @@ function showLevelCompleteDialog() {
     });
     
     document.getElementById('menu-btn').addEventListener('click', async () => {
-        // Сохраняем прогресс перед выходом в меню
-        await saveCurrentLevel(currentLevel);
-        saveUserRecord(currentLevel);
-        location.href='../MAIN/index.html';
+        await saveCurrentLevel(currentLevel + 1); // Сохраняем следующий уровень
+        saveUserRecord(currentLevel + 1);
+        location.href = '../MAIN/index.html';
     });
 }
 
 
 async function completeLevel() {
     try {
+        currentLevel++; // Увеличиваем уровень только после завершения
         const saved = await saveCurrentLevel(currentLevel);
         if (!saved) {
             console.error("Не удалось сохранить уровень в CloudStorage");
             alert("Не удалось сохранить прогресс. Проверьте подключение.");
             return;
         }
-        currentLevel++; // Переходим к следующему уровню
         await saveUserRecord(currentLevel); // Сохраняем рекорд, если нужно
         loadLevel(); // Загружаем новый уровень
     } catch (error) {
@@ -933,31 +937,6 @@ function checkAllWordsCompletion() {
             setTimeout(() => showLevelCompleteDialog(), 500 + (newlyCompletedWords.length * 300));
         }
     }
-}
-
-function showLevelCompleteDialog() {
-    const dialog = document.createElement('div');
-    dialog.className = 'level-complete-dialog';
-    dialog.innerHTML = `
-        <div class="dialog-content">
-            <h3>Уровень ${currentLevel} пройден!</h3>
-            <div class="dialog-buttons">
-                <button id="next-level-btn">Следующий уровень</button>
-                <button id="menu-btn" onclick="location.href='../MAIN/index.html'">В меню</button>
-            </div>
-        </div>
-    `;
-    
-    document.body.appendChild(dialog);
-    
-    document.getElementById('next-level-btn').addEventListener('click', () => {
-        dialog.remove();
-        completeLevel();
-    });
-    
-    document.getElementById('menu-btn').addEventListener('click', () => {
-        dialog.remove();
-    });
 }
 
 function checkSingleWordCompletion(wordIndex) {
