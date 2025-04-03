@@ -973,11 +973,9 @@ body.dark-theme .keyboard-key.highlight {
 }
 @media (max-width: 768px) {
     .cell input {
-        width: 100%;
-        height: 100%;
-        font-size: 14px; /* Оптимальный размер для мобильных */
+        position: relative;
+        z-index: 1;
     }
-}
 
     #crossword-container {
         overflow: hidden;
