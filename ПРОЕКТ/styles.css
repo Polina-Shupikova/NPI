@@ -1,0 +1,984 @@
+body {
+    background-image: url('https://cdnn1.img.sputnik-abkhazia.info/img/102991/75/1029917516_47:130:1134:813_1400x0_80_0_0_22e4fc6166bb61d929eceaee2a1e624e.jpg');
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center;
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 10px;
+    min-height: 100vh;
+}
+
+.header-container {
+    /* display: flex; */
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 20px;
+    position: relative;
+}
+
+h1 {
+    text-align: center;
+    margin-top: 20px;
+    background-color: rgba(255, 255, 255, 1);
+    padding: 10px;
+    border-radius: 5px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0,1);
+    font-size: 1.5rem;
+}
+
+.controls {
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+button {
+    padding: 6px 10px;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    backdrop-filter: blur(5px);
+    background-color: rgba(220, 20, 60, 0.7);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    margin: 5px;
+    min-width: 40px;
+    touch-action: manipulation;
+}
+
+button:hover {
+    background-color: rgba(220, 20, 60, 0.8);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+}
+
+button:active {
+    transform: translateY(1px);
+}
+
+button:disabled {
+    background-color: rgba(204, 204, 204, 0.7);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: 0.5s;
+}
+
+button:hover::before {
+    left: 100%;
+}
+
+#crossword-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+#crossword {
+    border: 2px solid rgba(51, 51, 51, 0.3);
+    background-color: rgba(255, 255, 255, 0.8);
+    border-radius: 5px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    display: inline-block;
+}
+
+.cell {
+    width: 30px;
+    height: 30px;
+    border: 1px solid rgba(221, 221, 221, 0.5);
+    display: inline-block;
+    text-align: center;
+    line-height: 30px;
+    vertical-align: top;
+    position: relative;
+    background-color: rgba(255, 255, 255, 0.9);
+    transition: background-color 0.3s;
+}
+
+.cell.black {
+    background-color: rgba(51, 51, 51, 0.8);
+}
+
+.cell input {
+    width: 100%;
+    height: 100%;
+    border: none;
+    text-align: center;
+    font-size: 18px;
+    text-transform: uppercase;
+    background-color: transparent;
+    color: #333;
+}
+}
+.cell input:focus {
+    outline: 2px solid rgba(76, 175, 80, 0.5);
+    background-color: rgba(240, 255, 240, 0.7);
+}
+
+.cell input.revealed {
+    background-color: #e0ffe0;
+}
+
+.cell input.readonly {
+    color: #2E8B57;
+    font-weight: bold;
+}
+
+.number {
+    position: absolute;
+    top: 0;
+    left: 2px;
+    font-size: 10px;
+    color: #333;
+}
+
+.keyboard {
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.keyboard-row {
+    display: flex;
+    margin-bottom: 5px;
+}
+
+.keyboard-key {
+    width: 40px;
+    height: 40px;
+    margin: 0 3px;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-transform: uppercase;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    backdrop-filter: blur(5px);
+    background-color: rgba(224, 224, 224, 0.7);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: #333;
+    touch-action: manipulation;
+}
+
+.keyboard-key:hover {
+    background-color: rgba(208, 208, 208, 0.8);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(0,0,0,0.15);
+}
+
+.keyboard-key::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    transition: 0.5s;
+}
+
+.keyboard-key:hover::before {
+    left: 100%;
+}
+
+.keyboard-key.wide {
+    width: 80px;
+}
+
+.keyboard-key.active {
+    background-color: rgba(76, 175, 80, 0.7);
+    color: white;
+}
+
+.keyboard-content {
+    display: block;
+}
+
+.word-list {
+    margin-top: 20px;
+    columns: 3; /* Оставляем 3 колонки для десктопов */
+    background-color: rgba(255, 255, 255, 0.7);
+    padding: 15px;
+    border-radius: 5px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+/* Медиа-запросы для мобильных устройств */
+@media (max-width: 768px) {
+    .word-list {
+        columns: 2; /* Две колонки на экранах до 768px */
+        padding: 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    .word-list {
+        columns: 1; /* Одна колонка на очень маленьких экранах (до 480px) */
+    }
+}
+
+.word-item {
+    margin-bottom: 10px;
+    break-inside: avoid;
+}
+
+.hint {
+    font-size: 12px;
+    color: #666;
+    display: block;
+    margin-left: 20px;
+}
+
+.level-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 20px;
+    gap: 15px;
+}
+
+#level-display {
+    font-weight: bold;
+    min-width: 150px;
+    text-align: center;
+    background-color: rgba(255, 255, 255, 1);
+    padding: 8px 15px;
+    border-radius: 4px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+#shop-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    z-index: 999;
+}
+
+#shop-modal {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.2);
+    z-index: 1000;
+    width: 350px;
+    max-width: 90%;
+}
+
+.hint-item {
+    margin-bottom: 15px;
+    padding: 10px;
+    background: #f5f5f5;
+    border-radius: 5px;
+}
+
+.hint-item h3 {
+    margin-top: 0;
+    color: #333;
+}
+
+.hint-item p {
+    margin-bottom: 10px;
+    color: #666;
+}
+
+.hint-btn {
+    padding: 5px 10px;
+    background: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.hint-btn:disabled {
+    background: #cccccc;
+    cursor: not-allowed;
+}
+
+#close-shop {
+    margin-top: 10px;
+    padding: 8px 15px;
+    background: #f44336;
+    color: white;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    width: 100%;
+}
+
+.hint-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 5px;
+}
+
+.keyboard-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    margin-top: 15px;
+}
+
+#direction-display {
+    font-weight: bold;
+    text-align: center;
+    background-color: rgba(255, 255, 255, 0.7);
+    padding: 8px 15px;
+    border-radius: 4px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    min-width: 150px;
+    transition: background-color 0.3s ease;
+}
+
+#direction-display.horizontal {
+    background-color: rgba(76, 175, 80, 0);
+    color: white;
+}
+
+#direction-display.vertical {
+    background-color: rgba(33, 150, 243, 0.7);
+    color: white;
+}
+
+#toggle-direction-btn {
+    padding: 6px 10px;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.3s ease;
+    background-color: rgba(220, 20, 60, 0.7);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+}
+
+#toggle-direction-btn:hover {
+    background-color: rgba(220, 20, 60, 0.8);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+}
+
+#toggle-direction-btn:active {
+    transform: translateY(1px);
+}
+
+#back-button {
+    padding: 10px 15px;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.3s ease;
+    background-color: rgba(220, 20, 60, 0.7);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    text-decoration: none;
+    position: static; /* Убираем фиксированное позиционирование */
+    margin-right: 15px;
+}
+
+
+#back-button:hover {
+    background-color: rgba(220, 20, 60, 0.8);
+    /* transform: translateY(-2px); */
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+}
+
+#back-button:active {
+    transform: translateY(1px);
+}
+
+#toggle-keyboard-btn {
+    display: none;
+}
+
+/* Медиа-запросы для мобильных устройств */
+@media (max-width: 768px) {
+    .header-container {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    #back-button {
+        margin-right: 0;
+        margin-bottom: 10px;
+        order: -1; /* Перемещаем кнопку выше заголовка */
+    }
+
+    h1 {
+        font-size: 1.2rem;
+        padding: 8px;
+    }
+
+    .cell {
+        width: 25px;
+        height: 25px;
+        line-height: 25px;
+        font-size: 16px;
+    }
+
+    .cell input {
+        width: 10px;
+        height: 10px;
+        line-height: 10px;
+        font-size: 10px;
+    }
+
+    .number {
+        font-size: 8px;
+    }
+
+    button, .keyboard-key {
+        padding: 6px 10px;
+        font-size: 12px;
+        margin: 2px;
+    }
+
+    .keyboard-key {
+        width: 35px;
+        height: 35px;
+    }
+
+    .keyboard-key.wide {
+        width: 70px;
+    }
+
+    .word-list {
+        columns: 1;
+        padding: 10px;
+    }
+
+    .level-controls, .keyboard-controls {
+        /* flex-direction: column; */
+        gap: 10px;
+    }
+
+    #level-display, #direction-display {
+        min-width: 100px;
+        font-size: 14px;
+    }
+
+    #shop-button, #back-button {
+        top: 10px;
+        font-size: 12px;
+        padding: 6px 12px;
+    }
+
+    #shop-modal {
+        width: 90%;
+        padding: 15px;
+    }
+
+    .keyboard-content {
+        display: none;
+    }
+
+    #toggle-keyboard-btn {
+        display: block;
+        margin: 10px auto;
+        padding: 8px 15px;
+        background-color: rgba(220, 20, 60, 0.7);
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+}
+
+@media (max-width: 480px) {
+    .cell {
+        width: 20px;
+        height: 20px;
+        line-height: 20px;
+        font-size: 14px;
+    }
+
+    button, .keyboard-key {
+        padding: 5px 8px;
+
+        font-size: 10px;
+    }
+
+    .keyboard-key {
+        width: 30px;
+        height: 30px;
+        padding: 6px 10px;
+        font-size: 12px;
+    }
+
+    .keyboard-row {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    h1 {
+        font-size: 1rem;
+    }
+
+    #level-display, #direction-display {
+        font-size: 12px;
+        padding: 6px 10px;
+    }
+}
+
+/* Добавьте в начало стилей для body */
+body {
+    background-image: url('https://cdnn1.img.sputnik-abkhazia.info/img/102991/75/1029917516_47:130:1134:813_1400x0_80_0_0_22e4fc6166bb61d929eceaee2a1e624e.jpg');
+    background-attachment: fixed;
+    background-size: cover;
+    background-position: center;
+    padding-top: 0; /* Убираем верхний отступ */
+    margin-top: 0;
+}
+
+/* Новые стили для шапки */
+.page-header {
+    background-color: white;
+    width: 100%;
+    padding: 15px 0;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.page-header h1 {
+    margin: 0;
+    padding: 0;
+    background-color: transparent;
+    box-shadow: none;
+    font-size: 1.5rem;
+}
+
+/* Обновленные стили для кнопки Назад */
+#back-button {
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    padding: 8px 15px;
+    background-color: rgba(220, 20, 60, 0.7);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 16px;
+    transition: all 0.3s;
+}
+
+#back-button:hover {
+    background-color: rgba(220, 20, 60, 0.9);
+}
+
+/* Фикс для основного контента */
+#crossword-container, .controls, .level-controls, .keyboard, .word-list {
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 95%;
+}
+
+/* Медиа-запросы для мобильных */
+@media (max-width: 768px) {
+    .page-header {
+        padding: 10px 0;
+    }
+
+    .page-header h1 {
+        font-size: 1.2rem;
+        padding: 0 40px; /* Оставляем место для кнопки */
+        text-align: center;
+    }
+
+    #back-button {
+        left: 10px;
+        padding: 6px 12px;
+        font-size: 14px;
+    }
+}
+
+@media (max-width: 480px) {
+    .page-header h1 {
+        font-size: 1rem;
+        padding: 0 35px;
+    }
+
+    #back-button {
+        font-size: 12px;
+        padding: 5px 10px;
+    }
+}
+
+.word-list {
+    background-color: white;
+    border: 2px solid #ddd;
+    border-radius: 10px;
+    padding: 20px;
+    margin: 20px auto;
+    max-width: 800px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    columns: 2;
+    column-gap: 30px;
+}
+
+.word-item {
+    margin-bottom: 15px;
+    break-inside: avoid;
+    padding: 10px;
+    background-color: #f9f9f9;
+    border-radius: 5px;
+    border-left: 4px solid #dc143c;
+    transition: all 0.3s ease;
+}
+
+.word-item:hover {
+    background-color: #f0f0f0;
+    transform: translateY(-2px);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+
+/* Акцентная полоса слева */
+.word-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(to bottom, #dc143c, #ff6b6b);
+    transition: width 0.3s ease;
+}
+
+.word-item:hover::before {
+    width: 6px;
+}
+
+/* Стили для номера слова */
+.word-item span[style*="font-weight: bold"] {
+    color: #dc143c;
+    font-size: 16px;
+    margin-right: 8px;
+    display: inline-block;
+    min-width: 25px;
+    font-weight: bold !important;
+}
+
+.hint {
+    font-size: 14px;
+    color: #333;
+    display: inline;
+    margin-left: 5px;
+}
+/* Анимация появления */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Адаптация для мобильных устройств */
+@media (max-width: 768px) {
+    .word-list {
+        columns: 1;
+        padding: 15px;
+    }
+}
+
+/* Обновленные стили для шапки */
+.page-header {
+    background-color: white;
+    width: 100%;
+    padding: 15px 0;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.page-header h1 {
+    margin: 0;
+    padding: 0;
+    background-color: transparent;
+    box-shadow: none;
+    font-size: 1.5rem;
+}
+
+/* Обновленные стили для кнопки Назад */
+#back-button {
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    padding: 8px 15px;
+    background-color: rgba(220, 20, 60, 0.7);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 16px;
+    transition: all 0.3s;
+}
+
+/* Новые стили для кнопки Магазин */
+#shop-button {
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    padding: 8px 15px;
+    /* background-color: rgba(33, 150, 243, 0.7); */
+    color: white;
+    border: none;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 16px;
+    transition: all 0.3s;
+    margin: 0;
+}
+@media (max-width: 480px) {
+    .word-list {
+        padding: 10px;
+    }
+
+    .word-item {
+        padding: 8px;
+    }
+}
+
+/* Медиа-запросы для мобильных */
+@media (max-width: 768px) {
+    .page-header {
+        padding: 10px 0;
+    }
+
+    .page-header h1 {
+        font-size: 1.2rem;
+        padding: 0 60px; /* Оставляем место для кнопок */
+        text-align: center;
+    }
+
+    #back-button {
+        left: 10px;
+        padding: 6px 12px;
+        font-size: 14px;
+    }
+
+    #shop-button {
+        right: 10px;
+        padding: 6px 12px;
+        font-size: 14px;
+    }
+}
+
+@media (max-width: 480px) {
+    .page-header h1 {
+        font-size: 1rem;
+        padding: 0 50px;
+    }
+
+    #back-button {
+        font-size: 12px;
+        padding: 5px 10px;
+    }
+
+    #shop-button {
+        font-size: 12px;
+        padding: 5px 10px;
+    }
+}
+
+/* Добавьте в конец файла styles.css */
+
+/* Темная тема */
+body.dark-theme {
+    background-image: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)),
+                      url('https://cdnn1.img.sputnik-abkhazia.info/img/102991/75/1029917516_47:130:1134:813_1400x0_80_0_0_22e4fc6166bb61d929eceaee2a1e624e.jpg');
+    color: #e0e0e0;
+}
+
+body.dark-theme .page-header {
+    background-color: #1a1a1a;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+}
+
+body.dark-theme h1 {
+    color: #ffffff;
+    background-color: rgba(30, 30, 30, 0.9);
+}
+
+body.dark-theme #crossword {
+    background-color: rgba(40, 40, 40, 0.9);
+    border-color: rgba(100, 100, 100, 0.5);
+}
+
+body.dark-theme .cell {
+    background-color: rgba(50, 50, 50, 0.9);
+    border-color: rgba(100, 100, 100, 0.5);
+}
+
+body.dark-theme .cell.black {
+    background-color: rgba(20, 20, 20, 0.9);
+}
+
+body.dark-theme .cell input {
+    color: #ffffff;
+}
+
+body.dark-theme .cell input:focus {
+    background-color: rgba(30, 70, 30, 0.7);
+    outline-color: rgba(76, 175, 80, 0.7);
+}
+
+body.dark-theme .cell input.readonly {
+    color: #4CAF50;
+}
+
+body.dark-theme .number {
+    color: #bbbbbb;
+}
+
+body.dark-theme .word-list {
+    background-color: rgba(40, 40, 40, 0.9);
+    border-color: #444;
+    color: #e0e0e0;
+}
+
+body.dark-theme .word-item {
+    background-color: rgba(50, 50, 50, 0.9);
+    border-left-color: #dc143c;
+}
+
+body.dark-theme .word-item:hover {
+    background-color: rgba(60, 60, 60, 0.9);
+}
+
+body.dark-theme .hint {
+    color: #aaaaaa;
+}
+
+body.dark-theme #level-display,
+body.dark-theme #direction-display {
+    background-color: rgba(50, 50, 50, 0.9);
+    color: #ffffff;
+}
+
+body.dark-theme #direction-display.horizontal {
+    background-color: rgba(30, 80, 30, 0.9);
+}
+
+body.dark-theme #direction-display.vertical {
+    background-color: rgba(20, 70, 120, 0.9);
+}
+
+body.dark-theme .keyboard-key {
+    background-color: rgba(70, 70, 70, 0.9);
+    color: #ffffff;
+    border-color: rgba(100, 100, 100, 0.5);
+}
+
+body.dark-theme .keyboard-key:hover {
+    background-color: rgba(90, 90, 90, 0.9);
+}
+
+body.dark-theme .keyboard-key.active {
+    background-color: rgba(30, 80, 30, 0.9);
+}
+
+body.dark-theme #shop-modal {
+    background-color: #2d2d2d;
+    color: #e0e0e0;
+}
+
+body.dark-theme .hint-item {
+    background-color: #3a3a3a;
+}
+
+body.dark-theme .hint-item h3 {
+    color: #ffffff;
+}
+
+body.dark-theme .hint-item p {
+    color: #bbbbbb;
+}
+
+body.dark-theme button,
+body.dark-theme #back-button,
+body.dark-theme #toggle-direction-btn,
+body.dark-theme #shop-button {
+    background-color: rgba(170, 30, 60, 0.8);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+body.dark-theme button:hover,
+body.dark-theme #back-button:hover,
+body.dark-theme #toggle-direction-btn:hover,
+body.dark-theme #shop-button:hover {
+    background-color: rgba(190, 40, 70, 0.9);
+}
+
+body.dark-theme button:disabled {
+    background-color: rgba(70, 70, 70, 0.7);
+    color: #999;
+}
+.keyboard-key.highlight {
+    background-color: rgba(33, 150, 243, 0.7); /* Голубой цвет */
+    color: white;
+}
+body.dark-theme .keyboard-key.highlight {
+    background-color: rgba(66, 165, 245, 0.8); /* Более яркий голубой для темной темы */
+    color: white;
+}
+@media (max-width: 768px) {
+    .cell input {
+        position: relative;
+        z-index: 1;
+    }
+
+    #crossword-container {
+        overflow: hidden;
+        touch-action: manipulation;
+    }
+}
