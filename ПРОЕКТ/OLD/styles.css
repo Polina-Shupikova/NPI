@@ -971,3 +971,25 @@ body.dark-theme .keyboard-key.highlight {
     background-color: rgba(66, 165, 245, 0.8); /* Более яркий голубой для темной темы */
     color: white;
 }
+@media (max-width: 768px) {
+    .cell input {
+        position: relative;
+        z-index: 1;
+    }
+
+    #crossword-container {
+        overflow: hidden;
+        touch-action: manipulation;
+    }
+}
+@media (max-width: 768px) {
+    body {
+        touch-action: manipulation;
+    }
+
+    .cell input {
+        -webkit-tap-highlight-color: transparent;
+        -webkit-user-select: none;
+        user-select: none;
+    }
+}

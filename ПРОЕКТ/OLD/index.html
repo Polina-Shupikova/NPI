@@ -211,6 +211,13 @@
                     }
                 });
             });
+            document.addEventListener('click', function(event) {
+                if (!event.target.closest('.cell input') && !event.target.closest('.keyboard-key')) {
+                    if (document.activeElement && document.activeElement.tagName === 'INPUT') {
+                        document.activeElement.blur();
+                    }
+                }
+            });
 
             updateLevelDisplay();
             updateShopUI();
