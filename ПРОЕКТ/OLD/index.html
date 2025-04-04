@@ -1074,6 +1074,146 @@ function highlightKeyboardKeys() {
             }
         }
 
+        // Обновляем существующий слушатель для input
+document.querySelector('#crossword').addEventListener('keydown', function(e) {
+    if (!currentActiveCell) return;
+
+    const row = parseInt(currentActiveCell.dataset.row);
+    const col = parseInt(currentActiveCell.dataset.col);
+
+    // Определяем текущее слово и направление
+    const currentWord = placedWords.find(word => {
+        const isHorizontal = word.horizontal;
+        const matchesDirection = currentInputDirection === 'horizontal' ? isHorizontal : !isHorizontal;
+        if (matchesDirection) {
+            if (isHorizontal) {
+                return word.row === row && col >= word.col && col < word.col + word.word.length;
+            } else {
+                return word.col === col && row >= word.row && row < word.row + word.word.length;
+            }
+        }
+        return false;
+    });
+
+    let nextRow = row;
+    let nextCol = col;
+
+    switch (e.key) {
+        case 'ArrowUp':
+            if (currentInputDirection === 'vertical' && currentWord) {
+                nextRow = row - 1;
+                if (nextRow < currentWord.row) return; // Не выходим за начало слова
+            } else {
+                nextRow = row - 1; // Просто вверх, если нет слова или горизонтальное направление
+            }
+            break;
+
+        case 'ArrowDown':
+            if (currentInputDirection === 'vertical' && currentWord) {
+                nextRow = row + 1;
+                if (nextRow >= currentWord.row + currentWord.word.length) {
+                    moveToNextWord(currentWord); // Переход к следующему слову
+                    return;
+                }
+            } else {
+                nextRow = row + 1; // Просто вниз
+            }
+            break;
+
+        case 'ArrowLeft':
+            if (currentInputDirection === 'horizontal' && currentWord) {
+                nextCol = col - 1;
+                if (nextCol < currentWord.col) return; // Не выходим за начало слова
+            } else {
+                nextCol = col - 1; // Просто влево
+            }
+            break;
+
+        case 'ArrowRight':
+            if (currentInputDirection === 'horizontal' && currentWord) {
+                nextCol = col + 1;
+                if (nextCol >= currentWord.col + currentWord.word.length) {
+                    moveToNextWord(currentWord); // Переход к следующему слову
+                    return;
+                }
+            } else {
+                nextCol = col + 1; // Просто вправо
+            }
+            break;
+
+        default:
+            return; // Игнорируем другие клавиши здесь
+    }
+
+    e.preventDefault(); // Предотвращаем стандартное поведение стрелок (прокрутку страницы)
+
+    // Проверяем, существует ли следующая ячейка
+    const nextInput = document.querySelector(`input[data-row="${nextRow}"][data-col="${nextCol}"]`);
+    if (nextInput && !nextInput.readOnly) {
+        nextInput.focus();
+        currentActiveCell = nextInput;
+        currentInputDirection = detectInputDirection(nextRow, nextCol); // Обновляем направление
+        updateDirectionDisplay();
+        highlightKeyboardKeys();
+
+        // Прокрутка для мобильных устройств
+        if (/Mobi|Android/i.test(navigator.userAgent)) {
+            nextInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }
+});
+
+// Функция для перехода к следующему слову
+function moveToNextWord(currentWord) {
+    const currentIndex = placedWords.indexOf(currentWord);
+    const nextIndex = currentIndex + 1;
+    if (nextIndex < placedWords.length) {
+        const nextWord = placedWords[nextIndex];
+        const nextInput = document.querySelector(`input[data-row="${nextWord.row}"][data-col="${nextWord.col}"]`);
+        if (nextInput) {
+            nextInput.focus();
+            currentActiveCell = nextInput;
+            currentInputDirection = nextWord.horizontal ? 'horizontal' : 'vertical';
+            updateDirectionDisplay();
+            highlightKeyboardKeys();
+            if (/Mobi|Android/i.test(navigator.userAgent)) {
+                nextInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+    }
+}
+
+// Интеграция с существующим кодом: обновляем слушатель input
+document.querySelectorAll('#crossword .cell input').forEach(input => {
+    input.addEventListener('keydown', function(e) {
+        if (e.key === 'Backspace' && this.value === '') {
+            e.preventDefault();
+            moveToPrevCell();
+        }
+        // Существующий код для Backspace уже есть, стрелки обрабатываются выше
+    });
+
+    input.addEventListener('focus', function() {
+        currentActiveCell = this;
+        const row = parseInt(this.dataset.row);
+        const col = parseInt(this.dataset.col);
+        currentInputDirection = detectInputDirection(row, col);
+        updateDirectionDisplay();
+        highlightKeyboardKeys();
+    });
+
+    input.addEventListener('input', function() {
+        this.value = this.value.toUpperCase();
+        moveToNextCell();
+    });
+
+    input.addEventListener('beforeinput', function(e) {
+        if (e.data && !/[А-Яа-я]/.test(e.data)) {
+            e.preventDefault();
+        }
+    });
+});
+
     </script>
 </body>
 </html>
