@@ -1,122 +1,84 @@
-// Добавляем в начало файла
 let userProgress = {
   userId: null,
   level: 1
 };
 
-// Функция для получения ID пользователя Telegram
 function getTelegramUserId() {
-  if (Telegram.WebApp) {
-      console.log(
-        Telegram.WebApp.initDataUnsafe, Telegram.WebApp.initData, "zz"
-      )
-      return Telegram.WebApp.initDataUnsafe.user?.id || null;
+  if (window.Telegram?.WebApp?.initDataUnsafe?.user?.id) {
+    return Telegram.WebApp.initDataUnsafe.user.id;
   }
-  console.log("НЕ В ТЕЛЕГЕ ЩА (на лошади)1")
+  console.log("Telegram WebApp не обнаружен, используется локальный режим");
   return null;
 }
 
-// Функция загрузки прогресса
 async function loadUserProgress() {
   const userId = getTelegramUserId();
-  if (!userId) {
-      console.warn("User ID not found, using local storage only");
-      const localLevel = localStorage.getItem('crossword_user_level');
-      return {
-          userId: null,
-          level: localLevel ? parseInt(localLevel) : 1
-      };
-  }
+  userProgress.userId = userId;
 
-  try {
-      const key = `user_level_${userId}`;
+  if (userId && window.Telegram?.WebApp) {
+    const key = `user_level_${userId}`;
+    try {
       return new Promise((resolve) => {
-          Telegram.WebApp.CloudStorage.getItem(key, (error, value) => {
-              if (error) {
-                  console.error("CloudStorage error:", error);
-                  const localLevel = localStorage.getItem('crossword_user_level');
-                  resolve({
-                      userId,
-                      level: localLevel ? parseInt(localLevel) : 1
-                  });
-              } else {
-                  const level = value ? parseInt(value) : 1;
-                  localStorage.setItem('crossword_user_level', String(level));
-                  resolve({
-                      userId,
-                      level
-                  });
-              }
-          });
+        Telegram.WebApp.CloudStorage.getItem(key, (error, value) => {
+          if (error || !value) {
+            console.warn("Прогресс не найден в CloudStorage, проверяем localStorage");
+            const localProgress = localStorage.getItem('crossword_user_progress');
+            const level = localProgress ? JSON.parse(localProgress).level : 1;
+            userProgress.level = level;
+            resolve(userProgress);
+          } else {
+            userProgress.level = parseInt(value);
+            localStorage.setItem('crossword_user_progress', JSON.stringify(userProgress));
+            console.log(`Прогресс загружен из CloudStorage: уровень ${userProgress.level}`);
+            resolve(userProgress);
+          }
+        });
       });
-  } catch (error) {
-      console.error("Error loading progress:", error);
-      const localLevel = localStorage.getItem('crossword_user_level');
-      return {
-          userId,
-          level: localLevel ? parseInt(localLevel) : 1
-      };
+    } catch (error) {
+      console.error("Ошибка загрузки из CloudStorage:", error);
+      const localProgress = localStorage.getItem('crossword_user_progress');
+      userProgress.level = localProgress ? JSON.parse(localProgress).level : 1;
+      return userProgress;
+    }
+  } else {
+    const localProgress = localStorage.getItem('crossword_user_progress');
+    userProgress.level = localProgress ? JSON.parse(localProgress).level : 1;
+    return userProgress;
   }
 }
 
-// Функция сохранения прогресса
 async function saveUserProgress(level) {
-  const userId = getTelegramUserId();
-  const progress = { userId, level };
-  
-  try {
-      localStorage.setItem('crossword_user_level', String(level));
-      
-      if (userId && window.Telegram?.WebApp) {
-          const key = `user_level_${userId}`;
-          return new Promise((resolve) => {
-              Telegram.WebApp.CloudStorage.setItem(key, String(level), (error) => {
-                  if (error) {
-                      console.error("CloudStorage error:", error);
-                      resolve(false);
-                  } else {
-                      console.log("Progress saved to CloudStorage");
-                      resolve(true);
-                  }
-              });
-          });
-      }
-      return true;
-  } catch (error) {
-      console.error("Error saving progress:", error);
-      return false;
-  }
-}
+  userProgress.level = level;
+  localStorage.setItem('crossword_user_progress', JSON.stringify(userProgress));
 
-document.addEventListener('DOMContentLoaded', async () => {
-  const progress = await loadUserProgress();
-  userProgress = progress;
-  localStorage.setItem('crossword_user_progress', JSON.stringify(progress));
-  loadSettings();
-  console.log("User progress loaded:", progress);
-});
+  if (userProgress.userId && window.Telegram?.WebApp) {
+    const key = `user_level_${userProgress.userId}`;
+    return new Promise((resolve) => {
+      Telegram.WebApp.CloudStorage.setItem(key, String(level), (error) => {
+        if (error) {
+          console.error("Ошибка сохранения в CloudStorage:", error);
+          resolve(false);
+        } else {
+          console.log(`Прогресс сохранен в CloudStorage: уровень ${level}`);
+          resolve(true);
+        }
+      });
+    });
+  }
+  console.log(`Прогресс сохранен локально: уровень ${level}`);
+  return true;
+}
 
 window.addEventListener('message', async (event) => {
   if (event.data.type === 'SAVE_PROGRESS') {
-      const level = event.data.level;
-      const success = await saveUserProgress(level);
-
-      if (event.source.postMessage) {
-          event.source.postMessage({
-              type: 'PROGRESS_SAVED',
-              success
-          }, event.origin);
-      }
-  }
-});
-
-window.addEventListener('message', (event) => {
-  if (event.data.type === 'PROGRESS_SAVED') {
-      if (event.data.success) {
-          console.log("Прогресс успешно сохранен в CloudStorage");
-      } else {
-          console.warn("Не удалось сохранить прогресс в CloudStorage");
-      }
+    const level = event.data.level;
+    const success = await saveUserProgress(level);
+    if (event.source.postMessage) {
+      event.source.postMessage({
+        type: 'PROGRESS_SAVED',
+        success
+      }, event.origin);
+    }
   }
 });
 
