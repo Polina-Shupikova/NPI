@@ -6,76 +6,53 @@ function getLevelConfig(level) {
     }
 }
 
-async function loadSavedLevel() {
-    const progress = localStorage.getItem('userProgress');
-    
-    if (!progress) {
-        console.warn("Прогресс не найден в localStorage, начинаем с 1 уровня");
-        return 1;
-    }
+// Заменяем существующие функции на эти:
 
+async function loadSavedLevel() {
     try {
+        // Пытаемся получить прогресс из localStorage главной страницы
+        const progress = localStorage.getItem('crossword_user_progress');
+        
+        if (!progress) {
+            console.warn("Прогресс не найден, начинаем с 1 уровня");
+            return 1;
+        }
+
         const { userId, level } = JSON.parse(progress);
-        if (!userId || !level) {
+        if (!level) {
             console.warn("Некорректные данные прогресса, начинаем с 1 уровня");
             return 1;
         }
 
-        console.log(`Загружен уровень ${level} для userId: ${userId}`);
+        console.log(`Загружен уровень ${level} для userId: ${userId || 'local'}`);
         return level;
     } catch (error) {
-        console.error("Ошибка при парсинге данных прогресса:", error);
+        console.error("Ошибка при загрузке прогресса:", error);
         return 1;
     }
 }
 
 async function saveCurrentLevel(level) {
-    const progress = localStorage.getItem('userProgress');
-    let userId = null;
-
-    if (progress) {
-        try {
-            userId = JSON.parse(progress).userId;
-        } catch (e) {
-            console.error("Ошибка парсинга существующего прогресса:", e);
-        }
-    }
-
-    if (!userId) {
-        console.warn("UserId не найден, сохранение только в localStorage");
-        localStorage.setItem('crossword_user_level', String(level));
-        return false;
-    }
-
-    const newProgress = {
-        userId: userId,
-        level: level,
-        timestamp: Date.now()
-    };
-
     try {
-        localStorage.setItem('userProgress', JSON.stringify(newProgress));
-        console.log(`Уровень ${level} сохранен для userId: ${userId}`);
-
-        if (window.Telegram?.WebApp) {
-            const key = `user_level_${userId}`;
-            const success = await new Promise((resolve) => {
-                Telegram.WebApp.CloudStorage.setItem(key, String(level), (error) => {
-                    if (error) {
-                        console.error(`Ошибка сохранения в CloudStorage для ${key}:`, error);
-                        resolve(false);
-                    } else {
-                        console.log(`Уровень ${level} сохранен в CloudStorage для ${key}`);
-                        resolve(true);
-                    }
-                });
-            });
-            return success;
+        // Сохраняем в localStorage главной страницы
+        const progress = localStorage.getItem('crossword_user_progress');
+        const userId = progress ? JSON.parse(progress).userId : null;
+        
+        const newProgress = { userId, level };
+        localStorage.setItem('crossword_user_progress', JSON.stringify(newProgress));
+        
+        // Отправляем сообщение главной странице для сохранения в CloudStorage
+        if (window.parent && window.parent.postMessage) {
+            window.parent.postMessage({
+                type: 'SAVE_PROGRESS',
+                level
+            }, '*');
         }
+        
+        console.log(`Уровень ${level} сохранен локально`);
         return true;
     } catch (error) {
         console.error("Ошибка при сохранении уровня:", error);
-        localStorage.setItem('crossword_user_level', String(level));
         return false;
     }
 }
