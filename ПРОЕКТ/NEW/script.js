@@ -84,28 +84,32 @@ async function loadSavedLevel() {
   }
 }
 
-// Сохранение текущего уровня через postMessage
 async function saveCurrentLevel(level) {
-  try {
-    userProgress.level = level;
-    localStorage.setItem('crossword_user_progress', JSON.stringify(userProgress));
-    if (window.parent && window.parent.postMessage) {
-      return new Promise((resolve) => {
-        window.parent.postMessage({ type: 'SAVE_PROGRESS', level }, '*');
-        window.addEventListener('message', (event) => {
-          if (event.data.type === 'PROGRESS_SAVED') {
-            console.log(`Сохранение в CloudStorage: ${event.data.success ? 'успешно' : 'не удалось'}`);
-            resolve(event.data.success);
-          }
-        }, { once: true });
-      });
+    try {
+      userProgress.level = level;
+      localStorage.setItem('crossword_user_progress', JSON.stringify(userProgress));
+      if (window.parent && window.parent.postMessage) {
+        return new Promise((resolve) => {
+          window.parent.postMessage({ type: 'SAVE_PROGRESS', level }, '*');
+          const timeout = setTimeout(() => {
+            console.warn('Тайм-аут ожидания ответа от CloudStorage');
+            resolve(false);
+          }, 5000); // Тайм-аут 5 секунд
+          window.addEventListener('message', (event) => {
+            if (event.data.type === 'PROGRESS_SAVED') {
+              clearTimeout(timeout);
+              console.log(`Сохранение в CloudStorage: ${event.data.success ? 'успешно' : 'не удалось'}`);
+              resolve(event.data.success);
+            }
+          }, { once: true });
+        });
+      }
+      console.log(`Уровень ${level} сохранен локально`);
+      return true;
+    } catch (error) {
+      console.error("Ошибка при сохранении уровня:", error);
+      return false;
     }
-    console.log(`Уровень ${level} сохранен локально`);
-    return true;
-  } catch (error) {
-    console.error("Ошибка при сохранении уровня:", error);
-    return false;
-  }
 }
 
 // Инициализация Telegram WebApp
@@ -630,50 +634,68 @@ function giveHint() {
   checkAllWordsCompletion();
 }
 
-// Показать диалог завершения уровня
 function showLevelCompleteDialog() {
-  const dialog = document.createElement('div');
-  dialog.className = 'level-complete-dialog';
-  dialog.innerHTML = `
-    <div class="dialog-content">
-      <h3>Уровень ${currentLevel} пройден!</h3>
-      <div class="dialog-buttons">
-        <button id="next-level-btn">Следующий уровень</button>
-        <button id="menu-btn">В меню</button>
+    const dialog = document.createElement('div');
+    dialog.className = 'level-complete-dialog';
+    dialog.innerHTML = `
+      <div class="dialog-content">
+        <h3>Уровень ${currentLevel} пройден!</h3>
+        <div class="dialog-buttons">
+          <button id="next-level-btn">Следующий уровень</button>
+          <button id="menu-btn">В меню</button>
+        </div>
       </div>
-    </div>
-  `;
-  document.body.appendChild(dialog);
-
-  document.getElementById('next-level-btn').addEventListener('click', async () => {
-    dialog.remove();
-    await completeLevel();
-  });
-  document.getElementById('menu-btn').addEventListener('click', async () => {
-    await saveCurrentLevel(currentLevel + 1);
-    location.href = '../MAIN/index.html';
-  });
-}
-
-async function completeLevel() {
-    currentLevel++;
-    const saved = await saveCurrentLevel(currentLevel);
-    if (!saved) {
-      console.warn("Не удалось сохранить в CloudStorage, сохранено локально");
-      alert("Прогресс сохранен локально. Проверьте подключение для синхронизации.");
+    `;
+    document.body.appendChild(dialog);
+  
+    const nextBtn = document.getElementById('next-level-btn');
+    const menuBtn = document.getElementById('menu-btn');
+  
+    if (!nextBtn || !menuBtn) {
+      console.error('Кнопки диалога не найдены!');
+      return;
     }
-    document.getElementById('level-number').textContent = currentLevel;
-    loadLevel();
+  
+    nextBtn.addEventListener('click', async () => {
+      try {
+        console.log('Нажата кнопка "Следующий уровень"');
+        dialog.remove();
+        await completeLevel();
+      } catch (error) {
+        console.error('Ошибка при переходе на следующий уровень:', error);
+        alert('Произошла ошибка при загрузке следующего уровня.');
+      }
+    });
+  
+    menuBtn.addEventListener('click', async () => {
+      try {
+        console.log('Нажата кнопка "В меню"');
+        await saveCurrentLevel(currentLevel + 1);
+        console.log('Переход в меню...');
+        location.href = '../MAIN/index.html';
+      } catch (error) {
+        console.error('Ошибка при возвращении в меню:', error);
+        alert('Произошла ошибка при возвращении в меню.');
+      }
+    });
   }
 
-// Инициализация слушателей событий
-function initEventListeners() {
-  const hintButton = document.getElementById('hint-button');
-  if (hintButton) hintButton.addEventListener('click', giveHint);
-  const toggleButton = document.querySelector('.solved-definitions-toggle');
-  if (toggleButton) toggleButton.addEventListener('click', toggleSolvedDefinitions);
-  document.addEventListener('keydown', handlePhysicalKeyPress);
-}
+  async function completeLevel() {
+    try {
+      currentLevel++;
+      const saved = await saveCurrentLevel(currentLevel);
+      if (!saved) {
+        console.warn("Не удалось сохранить в CloudStorage, сохранено локально");
+        alert("Прогресс сохранен локально. Проверьте подключение для синхронизации.");
+      }
+      console.log(`Переход на уровень ${currentLevel}`);
+      document.getElementById('level-number').textContent = currentLevel;
+      await loadLevel();
+    } catch (error) {
+      console.error('Ошибка в completeLevel:', error);
+      throw error; // Передаем ошибку вверх для обработки в showLevelCompleteDialog
+    }
+  }
 
 function toggleSolvedDefinitions() {
   const panel = document.getElementById('solved-definitions');
