@@ -12,6 +12,7 @@ function getTelegramUserId() {
       )
       return Telegram.WebApp.initDataUnsafe.user?.id || null;
   }
+  console.log("НЕ В ТЕЛЕГЕ ЩА (на лошади)")
   return null;
 }
 
