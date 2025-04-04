@@ -280,14 +280,30 @@ let crossword = {
 const usedLettersCache = {};
 
 async function loadWords() {
+    const EASY_WORDS_URL = 'https://gist.githubusercontent.com/Ukinnne/7374dccab584f7903680e5a5bacb56a5/raw/easy_words.json';
+    const HARD_WORDS_URL = 'https://gist.githubusercontent.com/Ukinnne/d8b156ad91831540f90236961c5095c9/raw/hard_words.json';
+
     try {
+        // Добавляем тайм-аут для запросов (например, 10 секунд)
+        const fetchWithTimeout = (url, timeout = 10000) => {
+            return Promise.race([
+                fetch(url),
+                new Promise((_, reject) =>
+                    setTimeout(() => reject(new Error('Превышено время ожидания загрузки')), timeout)
+                )
+            ]);
+        };
+
         const [easyResponse, hardResponse] = await Promise.all([
-            fetch('https://gist.githubusercontent.com/Ukinnne/7374dccab584f7903680e5a5bacb56a5/raw/easy_words.json'),
-            fetch('https://gist.githubusercontent.com/Ukinnne/d8b156ad91831540f90236961c5095c9/raw/hard_words.json')
+            fetchWithTimeout(EASY_WORDS_URL),
+            fetchWithTimeout(HARD_WORDS_URL)
         ]);
 
-        if (!easyResponse.ok || !hardResponse.ok) {
-            throw new Error(`Ошибка загрузки: ${easyResponse.status}, ${hardResponse.status}`);
+        if (!easyResponse.ok) {
+            throw new Error(`Ошибка загрузки простых слов: ${easyResponse.status} ${easyResponse.statusText}`);
+        }
+        if (!hardResponse.ok) {
+            throw new Error(`Ошибка загрузки сложных слов: ${hardResponse.status} ${hardResponse.statusText}`);
         }
 
         const [easyData, hardData] = await Promise.all([
@@ -298,11 +314,18 @@ async function loadWords() {
         wordDatabase.easy = easyData;
         wordDatabase.hard = hardData;
         console.log(`Загружено: ${easyData.length} лёгких и ${hardData.length} сложных слов`);
+
+        // Проверка минимального количества слов
+        if (wordDatabase.easy.length < 3 || wordDatabase.hard.length < 2) {
+            console.warn("Недостаточно слов, загружаем резервные");
+            loadBackupWords();
+        }
     } catch (error) {
-        console.error("Ошибка загрузки слов:", error);
+        console.error("Ошибка загрузки слов:", error.message);
         loadBackupWords();
         if (wordDatabase.easy.length === 0 || wordDatabase.hard.length === 0) {
-            throw new Error("Не удалось загрузить слова даже из резервной копии");
+            console.error("Даже резервные слова не загрузились!");
+            throw new Error("Не удалось загрузить слова для игры");
         }
     }
 }
