@@ -120,17 +120,30 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function loadLevel() {
     try {
         console.log(`Загрузка уровня ${currentLevel}`);
-        const generated = generateCrossword();
+        
+        // Пытаемся сгенерировать кроссворд
+        let generated = generateCrossword();
+        
         if (!generated) {
             console.error("Не удалось сгенерировать кроссворд");
-            throw new Error("Ошибка генерации кроссворда");
+            
+            // Попробуем сбросить использованные слова и попробовать еще раз
+            crossword.usedWords.clear();
+            generated = generateCrossword();
+            
+            if (!generated) {
+                throw new Error("Ошибка генерации кроссворда после повторной попытки");
+            }
         }
+        
         renderCrossword(true);
         generateKeyboard();
         document.getElementById('hint-count').textContent = crossword.hints;
     } catch (error) {
         console.error("Ошибка загрузки уровня:", error);
-        showError("Не удалось загрузить уровень");
+        
+        // Показать пользователю сообщение об ошибке
+        showError("Не удалось загрузить уровень. Пробуем снова...");
     }
 }
 
