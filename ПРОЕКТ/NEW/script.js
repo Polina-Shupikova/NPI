@@ -1178,17 +1178,3 @@ function handlePhysicalKeyPress(e) {
 function showError(message) {
     alert(message);
 }
-
-// Запуск игры
-document.addEventListener('DOMContentLoaded', async () => {
-    if (window.gameInitialized) return;
-    window.gameInitialized = true;
-
-    try {
-        await initGame();
-        await debugCloudStorage();
-    } catch (error) {
-        console.error("Ошибка при запуске игры:", error);
-        showError("Не удалось запустить игру. Проверьте подключение.");
-    }
-});
