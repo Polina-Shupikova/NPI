@@ -614,9 +614,6 @@ function initEventListeners() {
 
 document.addEventListener('DOMContentLoaded', () => {
     initEventListeners();
-    initGame().catch(error => {
-        console.error("Ошибка инициализации игры:", error);
-    });
 });
 
 function toggleSolvedDefinitions() {
