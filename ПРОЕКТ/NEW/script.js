@@ -34,25 +34,19 @@ async function loadSavedLevel() {
 
 async function saveCurrentLevel(level) {
     try {
-        // Сохраняем в localStorage главной страницы
         const progress = localStorage.getItem('crossword_user_progress');
         const userId = progress ? JSON.parse(progress).userId : null;
-        
         const newProgress = { userId, level };
         localStorage.setItem('crossword_user_progress', JSON.stringify(newProgress));
-        
-        // Отправляем сообщение главной странице для сохранения в CloudStorage
+
         if (window.parent && window.parent.postMessage) {
-            window.parent.postMessage({
-                type: 'SAVE_PROGRESS',
-                level
-            }, '*');
+            window.parent.postMessage({ type: 'SAVE_PROGRESS', level }, '*');
         }
-        
         console.log(`Уровень ${level} сохранен локально`);
         return true;
     } catch (error) {
         console.error("Ошибка при сохранении уровня:", error);
+        alert("Не удалось синхронизировать прогресс с облаком, но он сохранен локально.");
         return false;
     }
 }
@@ -142,30 +136,21 @@ async function initTelegramWebApp() {
 
 async function loadWordsWithRetry(maxRetries = 3) {
     let lastError;
-    
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
         try {
             await loadWords();
-            
-            // Проверяем, что загрузилось достаточно слов
             if (wordDatabase.easy.length >= 3 && wordDatabase.hard.length >= 2) {
-                return; // Успех
+                return;
             }
-            
-            throw new Error(`Недостаточно слов: ${wordDatabase.easy.length} лёгких, ${wordDatabase.hard.length} сложных`);
+            throw new Error("Insufficient words loaded");
         } catch (error) {
             lastError = error;
-            console.warn(`Попытка ${attempt} загрузки слов не удалась:`, error.message);
-            
-            if (attempt < maxRetries) {
-                // Ждем перед повторной попыткой
-                await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
-            }
+            console.warn(`Attempt ${attempt} failed:`, error.message);
+            if (attempt < maxRetries) await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
         }
     }
-    
-    // Все попытки исчерпаны
-    throw lastError || new Error("Неизвестная ошибка загрузки слов");
+    console.error("All retries failed, using backup:", lastError);
+    loadBackupWords();
 }
 
 async function loadLevelWithRetry(maxRetries = 5) {
@@ -295,37 +280,46 @@ let crossword = {
 const usedLettersCache = {};
 
 async function loadWords() {
-    try {
-      // Add fallback URLs or use local words if remote loading fails
-      const urls = [
+    const urls = [
         'https://gist.githubusercontent.com/Ukinnne/7374dccab584f7903680e5a5bacb56a5/raw/easy_words.json',
         'https://gist.githubusercontent.com/Ukinnne/d8b156ad91831540f90236961c5095c9/raw/hard_words.json',
-        // Add backup URLs here
-      ];
-  
-      // Try each URL until one succeeds
-      for (const url of urls) {
+        './data/easy_words.json', // Local fallback
+        './data/hard_words.json'  // Local fallback
+    ];
+
+    for (const url of urls) {
         try {
-          const response = await fetchWithTimeout(url);
-          if (response.ok) {
-            const data = await response.json();
-            // Process data
-            break; // Exit loop if successful
-          }
+            const response = await fetchWithTimeout(url, 5000);
+            if (response.ok) {
+                const data = await response.json();
+                if (url.includes('easy')) {
+                    wordDatabase.easy = data;
+                } else {
+                    wordDatabase.hard = data;
+                }
+                console.log(`Loaded words from ${url}`);
+                return;
+            }
         } catch (e) {
-          console.warn(`Failed to load from ${url}, trying next`);
+            console.warn(`Failed to load from ${url}`);
         }
-      }
-      
-      // If all failed, use backup words
-      if (wordDatabase.easy.length === 0) {
-        loadBackupWords();
-      }
-    } catch (error) {
-      console.error("Final fallback to backup words");
-      loadBackupWords();
     }
-  }
+    console.error("All word sources failed, using backup");
+    loadBackupWords();
+}
+
+async function fetchWithTimeout(url, timeout = 5000) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+    try {
+        const response = await fetch(url, { signal: controller.signal });
+        clearTimeout(timeoutId);
+        return response;
+    } catch (e) {
+        clearTimeout(timeoutId);
+        throw e;
+    }
+}
 
 function generateCrossword() {
     const levelConfig = getLevelConfig(currentLevel);
@@ -669,37 +663,27 @@ function showError(message) {
 }
 
 function getRandomWord(type, minLength, maxLength, recursionCount = 0) {
-    const MAX_RECURSION = 3; // Reduce from 100 to prevent infinite loops
-    
-    // First try exact length matches
+    const MAX_RECURSION = 3;
     const exactMatches = wordDatabase[type].filter(w => 
-      !crossword.usedWords.has(w.word) && 
-      w.word.length >= minLength && 
-      w.word.length <= maxLength
+        !crossword.usedWords.has(w.word) && 
+        w.word.length >= minLength && 
+        w.word.length <= maxLength
     );
-    
+
     if (exactMatches.length > 0) {
-      return exactMatches[Math.floor(Math.random() * exactMatches.length)];
+        return exactMatches[Math.floor(Math.random() * exactMatches.length)];
     }
-  
-    // Then try nearby lengths if no exact matches
-    const extendedMatches = wordDatabase[type].filter(w => 
-      !crossword.usedWords.has(w.word) &&
-      w.word.length >= Math.max(3, minLength - 2) && 
-      w.word.length <= maxLength + 2
-    );
-  
-    if (extendedMatches.length > 0) {
-      return extendedMatches[Math.floor(Math.random() * extendedMatches.length)];
-    }
-  
-    // As last resort, try any word
+
     if (recursionCount < MAX_RECURSION) {
-      console.warn("No suitable words, clearing used words");
-      crossword.usedWords.clear();
-      return getRandomWord(type, minLength, maxLength, recursionCount + 1);
+        console.warn("No suitable words, trying any length");
+        const anyMatches = wordDatabase[type].filter(w => !crossword.usedWords.has(w.word));
+        if (anyMatches.length > 0) {
+            return anyMatches[Math.floor(Math.random() * anyMatches.length)];
+        }
+        crossword.usedWords.clear();
+        return getRandomWord(type, minLength, maxLength, recursionCount + 1);
     }
-  
+
     console.error("Completely failed to find word");
     return null;
 }
@@ -1194,12 +1178,13 @@ initGame().then(() => debugCloudStorage());
 document.addEventListener('DOMContentLoaded', async () => {
     if (window.gameInitialized) return;
     window.gameInitialized = true;
-
     try {
         await initGame();
-        await debugCloudStorage();
     } catch (error) {
         console.error("Фатальная ошибка при запуске игры:", error);
-        alert("Не удалось запустить игру. Проверьте подключение и попробуйте снова.");
+        alert("Не удалось запустить игру.");
     }
 });
+
+// Remove redundant calls
+initGame().then(() => debugCloudStorage()); // Remove if already covered by DOMContentLoaded
