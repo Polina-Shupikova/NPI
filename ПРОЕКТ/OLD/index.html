@@ -129,6 +129,12 @@
         let currentInputDirection = null;
         let coins = 0;
         let purchasedHints = { letter: 0, word: 0 };
+        let usedWordsHistory = {
+    levels: [],  // История слов по уровням: массив из объектов { level: number, words: Set }
+    generations: []  // История генераций на текущем уровне: массив из Set слов
+};
+const LEVEL_HISTORY_LIMIT = 3;  // Хранить слова за последние 3 уровня
+const GENERATION_HISTORY_LIMIT = 3;  // Хранить слова за последние 3 генерации
 
 
 
@@ -274,6 +280,7 @@ function detectInputDirection(row, col) {
         function prevLevel() {
             if (currentLevel > 0) {
                 currentLevel--;
+                usedWordsHistory.generations = [];
                 updateLevelDisplay();
                 generateCrossword();
             }
@@ -282,6 +289,7 @@ function detectInputDirection(row, col) {
         function nextLevel() {
             if (currentLevel < levels.length - 1 && unlockedLevels.includes(currentLevel + 1)) {
                 currentLevel++;
+                usedWordsHistory.generations = [];
                 updateLevelDisplay();
                 generateCrossword();
             }
@@ -296,44 +304,98 @@ function detectInputDirection(row, col) {
         }
 
         function generateCrossword() {
-            document.getElementById('crossword').innerHTML = '';
-            document.getElementById('word-list').innerHTML = '';
-            crossword = [];
-            placedWords = [];
+    document.getElementById('crossword').innerHTML = '';
+    document.getElementById('word-list').innerHTML = '';
+    crossword = [];
+    placedWords = [];
 
-            const currentLevelSettings = levels[currentLevel];
-            const targetWordCount = currentLevelSettings.wordCount;
+    const currentLevelSettings = levels[currentLevel];
+    const targetWordCount = currentLevelSettings.wordCount;
 
-            const availableWords = [...wordList].sort(() => Math.random() - 0.5).slice(0, targetWordCount);
-            const firstWord = availableWords.shift();
-            const startRow = Math.floor(currentLevelSettings.gridSize / 2);
-            const startCol = Math.floor((currentLevelSettings.gridSize - firstWord.word.length) / 2);
+    // Получаем все использованные слова из истории уровней и генераций
+    const usedWords = new Set();
 
-            placeWord(firstWord, startRow, startCol, true);
+    // Слова из последних 3 уровней
+    usedWordsHistory.levels.forEach(levelData => {
+        levelData.words.forEach(word => usedWords.add(word));
+    });
 
-            let attempts = 0;
-            const maxAttempts = 100;
+    // Слова из последних 3 генераций на текущем уровне
+    usedWordsHistory.generations.forEach(genWords => {
+        genWords.forEach(word => usedWords.add(word));
+    });
 
-            while (availableWords.length > 0 && attempts < maxAttempts) {
-                attempts++;
-                const wordIndex = Math.floor(Math.random() * availableWords.length);
-                const word = availableWords[wordIndex];
+    // Фильтруем доступные слова, исключая уже использованные
+    const availableWords = wordList
+        .filter(item => !usedWords.has(item.word))
+        .sort(() => Math.random() - 0.5)
+        .slice(0, targetWordCount);
 
-                if (tryPlaceWord(word)) {
-                    availableWords.splice(wordIndex, 1);
-                    attempts = 0;
-                }
-            }
+    if (availableWords.length < targetWordCount) {
+        console.warn("Недостаточно уникальных слов для уровня. Используются повторяющиеся слова.");
+        // Если слов недостаточно, берем дополнительные из полного списка
+        const extraWords = wordList
+            .filter(item => !availableWords.some(w => w.word === item.word))
+            .sort(() => Math.random() - 0.5)
+            .slice(0, targetWordCount - availableWords.length);
+        availableWords.push(...extraWords);
+    }
 
-            determineCrosswordSize();
-            renderCrossword();
-            renderWordList();
-            highlightKeyboardKeys();
-            if (placedWords.length >= targetWordCount * 0.8 && !unlockedLevels.includes(currentLevel + 1) && currentLevel < levels.length - 1) {
-                unlockedLevels.push(currentLevel + 1);
-                updateLevelDisplay();
-            }
+    const firstWord = availableWords.shift();
+    const startRow = Math.floor(currentLevelSettings.gridSize / 2);
+    const startCol = Math.floor((currentLevelSettings.gridSize - firstWord.word.length) / 2);
+
+    placeWord(firstWord, startRow, startCol, true);
+
+    let attempts = 0;
+    const maxAttempts = 100;
+
+    while (availableWords.length > 0 && attempts < maxAttempts) {
+        attempts++;
+        const wordIndex = Math.floor(Math.random() * availableWords.length);
+        const word = availableWords[wordIndex];
+
+        if (tryPlaceWord(word)) {
+            availableWords.splice(wordIndex, 1);
+            attempts = 0;
         }
+    }
+
+    determineCrosswordSize();
+    renderCrossword();
+    renderWordList();
+    highlightKeyboardKeys();
+
+    // Сохраняем использованные слова в истории
+    const currentWords = new Set(placedWords.map(w => w.word));
+    updateUsedWordsHistory(currentWords);
+
+    if (placedWords.length >= targetWordCount * 0.8 && !unlockedLevels.includes(currentLevel + 1) && currentLevel < levels.length - 1) {
+        unlockedLevels.push(currentLevel + 1);
+        updateLevelDisplay();
+    }
+}
+
+function updateUsedWordsHistory(currentWords) {
+    // Обновляем историю генераций на текущем уровне
+    usedWordsHistory.generations.push(new Set(currentWords));
+    if (usedWordsHistory.generations.length > GENERATION_HISTORY_LIMIT) {
+        usedWordsHistory.generations.shift();  // Удаляем самую старую генерацию
+    }
+
+    // Обновляем историю уровней
+    const currentLevelData = usedWordsHistory.levels.find(data => data.level === currentLevel);
+    if (currentLevelData) {
+        // Если уровень уже есть, обновляем его слова
+        currentLevelData.words = new Set(currentWords);
+    } else {
+        // Добавляем новый уровень в историю
+        usedWordsHistory.levels.push({ level: currentLevel, words: new Set(currentWords) });
+        if (usedWordsHistory.levels.length > LEVEL_HISTORY_LIMIT) {
+            usedWordsHistory.levels.shift();  // Удаляем самый старый уровень
+        }
+    }
+}
 
         function tryPlaceWord(word) {
             for (const placedWord of placedWords) {
@@ -975,25 +1037,27 @@ function highlightKeyboardKeys() {
     document.head.appendChild(style);
 
         function saveGameData() {
-            const gameData = {
-                coins,
-                purchasedHints,
-                unlockedLevels,
-                currentLevel
-            };
-            localStorage.setItem('crosswordGameData', JSON.stringify(gameData));
-        }
+    const gameData = {
+        coins,
+        purchasedHints,
+        unlockedLevels,
+        currentLevel,
+        usedWordsHistory
+    };
+    localStorage.setItem('crosswordGameData', JSON.stringify(gameData));
+}
 
         function loadGameData() {
-            const savedData = localStorage.getItem('crosswordGameData');
-            if (savedData) {
-                const gameData = JSON.parse(savedData);
-                coins = gameData.coins || 0;
-                purchasedHints = gameData.purchasedHints || { letter: 0, word: 0 };
-                unlockedLevels = gameData.unlockedLevels || [0];
-                currentLevel = gameData.currentLevel || 0;
-            }
-        }
+    const savedData = localStorage.getItem('crosswordGameData');
+    if (savedData) {
+        const gameData = JSON.parse(savedData);
+        coins = gameData.coins || 0;
+        purchasedHints = gameData.purchasedHints || { letter: 0, word: 0 };
+        unlockedLevels = gameData.unlockedLevels || [0];
+        currentLevel = gameData.currentLevel || 0;
+        usedWordsHistory = gameData.usedWordsHistory || { levels: [], generations: [] };
+    }
+}
 
         async function loadDatabase() {
             try {
