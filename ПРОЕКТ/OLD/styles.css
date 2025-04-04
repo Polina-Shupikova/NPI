@@ -133,7 +133,7 @@ button:hover::before {
     -webkit-appearance: none; /* Убирает стандартный вид на iOS */
     appearance: none;
 }
-
+}
 .cell input:focus {
     outline: 2px solid rgba(76, 175, 80, 0.5);
     background-color: rgba(240, 255, 240, 0.7);
@@ -1007,5 +1007,4 @@ body.dark-theme .keyboard-key.highlight {
 
 .word-direction.vertical {
     color: #2196F3; /* Синий для вертикальных слов */
-}
 }
