@@ -38,24 +38,29 @@ async function getUserId() {
     }
 
     const webApp = Telegram.WebApp;
-    await new Promise(resolve => {
-        webApp.ready();
-        setTimeout(resolve, 50);
-    });
+    try {
+        await new Promise(resolve => {
+            webApp.ready();
+            setTimeout(resolve, 50);
+        });
 
-    if (webApp.initDataUnsafe?.user?.id) {
-        console.log("User ID найден:", webApp.initDataUnsafe.user.id);
-        return webApp.initDataUnsafe.user.id;
+        if (webApp.initDataUnsafe?.user?.id) {
+            console.log("User ID найден:", webApp.initDataUnsafe.user.id);
+            return webApp.initDataUnsafe.user.id;
+        }
+
+        const parsedData = parseInitData();
+        if (parsedData?.id) {
+            console.log("User ID найден через parseInitData:", parsedData.id);
+            return parsedData.id;
+        }
+
+        console.warn("User ID не найден, возможно, это тестовая среда");
+        return null;
+    } catch (error) {
+        console.error("Ошибка при получении User ID:", error);
+        return null;
     }
-
-    const parsedData = parseInitData();
-    if (parsedData?.id) {
-        console.log("User ID найден через parseInitData:", parsedData.id);
-        return parsedData.id;
-    }
-
-    console.error("User ID не найден ни в initDataUnsafe, ни в parseInitData");
-    return null;
 }
 
 async function loadSavedLevel() {
@@ -193,6 +198,23 @@ async function saveCurrentLevel(level) {
     }
 }
 
+async function loadLevel() {
+    try {
+        console.log(`Загрузка уровня ${currentLevel}`);
+        const generated = generateCrossword();
+        if (!generated) {
+            console.error("Не удалось сгенерировать кроссворд");
+            throw new Error("Ошибка генерации кроссворда");
+        }
+        renderCrossword(true);
+        generateKeyboard();
+        document.getElementById('hint-count').textContent = crossword.hints;
+    } catch (error) {
+        console.error("Ошибка загрузки уровня:", error);
+        showError("Не удалось загрузить уровень");
+    }
+}
+
 const RUSSIAN_LAYOUT = {
     'q': 'й', 'w': 'ц', 'e': 'у', 'r': 'к', 't': 'е', 'y': 'н', 
     'u': 'г', 'i': 'ш', 'o': 'щ', 'p': 'з', '[': 'х', ']': 'ъ',
@@ -276,15 +298,12 @@ async function loadWords() {
         wordDatabase.easy = easyData;
         wordDatabase.hard = hardData;
         console.log(`Загружено: ${easyData.length} лёгких и ${hardData.length} сложных слов`);
-
-        // Проверка минимального количества слов
-        if (wordDatabase.easy.length < 3 || wordDatabase.hard.length < 2) {
-            console.warn("Недостаточно слов, загружаем резервные");
-            loadBackupWords();
-        }
     } catch (error) {
         console.error("Ошибка загрузки слов:", error);
         loadBackupWords();
+        if (wordDatabase.easy.length === 0 || wordDatabase.hard.length === 0) {
+            throw new Error("Не удалось загрузить слова даже из резервной копии");
+        }
     }
 }
 
@@ -370,6 +389,9 @@ function initEventListeners() {
     } else {
         console.warn('Элемент .solved-definitions-toggle не найден в DOM');
     }
+
+    // Добавим обработчик клавиатуры
+    document.addEventListener('keydown', handlePhysicalKeyPress);
 }
 
 // Запускаем после загрузки DOM
@@ -782,12 +804,12 @@ function canPlaceWord(word, position, direction) {
 }
 
 function renderCrossword(force = false) {
-    if (!force && !document.getElementById('crossword-grid').children.length) {
+    const crosswordGrid = document.getElementById('crossword-grid');
+    if (!force && !crosswordGrid.children.length) {
         return;
     }
     
-    const grid = document.getElementById('crossword-grid');
-    grid.innerHTML = '';
+    crosswordGrid.innerHTML = '';
     
     let minX = crossword.size, maxX = 0, minY = crossword.size, maxY = 0;
     for (let y = 0; y < crossword.size; y++) {
@@ -1229,10 +1251,15 @@ async function debugCloudStorage() {
 // Вызовите где-нибудь, например, в initGame
 initGame().then(() => debugCloudStorage());
 
-document.addEventListener('DOMContentLoaded', () => {
-    if (isTelegramWebApp()) {
-        Telegram.WebApp.ready();
-        Telegram.WebApp.expand(); // Рекомендуется для лучшего UX
+document.addEventListener('DOMContentLoaded', async () => {
+    if (window.gameInitialized) return;
+    window.gameInitialized = true;
+
+    try {
+        await initGame();
+        await debugCloudStorage();
+    } catch (error) {
+        console.error("Фатальная ошибка при запуске игры:", error);
+        alert("Не удалось запустить игру. Проверьте подключение и попробуйте снова.");
     }
-    initGame().catch(console.error);
 });
