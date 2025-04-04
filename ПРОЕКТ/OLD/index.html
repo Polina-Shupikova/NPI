@@ -741,57 +741,82 @@ function highlightKeyboardKeys() {
 }
 
         function moveToNextCell() {
-            if (!currentActiveCell || !currentInputDirection) return;
+    if (!currentActiveCell || !currentInputDirection) return;
 
-            const row = parseInt(currentActiveCell.dataset.row);
-            const col = parseInt(currentActiveCell.dataset.col);
-            currentInputDirection = detectInputDirection(row, col);
+    const row = parseInt(currentActiveCell.dataset.row);
+    const col = parseInt(currentActiveCell.dataset.col);
+    currentInputDirection = detectInputDirection(row, col);
 
-            const currentWord = placedWords.find(word => {
-                const isHorizontal = word.horizontal;
-                const matchesDirection = currentInputDirection === 'horizontal' ? isHorizontal : !isHorizontal;
-                if (matchesDirection) {
-                    if (isHorizontal) {
-                        return word.row === row && col >= word.col && col < word.col + word.word.length;
-                    } else {
-                        return word.col === col && row >= word.row && row < word.row + word.word.length;
-                    }
-                }
-                return false;
-            });
-
-            if (!currentWord) return;
-            const isWordComplete = checkIfWordComplete(currentWord);
-        if (isWordComplete) {
-            checkWord(currentWord); // Автоматическая проверка слова
-        }
-
-            let nextRow, nextCol;
-            if (currentWord.horizontal) {
-                nextCol = col + 1;
-                nextRow = row;
-                if (nextCol >= currentWord.col + currentWord.word.length) {
-                    nextCol = currentWord.col;
-                }
+    const currentWord = placedWords.find(word => {
+        const isHorizontal = word.horizontal;
+        const matchesDirection = currentInputDirection === 'horizontal' ? isHorizontal : !isHorizontal;
+        if (matchesDirection) {
+            if (isHorizontal) {
+                return word.row === row && col >= word.col && col < word.col + word.word.length;
             } else {
-                nextRow = row + 1;
-                nextCol = col;
-                if (nextRow >= currentWord.row + currentWord.word.length) {
-                    nextRow = currentWord.row;
-                }
+                return word.col === col && row >= word.row && row < word.row + word.word.length;
             }
-
-            const nextInput = document.querySelector(`input[data-row="${nextRow}"][data-col="${nextCol}"]`);
-            if (nextInput) {
-                nextInput.focus();
-                if (/Mobi|Android/i.test(navigator.userAgent)) {
-                    nextInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }
-            }
-            const maxAttempts = currentWord.word.length;
-
-
         }
+        return false;
+    });
+
+    if (!currentWord) return;
+
+    const isWordComplete = checkIfWordComplete(currentWord);
+    if (isWordComplete) {
+        checkWord(currentWord); // Автоматическая проверка слова
+    }
+
+    let nextRow = row;
+    let nextCol = col;
+    let attempts = 0;
+    const maxAttempts = currentWord.word.length; // Ограничение на количество попыток, чтобы избежать бесконечного цикла
+
+    do {
+        if (currentWord.horizontal) {
+            nextCol = nextCol + 1;
+            if (nextCol >= currentWord.col + currentWord.word.length) {
+                nextCol = currentWord.col; // Возвращаемся к началу слова, если вышли за пределы
+                break;
+            }
+        } else {
+            nextRow = nextRow + 1;
+            if (nextRow >= currentWord.row + currentWord.word.length) {
+                nextRow = currentWord.row; // Возвращаемся к началу слова, если вышли за пределы
+                break;
+            }
+        }
+
+        const nextInput = document.querySelector(`input[data-row="${nextRow}"][data-col="${nextCol}"]`);
+        if (!nextInput || (nextInput.value && nextInput.readOnly)) {
+            attempts++;
+            continue; // Пропускаем заполненные и заблокированные ячейки
+        }
+
+        nextInput.focus();
+        if (/Mobi|Android/i.test(navigator.userAgent)) {
+            nextInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        currentActiveCell = nextInput; // Обновляем текущую активную ячейку
+        return; // Выходим, если нашли подходящую ячейку
+    } while (attempts < maxAttempts);
+
+    // Если не нашли подходящую ячейку, остаемся на текущей
+    currentActiveCell.focus();
+    if (isWordComplete && attempts >= maxAttempts) {
+    const nextWordIndex = placedWords.indexOf(currentWord) + 1;
+    if (nextWordIndex < placedWords.length) {
+        const nextWord = placedWords[nextWordIndex];
+        const nextInput = document.querySelector(`input[data-row="${nextWord.row}"][data-col="${nextWord.col}"]`);
+        if (nextInput) {
+            nextInput.focus();
+            currentActiveCell = nextInput;
+            currentInputDirection = nextWord.horizontal ? 'horizontal' : 'vertical';
+            updateDirectionDisplay();
+        }
+    }
+}
+}
         function moveToPrevCell() {
     if (!currentActiveCell || !currentInputDirection) return;
 
