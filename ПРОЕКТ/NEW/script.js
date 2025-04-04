@@ -185,24 +185,25 @@ async function initGame() {
   }
 }
 
-// Загрузка уровня
 async function loadLevel() {
-  console.log(`Загрузка уровня ${currentLevel}`);
-  let generated = generateCrossword();
-  if (!generated) {
-    console.warn("Не удалось сгенерировать кроссворд, повторная попытка...");
-    crossword.usedWords.clear();
-    generated = generateCrossword();
+    console.log(`Загрузка уровня ${currentLevel}`);
+    let generated = generateCrossword();
+    if (!generated) {
+      console.warn("Не удалось сгенерировать кроссворд, повторная попытка...");
+      crossword.usedWords.clear();
+      generated = generateCrossword();
+    }
+    if (generated) {
+      // Обновляем номер уровня перед отрисовкой
+      document.getElementById('level-number').textContent = currentLevel;
+      renderCrossword(true);
+      generateKeyboard();
+      document.getElementById('hint-count').textContent = crossword.hints;
+    } else {
+      console.error("Критическая ошибка генерации кроссворда");
+      showError("Не удалось загрузить уровень.");
+    }
   }
-  if (generated) {
-    renderCrossword(true);
-    generateKeyboard();
-    document.getElementById('hint-count').textContent = crossword.hints;
-  } else {
-    console.error("Критическая ошибка генерации кроссворда");
-    showError("Не удалось загрузить уровень.");
-  }
-}
 
 // Генерация кроссворда
 function generateCrossword() {
@@ -654,16 +655,16 @@ function showLevelCompleteDialog() {
   });
 }
 
-// Завершение уровня
 async function completeLevel() {
-  currentLevel++;
-  const saved = await saveCurrentLevel(currentLevel);
-  if (!saved) {
-    console.warn("Не удалось сохранить в CloudStorage, сохранено локально");
-    alert("Прогресс сохранен локально. Проверьте подключение для синхронизации.");
+    currentLevel++;
+    const saved = await saveCurrentLevel(currentLevel);
+    if (!saved) {
+      console.warn("Не удалось сохранить в CloudStorage, сохранено локально");
+      alert("Прогресс сохранен локально. Проверьте подключение для синхронизации.");
+    }
+    document.getElementById('level-number').textContent = currentLevel;
+    loadLevel();
   }
-  loadLevel();
-}
 
 // Инициализация слушателей событий
 function initEventListeners() {
