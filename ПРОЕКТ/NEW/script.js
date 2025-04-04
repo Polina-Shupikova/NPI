@@ -648,37 +648,21 @@ function showLevelCompleteDialog() {
     `;
     document.body.appendChild(dialog);
   
-    const nextBtn = document.getElementById('next-level-btn');
-    const menuBtn = document.getElementById('menu-btn');
+    document.getElementById('next-level-btn').onclick = () => {
+      console.log('Клик: Следующий уровень');
+      dialog.remove();
+      currentLevel++;
+      document.getElementById('level-number').textContent = currentLevel;
+      localStorage.setItem('crossword_user_progress', JSON.stringify({ level: currentLevel }));
+      loadLevel();
+    };
   
-    if (!nextBtn || !menuBtn) {
-      console.error('Кнопки диалога не найдены!');
-      return;
-    }
-  
-    nextBtn.addEventListener('click', async () => {
-      try {
-        console.log('Нажата кнопка "Следующий уровень"');
-        dialog.remove();
-        await completeLevel();
-      } catch (error) {
-        console.error('Ошибка при переходе на следующий уровень:', error);
-        alert('Произошла ошибка при загрузке следующего уровня.');
-      }
-    });
-  
-    menuBtn.addEventListener('click', async () => {
-      try {
-        console.log('Нажата кнопка "В меню"');
-        await saveCurrentLevel(currentLevel + 1);
-        console.log('Переход в меню...');
-        location.href = '../MAIN/index.html';
-      } catch (error) {
-        console.error('Ошибка при возвращении в меню:', error);
-        alert('Произошла ошибка при возвращении в меню.');
-      }
-    });
-  }
+    document.getElementById('menu-btn').onclick = () => {
+      console.log('Клик: В меню');
+      localStorage.setItem('crossword_user_progress', JSON.stringify({ level: currentLevel + 1 }));
+      window.location.href = '../MAIN/index.html';
+    };
+}
 
   async function completeLevel() {
     try {
