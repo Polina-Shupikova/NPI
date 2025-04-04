@@ -6,7 +6,13 @@ function getLevelConfig(level) {
     }
 }
 
-// Заменяем существующие функции на эти:
+const user = window.Telegram.WebApp.initDataUnsafe.user;
+if (user) {
+    const userId = user.id;
+    console.log("User ID:", userId);
+} else {
+    console.log("Пользователь не авторизован или данные недоступны");
+}
 
 async function loadSavedLevel() {
     try {
