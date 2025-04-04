@@ -925,7 +925,7 @@ function generateKeyboard() {
     const specialButtons = [
         { text: '⌫', action: clearCell },
         { text: '📖', action: showDefinitions },
-        { text: 'Подсказка', action: giveHint }
+        { text: '💡', action: giveHint }
     ];
     for (const btn of specialButtons) {
         const key = document.createElement('button');
