@@ -110,7 +110,7 @@ async function initGame() {
 document.addEventListener('DOMContentLoaded', async () => {
     try {
         await initGame();
-        await debugCloudStorage();
+        // await debugCloudStorage();
     } catch (error) {
         console.error("Фатальная ошибка при запуске игры:", error);
         alert("Не удалось запустить игру. Проверьте подключение и попробуйте снова.");
