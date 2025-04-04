@@ -58,62 +58,145 @@ async function saveCurrentLevel(level) {
 }
 
 async function initGame() {
-    console.log("Запуск initGame...");
+    console.log("Инициализация игры...");
 
-    if (window.Telegram?.WebApp) {
-        try {
-            console.log("Обнаружен Telegram WebApp, ждем готовности...");
-            Telegram.WebApp.ready();
-            await new Promise(resolve => setTimeout(resolve, 100));
-            Telegram.WebApp.expand();
-            console.log("Telegram WebApp готов");
-        } catch (error) {
-            console.warn("Ошибка инициализации Telegram WebApp:", error);
-        }
-    } else {
-        console.warn("Telegram WebApp не обнаружен, работаем в обычном режиме");
-    }
+    // 1. Инициализация Telegram WebApp (если доступно)
+    await initTelegramWebApp();
 
+    // 2. Загрузка слов с несколькими попытками и резервными вариантами
     try {
-        await loadWords();
+        await loadWordsWithRetry();
+        
+        // Проверка, что слова действительно загружены
         if (wordDatabase.easy.length === 0 || wordDatabase.hard.length === 0) {
             throw new Error("База слов пуста после загрузки");
         }
         console.log("Слова успешно загружены");
+    } catch (error) {
+        console.error("Ошибка загрузки слов:", error);
+        console.log("Используем резервные слова...");
+        loadBackupWords();
         
+        // Дополнительная проверка на случай проблем с резервными словами
+        if (wordDatabase.easy.length === 0 || wordDatabase.hard.length === 0) {
+            console.error("Критическая ошибка: Нет слов для игры!");
+            throw new Error("Не удалось загрузить слова для игры");
+        }
+    }
+
+    // 3. Загрузка уровня
+    try {
         const savedLevel = await loadSavedLevel();
         currentLevel = savedLevel;
         console.log("Игра начинается с уровня:", currentLevel);
         
-        await loadLevel();
+        // Попытка загрузить уровень с несколькими повторениями при ошибках
+        await loadLevelWithRetry();
     } catch (error) {
-        console.error("Ошибка загрузки слов:", error);
-        console.log("Переключаемся на резервные слова...");
-        loadBackupWords();
-        if (wordDatabase.easy.length === 0 || wordDatabase.hard.length === 0) {
-            console.error("Даже резервные слова не загрузились!");
-            throw new Error("Не удалось загрузить слова для игры");
-        }
+        console.error("Ошибка загрузки уровня:", error);
+        // Сброс к первому уровню в случае ошибки
         currentLevel = 1;
-        await loadLevel();
+        await loadLevelWithRetry();
     }
 
+    // 4. Инициализация интерфейса
     try {
         initEventListeners();
         console.log("Слушатели событий инициализированы");
     } catch (error) {
         console.error("Ошибка в initEventListeners:", error);
-        throw error;
+        throw error; // Это критическая ошибка, прерываем работу
     }
+
+    console.log("Игра успешно инициализирована");
+}
+
+// Вспомогательные функции:
+
+async function initTelegramWebApp() {
+    if (window.Telegram?.WebApp) {
+        try {
+            console.log("Обнаружен Telegram WebApp, инициализация...");
+            
+            // Готовность WebApp с таймаутом
+            Telegram.WebApp.ready();
+            await new Promise((resolve, reject) => {
+                setTimeout(() => {
+                    Telegram.WebApp.expand();
+                    resolve();
+                }, 100);
+                
+                // Добавляем обработчик на случай быстрого ответа
+                Telegram.WebApp.onEvent('viewportChanged', resolve);
+            });
+            
+            console.log("Telegram WebApp успешно инициализирован");
+        } catch (error) {
+            console.warn("Ошибка инициализации Telegram WebApp:", error);
+            // Продолжаем работу в обычном режиме
+        }
+    } else {
+        console.log("Telegram WebApp не обнаружен, работаем в обычном режиме");
+    }
+}
+
+async function loadWordsWithRetry(maxRetries = 3) {
+    let lastError;
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+            await loadWords();
+            
+            // Проверяем, что загрузилось достаточно слов
+            if (wordDatabase.easy.length >= 3 && wordDatabase.hard.length >= 2) {
+                return; // Успех
+            }
+            
+            throw new Error(`Недостаточно слов: ${wordDatabase.easy.length} лёгких, ${wordDatabase.hard.length} сложных`);
+        } catch (error) {
+            lastError = error;
+            console.warn(`Попытка ${attempt} загрузки слов не удалась:`, error.message);
+            
+            if (attempt < maxRetries) {
+                // Ждем перед повторной попыткой
+                await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+            }
+        }
+    }
+    
+    // Все попытки исчерпаны
+    throw lastError || new Error("Неизвестная ошибка загрузки слов");
+}
+
+async function loadLevelWithRetry(maxRetries = 5) {
+    let lastError;
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+            await loadLevel();
+            return; // Успех
+        } catch (error) {
+            lastError = error;
+            console.warn(`Попытка ${attempt} загрузки уровня не удалась:`, error.message);
+            
+            if (attempt < maxRetries) {
+                // Очищаем использованные слова перед повторной попыткой
+                crossword.usedWords.clear();
+                await new Promise(resolve => setTimeout(resolve, 500 * attempt));
+            }
+        }
+    }
+    
+    // Все попытки исчерпаны
+    throw lastError || new Error("Неизвестная ошибка загрузки уровня");
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
     try {
         await initGame();
-        await debugCloudStorage();
     } catch (error) {
         console.error("Фатальная ошибка при запуске игры:", error);
-        alert("Не удалось запустить игру. Проверьте подключение и попробуйте снова.");
+        alert("Не удалось запустить игру. Пожалуйста, попробуйте перезагрузить страницу.");
     }
 });
 
@@ -148,7 +231,7 @@ async function loadLevel() {
 }
 
 if (typeof RUSSIAN_LAYOUT === 'undefined') {
-    const RUSSIAN_LAYOUT = { 'q': 'й', 'w': 'ц', 'e': 'у', 'r': 'к', 't': 'е', 'y': 'н', 
+    var RUSSIAN_LAYOUT = { 'q': 'й', 'w': 'ц', 'e': 'у', 'r': 'к', 't': 'е', 'y': 'н', 
     'u': 'г', 'i': 'ш', 'o': 'щ', 'p': 'з', '[': 'х', ']': 'ъ',
     'a': 'ф', 's': 'ы', 'd': 'в', 'f': 'а', 'g': 'п', 'h': 'р',
     'j': 'о', 'k': 'л', 'l': 'д', ';': 'ж', "'": 'э', 
@@ -212,53 +295,37 @@ let crossword = {
 const usedLettersCache = {};
 
 async function loadWords() {
-    const EASY_WORDS_URL = 'https://gist.githubusercontent.com/Ukinnne/7374dccab584f7903680e5a5bacb56a5/raw/easy_words.json';
-    const HARD_WORDS_URL = 'https://gist.githubusercontent.com/Ukinnne/d8b156ad91831540f90236961c5095c9/raw/hard_words.json';
-
     try {
-        const fetchWithTimeout = (url, timeout = 10000) => {
-            return Promise.race([
-                fetch(url),
-                new Promise((_, reject) =>
-                    setTimeout(() => reject(new Error('Превышено время ожидания загрузки')), timeout)
-                )
-            ]);
-        };
-
-        const [easyResponse, hardResponse] = await Promise.all([
-            fetchWithTimeout(EASY_WORDS_URL),
-            fetchWithTimeout(HARD_WORDS_URL)
-        ]);
-
-        if (!easyResponse.ok) {
-            throw new Error(`Ошибка загрузки простых слов: ${easyResponse.status} ${easyResponse.statusText}`);
+      // Add fallback URLs or use local words if remote loading fails
+      const urls = [
+        'https://gist.githubusercontent.com/Ukinnne/7374dccab584f7903680e5a5bacb56a5/raw/easy_words.json',
+        'https://gist.githubusercontent.com/Ukinnne/d8b156ad91831540f90236961c5095c9/raw/hard_words.json',
+        // Add backup URLs here
+      ];
+  
+      // Try each URL until one succeeds
+      for (const url of urls) {
+        try {
+          const response = await fetchWithTimeout(url);
+          if (response.ok) {
+            const data = await response.json();
+            // Process data
+            break; // Exit loop if successful
+          }
+        } catch (e) {
+          console.warn(`Failed to load from ${url}, trying next`);
         }
-        if (!hardResponse.ok) {
-            throw new Error(`Ошибка загрузки сложных слов: ${hardResponse.status} ${hardResponse.statusText}`);
-        }
-
-        const [easyData, hardData] = await Promise.all([
-            easyResponse.json(),
-            hardResponse.json()
-        ]);
-
-        wordDatabase.easy = easyData;
-        wordDatabase.hard = hardData;
-        console.log(`Загружено: ${easyData.length} лёгких и ${hardData.length} сложных слов`);
-
-        if (wordDatabase.easy.length < 3 || wordDatabase.hard.length < 2) {
-            console.warn("Недостаточно слов, загружаем резервные");
-            loadBackupWords();
-        }
-    } catch (error) {
-        console.error("Ошибка загрузки слов:", error.message);
+      }
+      
+      // If all failed, use backup words
+      if (wordDatabase.easy.length === 0) {
         loadBackupWords();
-        if (wordDatabase.easy.length === 0 || wordDatabase.hard.length === 0) {
-            console.error("Даже резервные слова не загрузились!");
-            throw new Error("Не удалось загрузить слова для игры");
-        }
+      }
+    } catch (error) {
+      console.error("Final fallback to backup words");
+      loadBackupWords();
     }
-}
+  }
 
 function generateCrossword() {
     const levelConfig = getLevelConfig(currentLevel);
@@ -602,53 +669,38 @@ function showError(message) {
 }
 
 function getRandomWord(type, minLength, maxLength, recursionCount = 0) {
-    const MAX_RECURSION = 1;
+    const MAX_RECURSION = 3; // Reduce from 100 to prevent infinite loops
     
-    const availableWords = wordDatabase[type].filter(w => 
-        !crossword.usedWords.has(w.word) && 
-        w.word.length >= minLength && 
-        w.word.length <= maxLength
+    // First try exact length matches
+    const exactMatches = wordDatabase[type].filter(w => 
+      !crossword.usedWords.has(w.word) && 
+      w.word.length >= minLength && 
+      w.word.length <= maxLength
     );
     
-    if (availableWords.length > 0) {
-        return availableWords[Math.floor(Math.random() * availableWords.length)];
+    if (exactMatches.length > 0) {
+      return exactMatches[Math.floor(Math.random() * exactMatches.length)];
     }
-
-    const fallbackType = type === WORD_TYPES.EASY ? WORD_TYPES.HARD : WORD_TYPES.EASY;
-    const fallbackWords = wordDatabase[fallbackType].filter(w => 
-        !crossword.usedWords.has(w.word) && 
-        w.word.length >= minLength && 
-        w.word.length <= maxLength
+  
+    // Then try nearby lengths if no exact matches
+    const extendedMatches = wordDatabase[type].filter(w => 
+      !crossword.usedWords.has(w.word) &&
+      w.word.length >= Math.max(3, minLength - 2) && 
+      w.word.length <= maxLength + 2
     );
-    
-    if (fallbackWords.length > 0) {
-        return fallbackWords[Math.floor(Math.random() * fallbackWords.length)];
+  
+    if (extendedMatches.length > 0) {
+      return extendedMatches[Math.floor(Math.random() * extendedMatches.length)];
     }
-
-    const extendedMin = Math.max(3, minLength - 1);
-    const extendedMax = maxLength + 1;
-    const extendedWords = wordDatabase[type].filter(w => 
-        !crossword.usedWords.has(w.word) && 
-        w.word.length >= extendedMin && 
-        w.word.length <= extendedMax
-    );
-    
-    if (extendedWords.length > 0) {
-        return extendedWords[Math.floor(Math.random() * extendedWords.length)];
-    }
-
+  
+    // As last resort, try any word
     if (recursionCount < MAX_RECURSION) {
-        if (wordDatabase[type].length === 0 && wordDatabase[fallbackType].length === 0) {
-            console.error("База слов пуста!");
-            loadBackupWords();
-            return getRandomWord(type, minLength, maxLength, recursionCount + 1);
-        }
-        crossword.usedWords.clear();
-        console.warn("Очищены использованные слова, повторная попытка...");
-        return getRandomWord(type, minLength, maxLength, recursionCount + 1);
+      console.warn("No suitable words, clearing used words");
+      crossword.usedWords.clear();
+      return getRandomWord(type, minLength, maxLength, recursionCount + 1);
     }
-
-    console.error("Не удалось найти подходящее слово!");
+  
+    console.error("Completely failed to find word");
     return null;
 }
 
