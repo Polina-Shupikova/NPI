@@ -262,7 +262,7 @@ async function loadWords() {
 
 function generateCrossword() {
     const levelConfig = getLevelConfig(currentLevel);
-    crossword.size = Math.max(18, levelConfig.maxLength + 5);
+    crossword.size = Math.max(20, levelConfig.maxLength + 7); // Увеличиваем размер сетки
     crossword.hints = levelConfig.total;
     crossword.wordsToFind = levelConfig.total;
     crossword.wordsFound = 0;
@@ -271,34 +271,33 @@ function generateCrossword() {
     crossword.definitions = [];
     crossword.usedWords.clear();
 
-    // Проверка доступных слов
-    if (wordDatabase.easy.length + wordDatabase.hard.length < levelConfig.total) {
-        console.error("Недостаточно слов в базе! Загружаем резервные...");
+    // Проверка доступности слов
+    const availableWords = [
+        ...wordDatabase.easy.filter(w => w.word.length >= levelConfig.minLength && w.word.length <= levelConfig.maxLength),
+        ...wordDatabase.hard.filter(w => w.word.length >= levelConfig.minLength && w.word.length <= levelConfig.maxLength)
+    ];
+    
+    if (availableWords.length < levelConfig.total) {
+        console.warn("Недостаточно слов, загружаем резервные");
         loadBackupWords();
     }
 
-    let attempts = 0;
-    const maxAttempts = 500; // Увеличим количество попыток
-    let wordsAdded = 0;
-
-    // Пытаемся добавить первое слово
-    while (wordsAdded === 0 && attempts < maxAttempts / 2) {
-        const firstWord = getRandomWord(WORD_TYPES.EASY, levelConfig.minLength, levelConfig.maxLength);
-        if (firstWord) {
-            const centerY = Math.floor(crossword.size / 2);
-            const centerX = Math.floor((crossword.size - firstWord.word.length) / 2);
-            addWordToGrid(firstWord, { x: centerX, y: centerY }, 'horizontal', 1);
-            wordsAdded++;
-        }
-        attempts++;
-    }
-
-    if (wordsAdded === 0) {
-        console.error("Не удалось разместить первое слово");
+    // Добавляем первое слово
+    const firstWord = getRandomWord(WORD_TYPES.EASY, levelConfig.minLength, levelConfig.maxLength);
+    if (!firstWord) {
+        console.error("Не удалось выбрать первое слово");
         return false;
     }
 
-    // Пытаемся добавить остальные слова
+    const centerY = Math.floor(crossword.size / 2);
+    const centerX = Math.floor((crossword.size - firstWord.word.length) / 2);
+    addWordToGrid(firstWord, { x: centerX, y: centerY }, 'horizontal', 1);
+
+    // Добавляем остальные слова
+    let wordsAdded = 1;
+    let attempts = 0;
+    const maxAttempts = 1000;
+
     while (wordsAdded < levelConfig.total && attempts < maxAttempts) {
         const needEasy = wordsAdded < levelConfig.easy;
         const type = needEasy ? WORD_TYPES.EASY : WORD_TYPES.HARD;
@@ -306,22 +305,18 @@ function generateCrossword() {
 
         if (wordObj && tryAddConnectedWord(wordObj)) {
             wordsAdded++;
-            console.log(`Добавлено слово ${wordObj.word}, всего: ${wordsAdded}`);
+            attempts = 0; // Сбрасываем счетчик после успешного добавления
+        } else {
+            attempts++;
         }
-        attempts++;
     }
 
-    if (wordsAdded < levelConfig.total) {
+    if (wordsAdded < Math.max(3, levelConfig.total * 0.7)) {
         console.warn(`Добавлено только ${wordsAdded} из ${levelConfig.total} слов`);
-        
-        // Если добавили хотя бы 3 слова, считаем успехом
-        if (wordsAdded >= 3) {
-            crossword.wordsToFind = wordsAdded;
-            return true;
-        }
         return false;
     }
 
+    crossword.wordsToFind = wordsAdded;
     return true;
 }
 
@@ -368,11 +363,6 @@ function tryAddWithStrategy(wordObj, baseWord, strategy) {
         }
     }
     
-    // Если не нашли пересечений, пробуем разместить в любом месте
-    if (strategy.method === 'anyPlacement') {
-        return tryAddAnywhere(wordObj);
-    }
-    
     return false;
 }
 
@@ -393,49 +383,49 @@ function tryAddAnywhere(wordObj) {
     return false;
 }
 
-function canPlaceWordWithSingleIntersection(word, position, direction) {
+function canPlaceWordWithIntersections(word, position, direction, maxIntersections = 2) {
     const { x, y } = position;
     const length = word.length;
-
+    
+    // Проверка границ
     if (x < 0 || y < 0) return false;
     if (direction === 'horizontal' && x + length > crossword.size) return false;
     if (direction === 'vertical' && y + length > crossword.size) return false;
-
+    
     let intersectionCount = 0;
-
+    
     for (let i = 0; i < length; i++) {
         const cellX = direction === 'horizontal' ? x + i : x;
         const cellY = direction === 'vertical' ? y + i : y;
         const cell = crossword.grid[cellY]?.[cellX];
-
+        
         if (cell) {
+            // Проверяем совпадение букв в пересечениях
             if (cell.correctLetter !== word[i]) return false;
             intersectionCount++;
-            if (intersectionCount > 1) return false;
+            if (intersectionCount > maxIntersections) return false;
         }
-
+        
+        // Проверка соседних клеток
         const neighbors = [
-            { dx: -1, dy: -1 }, { dx: 0, dy: -1 }, { dx: 1, dy: -1 },
-            { dx: -1, dy: 0 },                    { dx: 1, dy: 0 },
-            { dx: -1, dy: 1 },  { dx: 0, dy: 1 },  { dx: 1, dy: 1 }
+            { dx: -1, dy: 0 }, { dx: 1, dy: 0 },
+            { dx: 0, dy: -1 }, { dx: 0, dy: 1 }
         ];
-
+        
         for (const { dx, dy } of neighbors) {
             const nx = cellX + dx;
             const ny = cellY + dy;
+            
             if (nx >= 0 && ny >= 0 && nx < crossword.size && ny < crossword.size) {
-                const neighborCell = crossword.grid[ny][nx];
-                if (neighborCell && neighborCell.wordIndices.length > 0) {
-                    if (!(intersectionCount === 1 && nx === cellX && ny === cellY)) {
-                        return false;
-                    }
+                const neighbor = crossword.grid[ny][nx];
+                if (neighbor && !(dx === 0 && dy === 0)) {
+                    return false;
                 }
             }
         }
     }
-
-    if (intersectionCount !== 1) return false;
-    return true;
+    
+    return intersectionCount > 0;
 }
 
 function loadBackupWords() {
