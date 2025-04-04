@@ -258,25 +258,34 @@ function generateCrossword() {
     crossword.definitions = [];
     crossword.usedWords.clear();
 
+    // Проверка доступных слов
     if (wordDatabase.easy.length + wordDatabase.hard.length < levelConfig.total) {
-        console.error("Недостаточно слов в базе!");
+        console.error("Недостаточно слов в базе! Загружаем резервные...");
         loadBackupWords();
     }
 
-    const firstWord = getRandomWord(WORD_TYPES.EASY, levelConfig.minLength, levelConfig.maxLength);
-    if (!firstWord) {
-        console.error("Не удалось выбрать первое слово");
+    let attempts = 0;
+    const maxAttempts = 500; // Увеличим количество попыток
+    let wordsAdded = 0;
+
+    // Пытаемся добавить первое слово
+    while (wordsAdded === 0 && attempts < maxAttempts / 2) {
+        const firstWord = getRandomWord(WORD_TYPES.EASY, levelConfig.minLength, levelConfig.maxLength);
+        if (firstWord) {
+            const centerY = Math.floor(crossword.size / 2);
+            const centerX = Math.floor((crossword.size - firstWord.word.length) / 2);
+            addWordToGrid(firstWord, { x: centerX, y: centerY }, 'horizontal', 1);
+            wordsAdded++;
+        }
+        attempts++;
+    }
+
+    if (wordsAdded === 0) {
+        console.error("Не удалось разместить первое слово");
         return false;
     }
 
-    const centerY = Math.floor(crossword.size / 2);
-    const centerX = Math.floor((crossword.size - firstWord.word.length) / 2);
-    addWordToGrid(firstWord, { x: centerX, y: centerY }, 'horizontal', 1);
-
-    let wordsAdded = 1;
-    let attempts = 0;
-    const maxAttempts = 1000;
-
+    // Пытаемся добавить остальные слова
     while (wordsAdded < levelConfig.total && attempts < maxAttempts) {
         const needEasy = wordsAdded < levelConfig.easy;
         const type = needEasy ? WORD_TYPES.EASY : WORD_TYPES.HARD;
@@ -284,35 +293,88 @@ function generateCrossword() {
 
         if (wordObj && tryAddConnectedWord(wordObj)) {
             wordsAdded++;
-            console.log(`Добавлено слово ${wordObj.word}, всего0 всего: ${wordsAdded}`);
+            console.log(`Добавлено слово ${wordObj.word}, всего: ${wordsAdded}`);
         }
         attempts++;
     }
 
     if (wordsAdded < levelConfig.total) {
         console.warn(`Добавлено только ${wordsAdded} из ${levelConfig.total} слов`);
+        
+        // Если добавили хотя бы 3 слова, считаем успехом
+        if (wordsAdded >= 3) {
+            crossword.wordsToFind = wordsAdded;
+            return true;
+        }
         return false;
     }
 
-    crossword.wordsToFind = wordsAdded;
     return true;
 }
 
 function tryAddConnectedWord(wordObj) {
-    for (const baseWord of crossword.words) {
-        for (let i = 0; i < baseWord.word.length; i++) {
-            const letter = baseWord.word[i];
-            const connectionIndex = wordObj.word.indexOf(letter);
-            if (connectionIndex === -1) continue;
+    // Пробуем разные стратегии соединения
+    const strategies = [
+        { method: 'singleIntersection' },
+        { method: 'anyIntersection', maxIntersections: 2 },
+        { method: 'anyPlacement' }
+    ];
 
-            const direction = baseWord.direction === 'horizontal' ? 'vertical' : 'horizontal';
-            const x = direction === 'horizontal' ? baseWord.x - connectionIndex : baseWord.x + i;
-            const y = direction === 'horizontal' ? baseWord.y + i : baseWord.y - connectionIndex;
+    for (const strategy of strategies) {
+        for (const baseWord of [...crossword.words].sort(() => Math.random() - 0.5)) {
+            if (tryAddWithStrategy(wordObj, baseWord, strategy)) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
 
-            if (canPlaceWordWithSingleIntersection(wordObj.word, { x, y }, direction)) {
+function tryAddWithStrategy(wordObj, baseWord, strategy) {
+    const word = wordObj.word;
+    
+    for (let i = 0; i < baseWord.word.length; i++) {
+        const letter = baseWord.word[i];
+        const connectionIndex = word.indexOf(letter);
+        if (connectionIndex === -1) continue;
+
+        const direction = baseWord.direction === 'horizontal' ? 'vertical' : 'horizontal';
+        const x = direction === 'horizontal' ? baseWord.x - connectionIndex : baseWord.x + i;
+        const y = direction === 'horizontal' ? baseWord.y + i : baseWord.y - connectionIndex;
+
+        if (strategy.method === 'singleIntersection') {
+            if (canPlaceWordWithSingleIntersection(word, { x, y }, direction)) {
                 addWordToGrid(wordObj, { x, y }, direction, crossword.words.length + 1);
                 return true;
             }
+        } else if (strategy.method === 'anyIntersection') {
+            if (canPlaceWordWithIntersections(word, { x, y }, direction, strategy.maxIntersections)) {
+                addWordToGrid(wordObj, { x, y }, direction, crossword.words.length + 1);
+                return true;
+            }
+        }
+    }
+    
+    // Если не нашли пересечений, пробуем разместить в любом месте
+    if (strategy.method === 'anyPlacement') {
+        return tryAddAnywhere(wordObj);
+    }
+    
+    return false;
+}
+
+function tryAddAnywhere(wordObj) {
+    const word = wordObj.word;
+    const direction = Math.random() > 0.5 ? 'horizontal' : 'vertical';
+    
+    // Пробуем случайные позиции
+    for (let i = 0; i < 50; i++) {
+        const x = Math.floor(Math.random() * (crossword.size - word.length));
+        const y = Math.floor(Math.random() * (crossword.size - word.length));
+        
+        if (canPlaceWord(word, { x, y }, direction)) {
+            addWordToGrid(wordObj, { x, y }, direction, crossword.words.length + 1);
+            return true;
         }
     }
     return false;
