@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Кроссворд Игра</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="script.js"></script>
+</head>
+<body>
+    <audio id="background-music" autoplay loop>
+        <source src="../assets/music.mp3" type="audio/mpeg">
+        Ваш браузер не поддерживает аудио.
+    </audio>
+    <script>
+        let sett = JSON.parse(localStorage.crosswordSettings).Settings;
+        document.getElementById("background-music").volume = sett.volume / 100;
+        const size = sett.fontSize;
+        if (size === 'small') {
+            document.body.style.fontSize = '16px';
+        } else if (size === 'medium') {
+            document.body.style.fontSize = '18px';
+        } else if (size === 'large') {
+            document.body.style.fontSize = '20px';
+        }
+
+        if (sett.theme == 'dark') {
+            document.body.classList.add('dark-theme');
+        } else {
+            document.body.classList.remove('dark-theme');
+        }
+    </script>
+
+    <div id="game-page" class="container game-page">
+        <div class="game-header">
+            <a href="../MAIN/index.html" id="back-button" class="back-button">Назад</a>
+            <div class="level-info">
+                <span>Уровень: <span id="level-number">1</span></span>
+                <button id="hint-button" class="hint-button">Подсказка</button>
+                <span class="hint-count">Осталось: <span id="hint-count">3</span></span>
+            </div>
+        </div>
+        
+        <div class="game-board">
+            <div class="crossword-grid" id="crossword-grid"></div>
+        </div>
+        
+        <div class="keyboard" id="keyboard"></div>
+
+        <div id="solved-definitions" class="solved-definitions collapsed">
+            <h3 class="solved-definitions-toggle">Угаданные слова: <span class="toggle-icon">▼</span></h3>
+            <div id="solved-definitions-list" class="solved-definitions-content"></div>
+        </div>
+
+        <div id="definitions-box" class="definitions-box hidden">
+            <h3>Определения слов:</h3>
+            <div id="definitions-list"></div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
