@@ -7,6 +7,9 @@ let userProgress = {
 // Функция для получения ID пользователя Telegram
 function getTelegramUserId() {
   if (window.Telegram?.WebApp) {
+      console.log(
+        Telegram.WebApp.initDataUnsafe, Telegram.WebApp.initData
+      )
       return Telegram.WebApp.initDataUnsafe.user?.id || null;
   }
   return null;

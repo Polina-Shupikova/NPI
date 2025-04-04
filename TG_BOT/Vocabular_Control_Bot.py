@@ -15,7 +15,7 @@ def handler_start(message):
     bot.send_message(message.chat.id, 'Этот бот-кроссворд предназначен для "убийства" времени, если вам скучно.')
     
     markup = types.InlineKeyboardMarkup(row_width=2)
-    web_app_url = "https://polina-shupikova.github.io/NPI/%D0%9F%D0%A0%D0%9E%D0%95%D0%9A%D0%A2/NEW/"
+    web_app_url = "https://polina-shupikova.github.io/NPI/%D0%9F%D0%A0%D0%9E%D0%95%D0%9A%D0%A2/MAIN/"
     btn_yes = types.InlineKeyboardButton(
         text="Да",
         web_app=types.WebAppInfo(url=web_app_url)
