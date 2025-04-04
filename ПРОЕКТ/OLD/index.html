@@ -532,6 +532,11 @@ input.addEventListener('keydown', function(e) {
         moveToPrevCell();
     }
 });
+input.addEventListener('beforeinput', function(e) {
+    if (e.data && !/[А-Яа-я]/.test(e.data)) {
+        e.preventDefault();
+    }
+});
 
                         cell.appendChild(input);
                     } else {
