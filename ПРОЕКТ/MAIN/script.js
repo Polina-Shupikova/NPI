@@ -8,11 +8,11 @@ let userProgress = {
 function getTelegramUserId() {
   if (Telegram.WebApp) {
       console.log(
-        Telegram.WebApp.initDataUnsafe, Telegram.WebApp.initData
+        Telegram.WebApp.initDataUnsafe, Telegram.WebApp.initData, "zz"
       )
       return Telegram.WebApp.initDataUnsafe.user?.id || null;
   }
-  console.log("НЕ В ТЕЛЕГЕ ЩА (на лошади)")
+  console.log("НЕ В ТЕЛЕГЕ ЩА (на лошади)1")
   return null;
 }
 
