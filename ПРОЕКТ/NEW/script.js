@@ -208,41 +208,51 @@ async function loadLevel() {
     }
   }
 
-// Генерация кроссворда
 function generateCrossword() {
-  const levelConfig = getLevelConfig(currentLevel);
-  crossword.size = Math.max(20, levelConfig.maxLength + 7);
-  crossword.hints = levelConfig.total;
-  crossword.wordsToFind = levelConfig.total;
-  crossword.wordsFound = 0;
-  crossword.words = [];
-  crossword.grid = Array(crossword.size).fill().map(() => Array(crossword.size).fill(null));
-  crossword.definitions = [];
-  crossword.usedWords.clear();
-
-  const firstWord = getRandomWord(WORD_TYPES.EASY, levelConfig.minLength, levelConfig.maxLength);
-  if (!firstWord) return false;
-  const centerY = Math.floor(crossword.size / 2);
-  const centerX = Math.floor((crossword.size - firstWord.word.length) / 2);
-  addWordToGrid(firstWord, { x: centerX, y: centerY }, 'horizontal', 1);
-
-  let wordsAdded = 1;
-  const maxAttempts = 1000;
-  let attempts = 0;
-
-  while (wordsAdded < levelConfig.total && attempts < maxAttempts) {
-    const needEasy = wordsAdded < levelConfig.easy;
-    const type = needEasy ? WORD_TYPES.EASY : WORD_TYPES.HARD;
-    const wordObj = getRandomWord(type, levelConfig.minLength, levelConfig.maxLength);
-    if (wordObj && tryAddConnectedWord(wordObj)) {
-      wordsAdded++;
-      attempts = 0;
-    } else {
-      attempts++;
+const levelConfig = getLevelConfig(currentLevel);
+crossword.size = Math.max(20, levelConfig.maxLength + 7);
+crossword.hints = levelConfig.total;
+crossword.wordsToFind = levelConfig.total;
+crossword.wordsFound = 0;
+crossword.words = [];
+crossword.grid = Array(crossword.size).fill().map(() => Array(crossword.size).fill(null));
+crossword.definitions = [];
+crossword.usedWords.clear();
+  
+const firstWord = getRandomWord(WORD_TYPES.EASY, levelConfig.minLength, levelConfig.maxLength);
+if (!firstWord) {
+  console.error("Не удалось выбрать первое слово");
+  return false;
+}
+const centerY = Math.floor(crossword.size / 2);
+const centerX = Math.floor((crossword.size - firstWord.word.length) / 2);
+addWordToGrid(firstWord, { x: centerX, y: centerY }, 'horizontal', 1);
+  
+let wordsAdded = 1;
+const maxAttempts = 2000; // Увеличиваем количество попыток
+let attempts = 0;
+  
+while (wordsAdded < levelConfig.total && attempts < maxAttempts) {
+  const needEasy = wordsAdded < levelConfig.easy;
+  const type = needEasy ? WORD_TYPES.EASY : WORD_TYPES.HARD;
+  const wordObj = getRandomWord(type, levelConfig.minLength, levelConfig.maxLength);
+  if (wordObj && tryAddConnectedWord(wordObj)) {
+    wordsAdded++;
+    attempts = 0;
+    console.log(`Добавлено слово: ${wordObj.word}, всего слов: ${wordsAdded}`);
+  } else {
+    attempts++;
+    if (attempts % 100 === 0) {
+       console.warn(`Попытка ${attempts}: не удалось добавить слово типа ${type}`);
     }
   }
-  crossword.wordsToFind = wordsAdded;
-  return wordsAdded >= Math.max(3, levelConfig.total * 0.7);
+}
+crossword.wordsToFind = wordsAdded;
+const success = wordsAdded >= Math.max(3, levelConfig.total * 0.7);
+if (!success) {
+  console.error(`Генерация не удалась: добавлено ${wordsAdded} из ${levelConfig.total} слов`);
+}
+return success;
 }
 
 // Выбор случайного слова
@@ -647,20 +657,31 @@ function showLevelCompleteDialog() {
     `;
     document.body.appendChild(dialog);
   
-    document.getElementById('next-level-btn').onclick = () => {
-      console.log('Клик: Следующий уровень');
-      dialog.remove();
-      currentLevel++;
-      document.getElementById('level-number').textContent = currentLevel;
-      localStorage.setItem('crossword_user_progress', JSON.stringify({ level: currentLevel }));
-      loadLevel();
-    };
+    const nextBtn = document.getElementById('next-level-btn');
+    const menuBtn = document.getElementById('menu-btn');
   
-    document.getElementById('menu-btn').onclick = () => {
-      console.log('Клик: В меню');
-      localStorage.setItem('crossword_user_progress', JSON.stringify({ level: currentLevel + 1 }));
-      window.location.href = '../MAIN/index.html';
-    };
+    if (nextBtn) {
+      nextBtn.onclick = () => {
+        console.log('Клик: Следующий уровень');
+        dialog.remove();
+        currentLevel++;
+        document.getElementById('level-number').textContent = currentLevel;
+        localStorage.setItem('crossword_user_progress', JSON.stringify({ level: currentLevel }));
+        loadLevel();
+      };
+    } else {
+      console.error("Кнопка 'next-level-btn' не найдена");
+    }
+  
+    if (menuBtn) {
+      menuBtn.onclick = () => {
+        console.log('Клик: В меню');
+        localStorage.setItem('crossword_user_progress', JSON.stringify({ level: currentLevel + 1 }));
+        window.location.href = '../MAIN/index.html';
+      };
+    } else {
+      console.error("Кнопка 'menu-btn' не найдена");
+    }
 }
 
   async function completeLevel() {
@@ -727,9 +748,9 @@ function handlePhysicalKeyPress(e) {
     }
 }
 
-  function initEventListeners() {
+function initEventListeners() {
     document.addEventListener('keydown', handlePhysicalKeyPress);
     console.log("Обработчики событий инициализированы");
-    }
+  }
 
-  document.addEventListener('DOMContentLoaded', initGame);
+document.addEventListener('DOMContentLoaded', initGame);
