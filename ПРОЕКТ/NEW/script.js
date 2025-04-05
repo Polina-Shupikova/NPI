@@ -170,7 +170,6 @@ function loadBackupWords() {
   console.log("Используются резервные слова");
 }
 
-// Инициализация игры
 async function initGame() {
   console.log("Запуск initGame...");
   await initTelegramWebApp();
@@ -686,53 +685,51 @@ function toggleSolvedDefinitions() {
   panel.classList.toggle('collapsed');
 }
 
-// Обработка физической клавиатуры
 function handlePhysicalKeyPress(e) {
-  if (!crossword.selectedCell) return;
-  const { x, y } = crossword.selectedCell;
-  const cellData = crossword.grid[y][x];
-  if (!cellData) return;
-
-  if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
-    e.preventDefault();
-    let newX = x, newY = y;
-    switch (e.key) {
-      case 'ArrowUp': newY--; break;
-      case 'ArrowDown': newY++; break;
-      case 'ArrowLeft': newX--; break;
-      case 'ArrowRight': newX++; break;
+    if (!crossword.selectedCell) return;
+    const { x, y } = crossword.selectedCell;
+    const cellData = crossword.grid[y][x];
+    if (!cellData) return;
+  
+    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+      e.preventDefault();
+      let newX = x, newY = y;
+      switch (e.key) {
+        case 'ArrowUp': newY--; break;
+        case 'ArrowDown': newY++; break;
+        case 'ArrowLeft': newX--; break;
+        case 'ArrowRight': newX++; break;
+        }
+      if (crossword.grid[newY]?.[newX]) selectCell(newX, newY);
+      return;
     }
-    if (crossword.grid[newY]?.[newX]) selectCell(newX, newY);
-    return;
-  }
-
-  if (e.key === 'Backspace') {
-    clearCell();
-    return;
-  }
-
-  if (e.key === 'Enter') {
-    showDefinitions();
-    return;
-  }
-
-  if (e.key === ' ') {
-    giveHint();
-    return;
-  }
-
-  let letter = e.key.toLowerCase();
-  if (RUSSIAN_LAYOUT[letter]) letter = RUSSIAN_LAYOUT[letter];
-  if (/[а-яё]/.test(letter)) {
-    handleKeyPress(letter.toUpperCase());
-    e.preventDefault();
-  }
+  
+    if (e.key === 'Backspace') {
+      clearCell();
+      return;
+    }
+  
+    if (e.key === 'Enter') {
+      showDefinitions();
+      return;
+    }
+  
+    if (e.key === ' ') {
+      giveHint();
+      return;
+    }
+  
+    let letter = e.key.toLowerCase();
+    if (RUSSIAN_LAYOUT[letter]) letter = RUSSIAN_LAYOUT[letter];
+    if (/[а-яё]/.test(letter)) {
+      handleKeyPress(letter.toUpperCase());
+      e.preventDefault();
+    }
 }
 
-// Показать ошибку
-function showError(message) {
-  alert(message);
-}
+  function initEventListeners() {
+    document.addEventListener('keydown', handlePhysicalKeyPress);
+    console.log("Обработчики событий инициализированы");
+    }
 
-// Запуск игры
-document.addEventListener('DOMContentLoaded', initGame);
+  document.addEventListener('DOMContentLoaded', initGame);
