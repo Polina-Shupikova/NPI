@@ -607,18 +607,6 @@ function showDefinitions() {
   };
 }
 
-// Добавить решенное определение
-function addSolvedDefinition(word, definition) {
-  const panel = document.getElementById('solved-definitions');
-  const list = document.getElementById('solved-definitions-list');
-  if (panel.classList.contains('hidden')) panel.classList.remove('hidden');
-  const item = document.createElement('div');
-  item.className = 'solved-definition-item';
-  item.innerHTML = `<strong>${word}:</strong> ${definition}`;
-  list.appendChild(item);
-  panel.scrollTop = panel.scrollHeight;
-}
-
 // Дать подсказку
 function giveHint() {
   if (crossword.hints <= 0) {
@@ -748,9 +736,43 @@ function handlePhysicalKeyPress(e) {
     }
 }
 
+// Добавляем обработчик для кнопки "Подсказка" сверху в initEventListeners
 function initEventListeners() {
     document.addEventListener('keydown', handlePhysicalKeyPress);
+    const hintBtn = document.getElementById('hint-btn');
+    if (hintBtn) {
+        hintBtn.addEventListener('click', giveHint);
+    }
     console.log("Обработчики событий инициализированы");
-  }
+}
+
+// Исправляем функцию addSolvedDefinition для корректного отображения угаданных слов
+function addSolvedDefinition(word, definition) {
+    const panel = document.getElementById('solved-definitions');
+    const list = document.getElementById('solved-definitions-list');
+    
+    // Убеждаемся, что панель видима и не схлопнута
+    if (panel.classList.contains('hidden')) {
+        panel.classList.remove('hidden');
+    }
+    if (panel.classList.contains('collapsed')) {
+        panel.classList.remove('collapsed');
+    }
+    
+    // Проверяем, не добавлено ли это слово уже
+    const existingItems = list.getElementsByClassName('solved-definition-item');
+    for (let item of existingItems) {
+        if (item.querySelector('strong').textContent === word) {
+            return; // Слово уже добавлено, выходим
+        }
+    }
+    
+    // Добавляем новое решенное слово
+    const item = document.createElement('div');
+    item.className = 'solved-definition-item';
+    item.innerHTML = `<strong>${word}:</strong> ${definition}`;
+    list.appendChild(item);
+    panel.scrollTop = panel.scrollHeight; // Прокручиваем вниз
+}
 
 document.addEventListener('DOMContentLoaded', initGame);
