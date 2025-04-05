@@ -303,7 +303,7 @@ function detectInputDirection(row, col) {
             document.getElementById('next-level').disabled = currentLevel === levels.length - 1 || !unlockedLevels.includes(currentLevel + 1);
         }
 
-        function generateCrossword() {
+function generateCrossword() {
     document.getElementById('crossword').innerHTML = '';
     document.getElementById('word-list').innerHTML = '';
     crossword = [];
@@ -312,20 +312,22 @@ function detectInputDirection(row, col) {
     const currentLevelSettings = levels[currentLevel];
     const targetWordCount = currentLevelSettings.wordCount;
 
-    // Получаем все использованные слова из истории уровней и генераций
     const usedWords = new Set();
 
     // Слова из последних 3 уровней
     usedWordsHistory.levels.forEach(levelData => {
-        levelData.words.forEach(word => usedWords.add(word));
+        if (levelData.words && typeof levelData.words.forEach === 'function') {
+            levelData.words.forEach(word => usedWords.add(word));
+        }
     });
 
     // Слова из последних 3 генераций на текущем уровне
     usedWordsHistory.generations.forEach(genWords => {
-        genWords.forEach(word => usedWords.add(word));
+        if (genWords && typeof genWords.forEach === 'function') {
+            genWords.forEach(word => usedWords.add(word));
+        }
     });
 
-    // Фильтруем доступные слова, исключая уже использованные
     const availableWords = wordList
         .filter(item => !usedWords.has(item.word))
         .sort(() => Math.random() - 0.5)
@@ -333,7 +335,6 @@ function detectInputDirection(row, col) {
 
     if (availableWords.length < targetWordCount) {
         console.warn("Недостаточно уникальных слов для уровня. Используются повторяющиеся слова.");
-        // Если слов недостаточно, берем дополнительные из полного списка
         const extraWords = wordList
             .filter(item => !availableWords.some(w => w.word === item.word))
             .sort(() => Math.random() - 0.5)
@@ -366,7 +367,6 @@ function detectInputDirection(row, col) {
     renderWordList();
     highlightKeyboardKeys();
 
-    // Сохраняем использованные слова в истории
     const currentWords = new Set(placedWords.map(w => w.word));
     updateUsedWordsHistory(currentWords);
 
@@ -375,7 +375,6 @@ function detectInputDirection(row, col) {
         updateLevelDisplay();
     }
 }
-
 function updateUsedWordsHistory(currentWords) {
     // Обновляем историю генераций на текущем уровне
     usedWordsHistory.generations.push(new Set(currentWords));
@@ -939,65 +938,103 @@ function highlightKeyboardKeys() {
         }
         return true;
     }
-
-    // Проверяет конкретное слово и награждает монетами
-    function checkWord(word) {
-        let isCorrect = true;
-        let correctLetters = 0;
-
+function checkLevelCompletion() {
+    let allWordsCorrect = true;
+    placedWords.forEach(word => {
         for (let i = 0; i < word.word.length; i++) {
             const row = word.horizontal ? word.row : word.row + i;
             const col = word.horizontal ? word.col + i : word.col;
             const input = document.querySelector(`input[data-row="${row}"][data-col="${col}"]`);
+            if (!input || input.value.toUpperCase() !== word.word[i]) {
+                allWordsCorrect = false;
+                return;
+            }
+        }
+    });
 
+    if (allWordsCorrect) {
+        const earnedCoins = placedWords.length * 2;
+        coins += earnedCoins;
+        saveGameData();
+        updateShopUI();
+
+        let message;
+        if (currentLevel < levels.length - 1 && !unlockedLevels.includes(currentLevel + 1)) {
+            coins += 10; // Бонус за открытие нового уровня
+            unlockedLevels.push(currentLevel + 1);
+            message = `Уровень ${currentLevel + 1} завершен! +${earnedCoins + 10} монет. Переход на следующий уровень...`;
+        } else if (currentLevel < levels.length - 1) {
+            message = `Уровень ${currentLevel + 1} завершен! +${earnedCoins} монет. Переход на следующий уровень...`;
+        } else {
+            message = `Поздравляем! Все уровни пройдены! +${earnedCoins} монет.`;
+        }
+
+        showNotification(message, 'success');
+
+        // Переход на следующий уровень, если он есть
+        if (currentLevel < levels.length - 1) {
+            setTimeout(() => {
+                nextLevel();
+            }, 2000); // Задержка 2 секунды для отображения уведомления
+        }
+    }
+}
+function checkWord(word) {
+    let isCorrect = true;
+    let correctLetters = 0;
+
+    for (let i = 0; i < word.word.length; i++) {
+        const row = word.horizontal ? word.row : word.row + i;
+        const col = word.horizontal ? word.col + i : word.col;
+        const input = document.querySelector(`input[data-row="${row}"][data-col="${col}"]`);
+
+        if (input) {
+            const correctLetter = crossword[row][col].letter;
+            const userLetter = input.value.toUpperCase();
+
+            if (userLetter === correctLetter) {
+                input.style.backgroundColor = 'rgba(144, 238, 144, 0.5)';
+                correctLetters++;
+            } else {
+                input.style.backgroundColor = 'rgba(255, 182, 193, 0.5)';
+                isCorrect = false;
+            }
+        }
+    }
+
+    if (isCorrect) {
+        coins += 1; // Награда за правильное слово
+        updateShopUI();
+        saveGameData();
+
+        // Делаем клетки read-only после правильного ввода
+        for (let i = 0; i < word.word.length; i++) {
+            const row = word.horizontal ? word.row : word.row + i;
+            const col = word.horizontal ? word.col + i : word.col;
+            const input = document.querySelector(`input[data-row="${row}"][data-col="${col}"]`);
             if (input) {
-                const correctLetter = crossword[row][col].letter;
-                const userLetter = input.value.toUpperCase();
-
-                if (userLetter === correctLetter) {
-                    input.style.backgroundColor = 'rgba(144, 238, 144, 0.5)';
-                    correctLetters++;
-                } else {
-                    input.style.backgroundColor = 'rgba(255, 182, 193, 0.5)';
-                    isCorrect = false;
-                }
+                input.readOnly = true;
+                input.classList.add('readonly');
             }
         }
 
-        if (isCorrect) {
-            coins += 1; // Награда за правильное слово
-            updateShopUI();
-            saveGameData();
-
-            // Делаем клетки read-only после правильного ввода
+        showNotification('Слово верно! +1 монета', 'success');
+        checkLevelCompletion(); // Проверяем завершение уровня
+    } else {
+        setTimeout(() => {
             for (let i = 0; i < word.word.length; i++) {
                 const row = word.horizontal ? word.row : word.row + i;
                 const col = word.horizontal ? word.col + i : word.col;
                 const input = document.querySelector(`input[data-row="${row}"][data-col="${col}"]`);
-                if (input) {
-                    input.readOnly = true;
-                    input.classList.add('readonly');
+                if (input && input.style.backgroundColor === 'rgba(255, 182, 193, 0.5)') {
+                    input.value = '';
+                    input.style.backgroundColor = '';
                 }
             }
-
-            // Показываем уведомление
-            showNotification('Слово верно! +1 монета', 'success');
-        } else {
-            // Сбрасываем неправильные буквы
-            setTimeout(() => {
-                for (let i = 0; i < word.word.length; i++) {
-                    const row = word.horizontal ? word.row : word.row + i;
-                    const col = word.horizontal ? word.col + i : word.col;
-                    const input = document.querySelector(`input[data-row="${row}"][data-col="${col}"]`);
-                    if (input && input.style.backgroundColor === 'rgba(255, 182, 193, 0.5)') {
-                        input.value = '';
-                        input.style.backgroundColor = '';
-                    }
-                }
-                showNotification('Есть ошибки, попробуйте еще раз', 'error');
-            }, 1000);
-        }
+            showNotification('Есть ошибки, попробуйте еще раз', 'error');
+        }, 1000);
     }
+}
 
     // Функция для показа уведомлений
     function showNotification(message, type) {
@@ -1036,18 +1073,24 @@ function highlightKeyboardKeys() {
     `;
     document.head.appendChild(style);
 
-        function saveGameData() {
+function saveGameData() {
     const gameData = {
         coins,
         purchasedHints,
         unlockedLevels,
         currentLevel,
-        usedWordsHistory
+        usedWordsHistory: {
+            levels: usedWordsHistory.levels.map(levelData => ({
+                level: levelData.level,
+                words: Array.from(levelData.words) // Преобразуем Set в массив
+            })),
+            generations: usedWordsHistory.generations.map(genWords => Array.from(genWords)) // Преобразуем Set в массив
+        }
     };
     localStorage.setItem('crosswordGameData', JSON.stringify(gameData));
 }
 
-        function loadGameData() {
+function loadGameData() {
     const savedData = localStorage.getItem('crosswordGameData');
     if (savedData) {
         const gameData = JSON.parse(savedData);
@@ -1056,6 +1099,17 @@ function highlightKeyboardKeys() {
         unlockedLevels = gameData.unlockedLevels || [0];
         currentLevel = gameData.currentLevel || 0;
         usedWordsHistory = gameData.usedWordsHistory || { levels: [], generations: [] };
+
+        // Восстанавливаем Set для levels
+        usedWordsHistory.levels = (gameData.usedWordsHistory?.levels || []).map(levelData => ({
+            level: levelData.level,
+            words: new Set(levelData.words ? Object.values(levelData.words) : [])
+        }));
+
+        // Восстанавливаем Set для generations
+        usedWordsHistory.generations = (gameData.usedWordsHistory?.generations || []).map(genWords =>
+            new Set(genWords ? Object.values(genWords) : [])
+        );
     }
 }
 
